@@ -64,3 +64,45 @@ export function parseRegionDoc(data: unknown): RegionDoc {
     isActive: Boolean(d.isActive ?? false),
   };
 }
+
+/**
+ * Robustly extracts and parses JSON from an AI text response.
+ * Strips markdown code blocks and handles leading/trailing text.
+ * 
+ * @param text - The raw text response from the AI
+ * @returns The parsed JSON object
+ * @throws AppError if JSON extraction or parsing fails
+ */
+export function extractAndParseJson<T = unknown>(text: string): T {
+  try {
+    // 1. Remove markdown code blocks if present (```json ... ```)
+    let cleanText = text.replace(/```(?:json)?\n?/g, "").replace(/```\n?/g, "").trim();
+
+    // 2. Try to find the first '{' or '[' and the last '}' or ']'
+    const firstBrace = cleanText.indexOf('{');
+    const firstBracket = cleanText.indexOf('[');
+    
+    let startIndex = -1;
+    if (firstBrace !== -1 && firstBracket !== -1) {
+      startIndex = Math.min(firstBrace, firstBracket);
+    } else if (firstBrace !== -1) {
+      startIndex = firstBrace;
+    } else if (firstBracket !== -1) {
+      startIndex = firstBracket;
+    }
+
+    if (startIndex !== -1) {
+      const isArray = cleanText[startIndex] === '[';
+      const lastIndex = cleanText.lastIndexOf(isArray ? ']' : '}');
+      
+      if (lastIndex !== -1 && lastIndex >= startIndex) {
+        cleanText = cleanText.substring(startIndex, lastIndex + 1);
+      }
+    }
+
+    // 3. Parse the cleaned string
+    return JSON.parse(cleanText) as T;
+  } catch (error) {
+    throw new Error(`Failed to extract JSON from AI response. Raw text: ${text.substring(0, 100)}...`);
+  }
+}

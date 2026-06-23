@@ -5,7 +5,7 @@ import { Hero } from "@/features/home/components/Hero";
 import { ServicesSection } from "@/features/home/components/ServicesSection";
 import { GoogleReviewsSection } from "@/features/home/components/GoogleReviewsSection";
 import { AlternatingSections } from "@/components/layout/AlternatingSections";
-import { HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK, SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK, REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK } from "@/constants/ui";
+import { HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK, SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK, REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK, DEFAULT_PHONE } from "@/constants/ui";
 import type { SettingsDoc, PestDoc } from "@/types";
 import type { HeroSlideDoc, GoogleReviewDoc } from "@/features/home/types";
 import { getHomeData } from "@/features/home/actions";
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 const DEFAULT_SETTINGS: SettingsDoc = {
-  phone: "905000000000",
+  phone: DEFAULT_PHONE,
   heroAutoplayDelay: HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   servicesAutoplayDelay: SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   reviewsAutoplayDelay: REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
@@ -33,7 +33,7 @@ const HomePage = async () => {
   let settings: SettingsDoc = DEFAULT_SETTINGS;
 
   if (!homeDataResponse.success) {
-    console.error("Failed to load home data:", homeDataResponse.error);
+    console.error(DICTIONARY.systemErrors.logs.homeDataFetch, homeDataResponse.error);
   } else if (homeDataResponse.data) {
     slides = homeDataResponse.data.slides;
     pests = homeDataResponse.data.pests;
@@ -47,7 +47,7 @@ const HomePage = async () => {
   const stats = placesResponse.success ? placesResponse.data?.stats : null;
   // Placeholder images
 
-  const rawPhone = settings.phone || "905000000000";
+  const rawPhone = settings.phone || DEFAULT_PHONE;
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
   const telUrl = generateTelUrl(rawPhone);
   // Delays are defined in seconds in the database/constants, but Embla expects milliseconds

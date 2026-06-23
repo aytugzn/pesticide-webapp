@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { label: DICTIONARY.admin.dashboard.menu.combinations, href: ROUTES.adminCombinations },
   { label: DICTIONARY.admin.dashboard.menu.reports,       href: ROUTES.adminReports },
   { label: DICTIONARY.admin.dashboard.menu.messages,       href: ROUTES.adminMessages },
-  { label: DICTIONARY.admin.dashboard.menu.references,    href: ROUTES.adminReferences },
   { label: DICTIONARY.admin.dashboard.menu.reviews,       href: ROUTES.adminReviews },
   { label: DICTIONARY.admin.dashboard.menu.settings,        href: ROUTES.adminSettings },
 ] as const;

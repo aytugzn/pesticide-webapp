@@ -5,3 +5,4 @@ export const SERVICES_SECTION_MAX_ITEMS = 7;
 export const SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK = 4; // seconds
 export const REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK = 40; // seconds
 export const HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK = 5; // seconds
+export const DEFAULT_PHONE = "905000000000";

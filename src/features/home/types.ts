@@ -27,7 +27,3 @@ export const HOME_ERRORS = {
 } as const;
 
 export type HomeErrorCode = keyof typeof HOME_ERRORS;
-
-export type ActionResponse<T = void> =
-  | { success: true; data?: T }
-  | { success: false; error: HomeErrorCode };

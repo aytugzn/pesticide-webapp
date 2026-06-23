@@ -1,14 +1,13 @@
 export const ROUTES = {
   login: "/login",
   admin: "/admin",
-  adminRegions: "/admin/bolgeler",
-  adminPests: "/admin/hasereler",
-  adminCombinations: "/admin/kombinasyonlar",
-  adminReports: "/admin/raporlar",
-  adminMessages: "/admin/mesajlar",
-  adminReferences: "/admin/referanslar",
-  adminSettings: "/admin/ayarlar",
-  adminReviews: "/admin/yorumlar",
+  adminRegions: "/admin/regions",
+  adminPests: "/admin/pests",
+  adminCombinations: "/admin/combinations",
+  adminReports: "/admin/service-reports",
+  adminMessages: "/admin/messages",
+  adminSettings: "/admin/settings",
+  adminReviews: "/admin/reviews",
   
   // Public Routes
   home: "/",

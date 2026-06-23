@@ -3,13 +3,15 @@
 import { adminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AUTH_ERRORS, type ActionResponse } from "./types";
+import { AUTH_ERRORS, type AuthErrorCode } from "./types";
+import type { ActionResponse } from "@/types";
+import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 
 const ALLOWED_EMAILS = [process.env.ADMIN_EMAIL || ""];
 const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 gün
 
-const createSession = async (idToken: string): Promise<ActionResponse> => {
+const createSession = async (idToken: string): Promise<ActionResponse<void, AuthErrorCode>> => {
   const expiresIn = SESSION_DURATION * 1000;
 
   try {
@@ -34,7 +36,7 @@ const createSession = async (idToken: string): Promise<ActionResponse> => {
 
     return { success: true };
   } catch (error) {
-    console.error("Session creation error:", error);
+    console.error(DICTIONARY.systemErrors.logs.sessionCreation, error);
     return { success: false, error: AUTH_ERRORS.SESSION_CREATION_FAILED };
   }
 };

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
+import { DEFAULT_PHONE } from "@/constants/ui";
 import { NavLink } from "@/components/ui/NavLink";
 import { ChevronDown, Bug, MapPin } from "lucide-react";
 import { adminDb } from "@/lib/firebase-admin";
@@ -43,10 +44,10 @@ const Navbar = async () => {
     regions = data.regions;
     settings = data.settings;
   } catch (error) {
-    console.error("Navbar data fetch error:", error);
+    console.error(DICTIONARY.systemErrors.logs.navbarDataFetch, error);
   }
   
-  const rawPhone = settings.phone || "905000000000";
+  const rawPhone = settings.phone || DEFAULT_PHONE;
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
   const telUrl = generateTelUrl(rawPhone);
 

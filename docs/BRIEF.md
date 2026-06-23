@@ -57,13 +57,13 @@ Tek admin, Firebase Auth ile giriş yapar.
 
 ```
 /admin                     → Dashboard (özet istatistikler)
-/admin/bolgeler            → Bölge listesi, ekle/sil/aktif-pasif
-/admin/hasereler           → Haşere listesi, ekle/sil/aktif-pasif
-/admin/kombinasyonlar      → İçerik üretimi ve yönetimi ← KRİTİK
-/admin/raporlar            → İlaçlama raporu oluştur, QR indir
-/admin/mesajlar            → İletişim formu gelen kutusı
-/admin/referanslar         → Müşteri yorumları yönetimi
-/admin/ayarlar             → Genel site ayarları
+/admin/regions             → Bölge listesi, ekle/sil/aktif-pasif
+/admin/pests               → Haşere listesi, ekle/sil/aktif-pasif
+/admin/combinations        → İçerik üretimi ve yönetimi ← KRİTİK
+/admin/service-reports     → İlaçlama raporu oluştur, QR indir
+/admin/messages            → İletişim formu gelen kutusı
+/admin/reviews             → Müşteri yorumları yönetimi
+/admin/settings            → Genel site ayarları
 ```
 
 ---
@@ -196,59 +196,59 @@ Ek Notlar:             [DOLDUR]
 ```
 firestore/
 │
-├── bolge/
+├── regions/
 │   └── {slug}/
-│       ├── ad: "Bornova"
+│       ├── name: "Bornova"
 │       ├── slug: "bornova"
-│       ├── ozellikler: "yoğun apartman..."   ← AI prompt için
-│       └── aktif: true
+│       ├── description: "yoğun apartman..."   ← AI prompt için
+│       └── isActive: true
 │
-├── hasere/
+├── pests/
 │   └── {slug}/
-│       ├── ad: "Karınca"
+│       ├── name: "Karınca"
 │       ├── slug: "karinca-ilaclama"
-│       ├── ozellikler: "yaz aylarında pik..."  ← AI prompt için
-│       ├── gorsel: "url"
-│       └── aktif: true
+│       ├── description: "yaz aylarında pik..."  ← AI prompt için
+│       ├── image: "url"
+│       └── isActive: true
 │
-├── kombinasyon/
-│   └── {bolge}_{hasere}/                      ← örn: "bornova_karinca-ilaclama"
-│       ├── bolge: "bornova"
-│       ├── hasere: "karinca-ilaclama"
+├── combinations/
+│   └── {region}_{pest}/                      ← örn: "bornova_karinca-ilaclama"
+│       ├── region: "bornova"
+│       ├── pest: "karinca-ilaclama"
 │       ├── title: "Bornova Karınca İlaçlama | DMR İlaçlama"
 │       ├── h1: "Bornova'da Karınca İlaçlama Hizmeti"
 │       ├── metaDesc: "..."
 │       ├── content: "..."
 │       ├── faq: [{question, answer}]
 │       ├── ogImage: "url"
-│       └── aktif: true
+│       └── isActive: true
 │
-├── rapor/
+├── serviceReports/
 │   └── {uuid}/
-│       ├── musteriAdi: "..."
-│       ├── adres: "..."
-│       ├── tarih: timestamp
-│       ├── hasere: "..."
-│       ├── ilac: "..."
-│       ├── teknisyen: "..."
+│       ├── customerName: "..."
+│       ├── address: "..."
+│       ├── date: timestamp
+│       ├── pest: "..."
+│       ├── medicine: "..."
+│       ├── technician: "..."
 │       └── [DOLDUR — müşteriyle görüşülecek diğer alanlar]
 │
-├── mesajlar/
+├── messages/
 │   └── {id}/
-│       ├── ad, email, telefon, mesaj
-│       ├── tarih: timestamp
-│       └── okundu: false
+│       ├── customerName, email, phone, message
+│       ├── date: timestamp
+│       └── isRead: false
 │
-├── referanslar/
+├── reviews/
 │   └── {id}/
-│       ├── musteriAdi, yorum, puan
-│       ├── tarih: timestamp
-│       └── aktif: false   ← admin onaylayana kadar
+│       ├── customerName, review, rating
+│       ├── date: timestamp
+│       └── isActive: false   ← admin onaylayana kadar
 │
-└── ayarlar/
-    └── genel/
-        ├── telefon, adres, calisma saatleri
-        ├── ruhsatNo, defaultOgGorsel
+└── settings/
+    └── general/
+        ├── phone, address, workingHours
+        ├── licenseNumber, defaultOgImage
         └── googleAnalyticsId
 ```
 

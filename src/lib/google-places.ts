@@ -1,5 +1,7 @@
-import type { GoogleStatsDoc, ActionResponse } from "@/features/home/types";
+import type { GoogleStatsDoc } from "@/features/home/types";
+import type { ActionResponse } from "@/types";
 import { unstable_cacheTag as cacheTag } from "next/cache";
+import { DICTIONARY } from "@/constants/dictionary";
 
 /**
  * Fetches ratings and review counts from Google Places API.
@@ -18,7 +20,7 @@ export async function getGooglePlaceDetails(placeId?: string): Promise<ActionRes
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    console.error("GOOGLE_PLACES_API_KEY is not set in environment variables.");
+    console.error(DICTIONARY.systemErrors.googlePlacesApiMissing);
     return { success: false, error: "INVALID_CONFIGURATION" };
   }
 
@@ -34,14 +36,14 @@ export async function getGooglePlaceDetails(placeId?: string): Promise<ActionRes
     });
 
     if (!response.ok) {
-      console.error(`Google Places API returned ${response.status}`);
+      console.error(DICTIONARY.systemErrors.googlePlacesApiFailed, { status: response.status });
       return { success: false, error: "PLACES_API_FAILED" };
     }
 
     const data = await response.json();
 
     if (!data.rating && !data.userRatingCount) {
-      console.warn("Google Places API warning/error: No valid data found in response");
+      console.warn(DICTIONARY.systemErrors.googlePlacesApiNoData);
       return { success: false, error: "NO_VALID_DATA" };
     }
 
@@ -53,7 +55,7 @@ export async function getGooglePlaceDetails(placeId?: string): Promise<ActionRes
     return { success: true, data: { stats } };
 
   } catch (error) {
-    console.error("Failed to fetch Google Place details:", error);
+    console.error(DICTIONARY.systemErrors.googlePlacesApiFailed, error);
     return { success: false, error: "FETCH_FAILED" };
   }
 }

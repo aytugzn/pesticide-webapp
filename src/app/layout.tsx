@@ -27,7 +27,7 @@ async function getLayoutSettings() {
     const settingsSnap = await adminDb.collection("settings").doc("general").get();
     return parseSettingsDoc(settingsSnap.data());
   } catch (error) {
-    console.error("Layout settings fetch error:", error);
+    console.error(DICTIONARY.systemErrors.logs.layoutSettingsFetch, error);
     return {};
   }
 }

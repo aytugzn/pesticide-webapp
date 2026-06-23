@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { DICTIONARY } from "../constants/dictionary";
+import { DICTIONARY } from "@/constants/dictionary";
+import { AppError } from "./exceptions";
 
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  throw new Error(DICTIONARY.gemini.errors.missingApiKey);
+  throw new AppError(DICTIONARY.systemErrors.geminiApiKeyMissing, "ENV_MISSING");
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);

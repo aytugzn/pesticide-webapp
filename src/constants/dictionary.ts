@@ -110,7 +110,6 @@ const adminDict = {
       combinations: "Kombinasyonlar",
       reports: "Raporlar",
       messages: "Mesajlar",
-      references: "Referanslar",
       reviews: "Yorumlar",
       settings: "Ayarlar",
     }
@@ -130,6 +129,29 @@ const adminDict = {
   }
 };
 
+const globalErrorDict = {
+  title: "Bir Şeyler Ters Gitti",
+  description: "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin veya daha sonra tekrar ziyaret edin.",
+  retryButton: "Tekrar Dene",
+  backToHome: "Ana Sayfaya Dön",
+};
+
+const systemErrorsDict = {
+  firebaseClientEnvMissing: "CRITICAL ERROR: Firebase client environment variables are missing!",
+  firebaseAdminEnvMissing: "CRITICAL ERROR: Firebase Admin .env variables are missing!",
+  geminiApiKeyMissing: "CRITICAL ERROR: GEMINI_API_KEY environment variable is missing.",
+  googlePlacesApiMissing: "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
+  googlePlacesApiFailed: "Google Places API request failed",
+  googlePlacesApiNoData: "Google Places API warning: No valid data found in response",
+  logs: {
+    homeDataFetch: "Error occurred while fetching home page data",
+    loginError: "Error occurred during login process",
+    sessionCreation: "Error occurred while creating session",
+    navbarDataFetch: "Error occurred while fetching navbar data",
+    layoutSettingsFetch: "Error occurred while fetching layout settings",
+  }
+};
+
 export const DICTIONARY = deepFreeze({
   navbar: navbarDict,
   auth: authDict,
@@ -138,4 +160,6 @@ export const DICTIONARY = deepFreeze({
   gemini: geminiDict,
   social: socialDict,
   admin: adminDict,
+  globalError: globalErrorDict,
+  systemErrors: systemErrorsDict,
 } as const);

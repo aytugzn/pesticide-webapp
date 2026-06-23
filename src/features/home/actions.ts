@@ -1,6 +1,9 @@
 import { adminDb } from "@/lib/firebase-admin";
-import type { ActionResponse, HeroSlideDoc, GoogleReviewDoc } from "./types";
+import type { HeroSlideDoc, GoogleReviewDoc, HomeErrorCode } from "./types";
+import { HOME_ERRORS } from "./types";
 import type { SettingsDoc, PestDoc } from "@/types";
+import type { ActionResponse } from "@/types";
+import { DICTIONARY } from "@/constants/dictionary";
 import { parseSettingsDoc, parsePestDoc } from "@/utils/parsers";
 import { unstable_cacheTag as cacheTag } from "next/cache";
 
@@ -13,7 +16,7 @@ export type HomeData = {
 };
 
 
-export async function getHomeData(): Promise<ActionResponse<HomeData>> {
+export async function getHomeData(): Promise<ActionResponse<HomeData, HomeErrorCode>> {
   "use cache";
   cacheTag("home-data");
   
@@ -34,7 +37,7 @@ export async function getHomeData(): Promise<ActionResponse<HomeData>> {
     if (sliderSnap.exists) {
       const data = sliderSnap.data();
       if (data && Array.isArray(data.slides)) {
-        slides = data.slides.map((s: any) => ({
+        slides = data.slides.map((s: Record<string, unknown>) => ({
           ...s,
           imageUrl: String(s.imageUrl || ""),
           order: Number(s.order) || 0
@@ -53,7 +56,7 @@ export async function getHomeData(): Promise<ActionResponse<HomeData>> {
     if (reviewsSnap.exists) {
       const data = reviewsSnap.data();
       if (data && Array.isArray(data.items)) {
-        customReviews = data.items.map((r: any) => ({
+        customReviews = data.items.map((r: Record<string, unknown>) => ({
           ...r,
           rating: Number(r.rating) || 5
         })) as GoogleReviewDoc[];
@@ -74,7 +77,7 @@ export async function getHomeData(): Promise<ActionResponse<HomeData>> {
       }
     };
   } catch (error) {
-    console.error("Home page data fetch error:", error);
-    return { success: false, error: "FETCH_FAILED" };
+    console.error(DICTIONARY.systemErrors.logs.homeDataFetch, error);
+    return { success: false, error: HOME_ERRORS.FETCH_FAILED };
   }
 }

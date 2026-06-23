@@ -21,9 +21,9 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   ];
 
   const [regionsSnap, pestsSnap, combinationsSnap] = await Promise.all([
-    adminDb.collection("bolge").where("aktif", "==", true).get(),
-    adminDb.collection("hasere").where("aktif", "==", true).get(),
-    adminDb.collection("kombinasyon").where("aktif", "==", true).get(),
+    adminDb.collection("regions").where("isActive", "==", true).get(),
+    adminDb.collection("pests").where("isActive", "==", true).get(),
+    adminDb.collection("combinations").where("isActive", "==", true).get(),
   ]);
 
   const regionPages: MetadataRoute.Sitemap = regionsSnap.docs.map((doc) => {

@@ -11,8 +11,4 @@ export const AUTH_ERRORS = {
   SESSION_CREATION_FAILED: "SESSION_CREATION_FAILED",
 } as const;
 
-export type AuthErrorCode = keyof typeof AUTH_ERRORS;
-
-export type ActionResponse<T = void> =
-  | { success: true; data?: T }
-  | { success: false; error: AuthErrorCode };
+export type AuthErrorCode = keyof typeof AUTH_ERRORS;
