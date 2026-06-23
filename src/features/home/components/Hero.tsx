@@ -2,7 +2,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { Phone, MessageCircle, PhoneCall } from "lucide-react";
 import { GoogleStats } from "./GoogleStats";
-import { HeroSlider } from "./HeroSlider";
+import { ImageSlider } from "@/components/ui/ImageSlider";
 import { StickyMobileActions } from "./StickyMobileActions";
 import type { HeroSlideDoc, GoogleStatsDoc } from "@/features/home/types";
 
@@ -11,16 +11,20 @@ export const Hero = ({
   telUrl,
   whatsappUrl,
   autoplayDelay,
-  stats
+  stats,
+  instagramUrl,
+  facebookUrl
 }: { 
   slides: HeroSlideDoc[]; 
   telUrl: string;
   whatsappUrl: string;
   autoplayDelay?: number;
   stats?: GoogleStatsDoc;
+  instagramUrl?: string;
+  facebookUrl?: string;
 }) => {
   return (
-    <section className="relative w-full bg-brand-surface pt-4 pb-16 md:pb-24 md:pt-16">
+    <section className="relative w-full pt-4 pb-16 md:pb-24 md:pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
@@ -48,7 +52,7 @@ export const Hero = ({
                 variant="outline"
                 className="!rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 justify-center bg-brand-surface"
               >
-                <Phone className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                <Phone className="w-4 h-4 mr-1.5 flex-shrink-0"  aria-hidden="true" />
                 <span className="truncate">{DICTIONARY.home.stickyActions.callNow}</span>
               </Button>
 
@@ -58,26 +62,33 @@ export const Hero = ({
                 className="!rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 justify-center border border-whatsapp/50 dark:border-whatsapp/30"
                 external
               >
-                <MessageCircle className="w-4 h-4 mr-1.5 fill-current flex-shrink-0" />
-                <span className="truncate">{DICTIONARY.home.stickyActions.whatsapp}</span>
+                <MessageCircle className="w-4 h-4 mr-1.5 fill-current flex-shrink-0"  aria-hidden="true" />
+                <span className="truncate">{DICTIONARY.social.whatsapp.text}</span>
               </Button>
 
               <Button 
                 variant="primary"
                 className="!rounded-full col-span-2 lg:col-span-1 px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-md hover:shadow-xl shadow-brand-primary/20 lg:flex-1 justify-center"
               >
-                <PhoneCall className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                <PhoneCall className="w-4 h-4 mr-1.5 flex-shrink-0"  aria-hidden="true" />
                 <span className="truncate">{DICTIONARY.navbar.callMeBack}</span>
               </Button>
             </div>
 
             {/* Stats */}
-            <GoogleStats stats={stats} />
+            <GoogleStats stats={stats} instagramUrl={instagramUrl} facebookUrl={facebookUrl} />
           </div>
 
           {/* Right Column: Slider */}
-          <div className="w-full h-80 sm:h-96 lg:h-[36rem] rounded-3xl overflow-hidden shadow-2xl relative">
-            <HeroSlider slides={slides} autoplayDelay={autoplayDelay} />
+          <div className="w-full aspect-square md:aspect-landscape lg:aspect-square xl:aspect-landscape rounded-3xl overflow-hidden shadow-2xl relative group">
+            <ImageSlider 
+              images={slides.map(slide => ({
+                id: slide.id || slide.imageUrl,
+                url: slide.imageUrl,
+                altText: slide.altText
+              }))} 
+              autoplayDelay={autoplayDelay} 
+            />
           </div>
 
         </div>

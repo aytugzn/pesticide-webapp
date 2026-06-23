@@ -40,17 +40,17 @@ export const StickyMobileActions = ({
     >
       <a 
         href={telUrl}
-        className="flex-1 flex items-center justify-center gap-2 bg-brand-primary text-white py-5 font-bold text-sm tracking-wide"
+        className="flex-1 flex items-center justify-center gap-2 bg-brand-primary text-brand-surface py-5 font-bold text-sm tracking-wide"
       >
-        <Phone className="w-5 h-5" />
+        <Phone className="w-5 h-5"  aria-hidden="true" />
         <span>{DICTIONARY.home.stickyActions.callNow}</span>
       </a>
       <a 
         href={whatsappUrl}
-        className="flex-1 flex items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp-hover text-white py-5 font-bold text-sm tracking-wide"
+        className="flex-1 flex items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp-hover text-brand-surface py-5 font-bold text-sm tracking-wide"
       >
-        <MessageCircle className="w-5 h-5 fill-white" />
-        <span>{DICTIONARY.home.stickyActions.whatsapp}</span>
+        <MessageCircle className="w-5 h-5 fill-brand-surface"  aria-hidden="true" />
+        <span>{DICTIONARY.social.whatsapp.text}</span>
       </a>
     </div>
   );

@@ -8,10 +8,12 @@ export const ROUTES = {
   adminMessages: "/admin/mesajlar",
   adminReferences: "/admin/referanslar",
   adminSettings: "/admin/ayarlar",
+  adminReviews: "/admin/yorumlar",
   
   // Public Routes
   home: "/",
   about: "/hakkimizda",
+  services: "/hizmetler",
   contact: "/iletisim",
   pestBase: "/hasere",
   regionBase: "/bolge",

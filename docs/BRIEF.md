@@ -125,12 +125,12 @@ Haşere özellikleri: {hasere.ozellikler}
 - title: max 60 karakter, "{bolge} {hasere} İlaçlama | DMR İlaçlama" formatında
 - h1: max 70 karakter, doğal ve çekici
 - metaDesc: max 160 karakter, CTA içersin
-- icerik: 300-400 kelime, bölge ve haşere özelliklerini doğal entegre et,
+- content: 300-400 kelime, bölge ve haşere özelliklerini doğal entegre et,
   template hissi verme, o bölgeye özgü detaylar kullan
-- faq: 3 adet soru-cevap
+- faq: 3 question-answer pairs
 
 Sadece JSON döndür, başka hiçbir şey yazma.
-Format: { title, h1, metaDesc, icerik, faq: [{soru, cevap}] }
+Format: { "title", "h1", "metaDesc", "content", "faq": [{"question", "answer"}] }
 ```
 
 > **Neden token sorunu yok?**
@@ -218,9 +218,9 @@ firestore/
 │       ├── title: "Bornova Karınca İlaçlama | DMR İlaçlama"
 │       ├── h1: "Bornova'da Karınca İlaçlama Hizmeti"
 │       ├── metaDesc: "..."
-│       ├── icerik: "..."
-│       ├── faq: [{soru, cevap}]
-│       ├── ogGorsel: "url"
+│       ├── content: "..."
+│       ├── faq: [{question, answer}]
+│       ├── ogImage: "url"
 │       └── aktif: true
 │
 ├── rapor/

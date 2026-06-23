@@ -46,6 +46,8 @@
   --whatsapp-hover: #128c7e;
   --google-blue: #4285F4;
   --google-yellow: #FABB05;
+  --instagram: #E1306C;
+  --facebook: #1877F2;
 }
 
 /* Dark Mode */
@@ -124,6 +126,12 @@
   --color-whatsapp-hover: var(--whatsapp-hover);
   --color-google-blue: var(--google-blue);
   --color-google-yellow: var(--google-yellow);
+  --color-instagram: var(--instagram);
+  --color-facebook: var(--facebook);
+
+  /* Aspect Ratios */
+  --aspect-portrait: 4 / 5;
+  --aspect-landscape: 4 / 3;
 
   /* Animations */
   --animate-marquee: marquee 40s linear infinite;
@@ -131,6 +139,18 @@
   @keyframes marquee {
     0% { transform: translateX(0%); }
     100% { transform: translateX(-50%); }
+  }
+}
+
+/* Components Layer */
+@layer components {
+  .alternating-sections > section:nth-child(odd) {
+    background-color: var(--brand-surface);
+    --section-bg: var(--brand-surface);
+  }
+  .alternating-sections > section:nth-child(even) {
+    background-color: var(--surface-neutral);
+    --section-bg: var(--surface-neutral);
   }
 }
 

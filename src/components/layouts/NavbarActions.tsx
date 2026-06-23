@@ -33,16 +33,16 @@ export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; te
         variant="icon"
         size="icon"
         external
-        aria-label={DICTIONARY.navbar.whatsappAria}
+        aria-label={DICTIONARY.social.whatsapp.aria}
       >
-        <MessageCircle className="w-5 h-5" />
+        <MessageCircle className="w-5 h-5"  aria-hidden="true" />
       </Button>
       
       <a 
         href={telUrl} 
-        className="flex items-center gap-2 px-5 py-2.5 rounded-brand-md bg-brand-primary text-white text-sm font-bold hover:bg-brand-primary-hover transition-colors shadow-sm"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-brand-md bg-brand-primary text-brand-surface text-sm font-bold hover:bg-brand-primary-hover transition-colors shadow-sm"
       >
-        <Phone className="w-4 h-4 fill-white/20" />
+        <Phone className="w-4 h-4 fill-brand-surface/20"  aria-hidden="true" />
         <span>{DICTIONARY.navbar.callNow}</span>
       </a>
     </div>

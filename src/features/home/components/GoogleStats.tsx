@@ -6,51 +6,103 @@ import { DICTIONARY } from "@/constants/dictionary";
 import logoImg from '@/../public/dmr.svg';
 import type { GoogleStatsDoc } from "@/features/home/types";
 
-export const GoogleStats = ({ stats }: { stats?: GoogleStatsDoc }) => {
+const InstagramIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+  </svg>
+);
+
+const FacebookIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+  </svg>
+);
+
+export const GoogleStats = ({ stats, instagramUrl, facebookUrl }: { stats?: GoogleStatsDoc, instagramUrl?: string, facebookUrl?: string }) => {
   // Safe fallbacks to dictionary if no dynamic stats are passed yet
   const displayRating = stats?.rating || DICTIONARY.home.googleStats.rating;
   const displayReviewCount = stats?.reviewCount || DICTIONARY.home.googleStats.reviewCount;
+  
+  const finalInstagramUrl = instagramUrl || DICTIONARY.social.instagram.url;
+  const finalFacebookUrl = facebookUrl || DICTIONARY.social.facebook.url;
 
   return (
-    <div className="flex items-center gap-4 pt-6 border-t border-brand-border/50">
-      {/* Business Logo */}
-      <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-brand-surface flex items-center justify-center flex-shrink-0 shadow-sm border border-brand-border overflow-hidden">
-        <Image 
-          src={logoImg} 
-          alt={DICTIONARY.navbar.logoAlt} 
-          fill 
-          className="object-contain p-1.5 dark:invert dark:brightness-0"
-        />
-      </div>
+    <div className="flex items-center w-full pt-6 border-t border-brand-border/50">
       
-      {/* Business Info & Stars */}
-      <div className="flex flex-col justify-center gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <p className="font-bold text-text-primary leading-none text-sm md:text-base">
-            {DICTIONARY.home.googleStats.businessName}
-          </p>
-          <BadgeCheck className="w-4 h-4 md:w-5 md:h-5 text-google-blue" strokeWidth={2.5} aria-label={DICTIONARY.home.googleStats.verifiedBadgeAria} />
+      <div className="flex items-center gap-4">
+        {/* Business Logo */}
+        <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-brand-surface flex items-center justify-center flex-shrink-0 shadow-sm border border-brand-border overflow-hidden">
+          <Image 
+            src={logoImg} 
+            alt={DICTIONARY.navbar.logoAlt} 
+            fill 
+            className="object-contain p-1.5 dark:invert dark:brightness-0"
+          />
         </div>
         
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm md:text-base font-black text-text-primary leading-none">{displayRating}</span>
-          <div className="flex gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3.5 h-3.5 md:w-4 md:h-4 fill-google-yellow text-google-yellow" />
-            ))}
+        {/* Business Info & Stars */}
+        <div className="flex flex-col justify-center gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <p className="font-bold text-text-primary leading-none text-sm md:text-base">
+              {DICTIONARY.home.googleStats.businessName}
+            </p>
+            <BadgeCheck 
+              className="w-4 h-4 md:w-5 md:h-5 text-google-blue" 
+              strokeWidth={2.5} 
+              aria-label={DICTIONARY.home.googleStats.verifiedBadgeAria}  
+              role="img" 
+            />
           </div>
-          <a 
-            href="#google-reviews"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById("google-reviews")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="text-xs md:text-sm font-medium text-text-muted hover:text-brand-primary hover:underline transition-all ml-0.5"
-          >
-            ({displayReviewCount} {DICTIONARY.home.googleStats.reviewsText})
-          </a>
+          
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-sm md:text-base font-black text-text-primary leading-none">{displayRating}</span>
+            <div 
+              className="flex gap-0.5"
+              aria-label={DICTIONARY.home.googleReviews.ariaStars}
+              role="img"
+            >
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-3.5 h-3.5 md:w-4 md:h-4 fill-google-yellow text-google-yellow"  aria-hidden="true" />
+              ))}
+            </div>
+            <a 
+              href="#google-reviews"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById("google-reviews")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-xs md:text-sm font-medium text-text-muted hover:text-brand-primary hover:underline transition-all ml-0.5"
+            >
+              ({displayReviewCount} {DICTIONARY.home.googleStats.reviewsText})
+            </a>
+          </div>
         </div>
       </div>
+
+      {/* Social Links */}
+      <div className="flex items-center gap-2 md:gap-3 ml-auto pl-2">
+        <a 
+          href={finalInstagramUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="p-2 md:p-2.5 rounded-full bg-brand-surface/50 border border-brand-border/50 text-text-secondary hover:text-instagram hover:border-instagram/30 hover:bg-instagram/5 transition-all"
+          aria-label={DICTIONARY.social.instagram.aria}
+        >
+          <InstagramIcon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
+        </a>
+        <a 
+          href={finalFacebookUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="p-2 md:p-2.5 rounded-full bg-brand-surface/50 border border-brand-border/50 text-text-secondary hover:text-facebook hover:border-facebook/30 hover:bg-facebook/5 transition-all"
+          aria-label={DICTIONARY.social.facebook.aria}
+        >
+          <FacebookIcon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
+        </a>
+      </div>
+
     </div>
   );
 };

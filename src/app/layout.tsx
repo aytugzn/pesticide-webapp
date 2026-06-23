@@ -16,20 +16,27 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+import { unstable_cacheTag as cacheTag } from "next/cache";
+import { parseSettingsDoc } from "@/utils/parsers";
+
+async function getLayoutSettings() {
+  "use cache";
+  cacheTag("layout-settings");
+  
+  try {
+    const settingsSnap = await adminDb.collection("settings").doc("general").get();
+    return parseSettingsDoc(settingsSnap.data());
+  } catch (error) {
+    console.error("Layout settings fetch error:", error);
+    return {};
+  }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
-  let defaultOgImage = DICTIONARY.meta.ogImageFallback;
+  const settings = await getLayoutSettings();
+  let defaultOgImage = settings.defaultOgImage || DICTIONARY.meta.ogImageFallback;
   const title = DICTIONARY.meta.title;
   const description = DICTIONARY.meta.description;
-
-  try {
-    const ayarlarSnap = await adminDb.collection("settings").doc("general").get();
-    const data = ayarlarSnap.data();
-    if (data?.defaultOgImage) {
-      defaultOgImage = data.defaultOgImage;
-    }
-  } catch (error) {
-    console.error("Metadata fetch error:", error);
-  }
 
   return {
     title,

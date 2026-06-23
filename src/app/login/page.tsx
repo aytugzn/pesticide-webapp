@@ -21,27 +21,27 @@ const LoginPage = () => (
   <main className="min-h-screen flex">
 
     {/* Left Panel: Brand */}
-    <div className="hidden lg:flex lg:w-1/2 bg-brand-primary flex-col justify-between p-14 relative overflow-hidden" aria-hidden="true">
+    <div className="hidden lg:flex lg:w-1/2 bg-brand-primary flex-col justify-between p-14 relative overflow-hidden">
 
       {/* Decorative Circles */}
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 pointer-events-none" />
-      <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-surface/5 pointer-events-none" aria-hidden="true" />
+      <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-brand-surface/5 pointer-events-none" aria-hidden="true" />
 
       <div className="relative z-10">
-        <p className="text-white/50 text-xs font-medium tracking-widest uppercase mb-16">
+        <p className="text-brand-surface/50 text-xs font-medium tracking-widest uppercase mb-16">
           {PAGE_CONTENT.badge}
         </p>
-        <p className="font-heading font-bold text-white text-5xl leading-snug mb-5">
+        <p className="font-heading font-bold text-brand-surface text-5xl leading-snug mb-5">
           {PAGE_CONTENT.brand}
         </p>
-        <p className="text-white/60 text-lg font-light leading-relaxed max-w-xs">
+        <p className="text-brand-surface/60 text-lg font-light leading-relaxed max-w-xs">
           {PAGE_CONTENT.tagline}
         </p>
       </div>
 
       <div className="relative z-10 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-        <p className="text-white/35 text-xs">{PAGE_CONTENT.copyright}</p>
+        <span className="w-1.5 h-1.5 rounded-full bg-brand-surface/30" aria-hidden="true" />
+        <p className="text-brand-surface/35 text-xs">{PAGE_CONTENT.copyright}</p>
       </div>
     </div>
 

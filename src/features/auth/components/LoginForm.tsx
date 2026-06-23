@@ -81,7 +81,7 @@ const LoginForm = () => {
           <span>{DICTIONARY.auth.loadingButton}</span>
         ) : (
           <>
-            <LogIn className="w-5 h-5" />
+            <LogIn className="w-5 h-5"  aria-hidden="true" />
             <span>{DICTIONARY.auth.loginButton}</span>
           </>
         )}

@@ -7,10 +7,28 @@ import { adminDb } from "@/lib/firebase-admin";
 import { DICTIONARY } from "@/constants/dictionary";
 import { MobileMenu } from "./MobileMenu";
 import { NavbarActions } from "./NavbarActions";
+import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
 import logoImg from '@/../public/dmr.svg'
-import type { PestDoc, RegionDoc, SettingsDoc } from "@/types";
+import { type PestDoc, type RegionDoc, type SettingsDoc } from "@/types";
+import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
+import { unstable_cacheTag as cacheTag } from "next/cache";
 
+async function getNavbarData() {
+  "use cache";
+  cacheTag("navbar");
 
+  const [pestsSnap, regionsSnap, settingsSnap] = await Promise.all([
+    adminDb.collection("pests").where("isActive", "==", true).get(),
+    adminDb.collection("regions").where("isActive", "==", true).get(),
+    adminDb.collection("settings").doc("general").get(),
+  ]);
+
+  return {
+    pests: pestsSnap.docs.map((doc) => parsePestDoc(doc.data())),
+    regions: regionsSnap.docs.map((doc) => parseRegionDoc(doc.data())),
+    settings: parseSettingsDoc(settingsSnap.data()),
+  };
+}
 
 
 
@@ -20,24 +38,17 @@ const Navbar = async () => {
   let settings: SettingsDoc = {};
 
   try {
-    const [pestsSnap, regionsSnap, settingsSnap] = await Promise.all([
-      adminDb.collection("pests").where("isActive", "==", true).get(),
-      adminDb.collection("regions").where("isActive", "==", true).get(),
-      adminDb.collection("settings").doc("general").get(),
-    ]);
-
-    pests = pestsSnap.docs.map((doc) => doc.data() as PestDoc);
-    regions = regionsSnap.docs.map((doc) => doc.data() as RegionDoc);
-    settings = (settingsSnap.data() as SettingsDoc) || {};
+    const data = await getNavbarData();
+    pests = data.pests;
+    regions = data.regions;
+    settings = data.settings;
   } catch (error) {
     console.error("Navbar data fetch error:", error);
   }
   
-  // Format phone number for tel: and wa.me links (remove spaces, ensure country code)
   const rawPhone = settings.phone || "905000000000";
-  const formattedPhone = rawPhone.replace(/\s+/g, "");
-  const whatsappUrl = `https://wa.me/${formattedPhone.startsWith("+") ? formattedPhone.slice(1) : formattedPhone}`;
-  const telUrl = `tel:${formattedPhone.startsWith("+") ? formattedPhone : `+${formattedPhone}`}`;
+  const whatsappUrl = generateWhatsAppUrl(rawPhone);
+  const telUrl = generateTelUrl(rawPhone);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-brand-surface border-b border-brand-border">
@@ -65,7 +76,7 @@ const Navbar = async () => {
             <div className="group h-full flex items-center">
               <button className="flex items-center gap-1 text-sm font-medium text-text-primary group-hover:text-brand-primary transition-colors h-full">
                 {DICTIONARY.navbar.services}
-                <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform duration-200" />
+                <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform duration-200"  aria-hidden="true" />
               </button>
 
               {/* Mega Menu Dropdown */}
@@ -87,7 +98,7 @@ const Navbar = async () => {
                               href={`${ROUTES.pestBase}/${pest.slug}`}
                               className="flex items-center gap-3 text-sm text-text-secondary hover:text-brand-primary transition-colors group/item"
                             >
-                              <Bug className="w-4 h-4 text-text-muted group-hover/item:text-brand-primary transition-colors" />
+                              <Bug className="w-4 h-4 text-text-muted group-hover/item:text-brand-primary transition-colors"  aria-hidden="true" />
                               <span className="font-medium">{pest.name}</span>
                             </Link>
                           </li>
@@ -111,7 +122,7 @@ const Navbar = async () => {
                               href={`${ROUTES.regionBase}/${region.slug}`}
                               className="flex items-center gap-3 text-sm text-text-secondary hover:text-brand-primary transition-colors group/item"
                             >
-                              <MapPin className="w-4 h-4 text-text-muted group-hover/item:text-brand-primary transition-colors" />
+                              <MapPin className="w-4 h-4 text-text-muted group-hover/item:text-brand-primary transition-colors"  aria-hidden="true" />
                               <span className="font-medium">{region.name}</span>
                             </Link>
                           </li>

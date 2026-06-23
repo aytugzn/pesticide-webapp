@@ -66,11 +66,11 @@ const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
     <div className="md:hidden flex items-center">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-3 rounded-md text-text-primary active:bg-black/10 dark:active:bg-white/10 transition-colors"
+        className="p-3 rounded-md text-text-primary active:bg-foreground/10 transition-colors"
         aria-label={DICTIONARY.navbar.mobileMenuAria}
         style={{ touchAction: "manipulation" }}
       >
-        {isOpen ? <X className="w-6 h-6 pointer-events-none" /> : <Menu className="w-6 h-6 pointer-events-none" />}
+        {isOpen ? <X className="w-6 h-6 pointer-events-none"  aria-hidden="true" /> : <Menu className="w-6 h-6 pointer-events-none"  aria-hidden="true" />}
       </button>
 
       {/* Full Screen Overlay Menu */}
@@ -86,12 +86,17 @@ const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
                 onClick={() => setIsServicesOpen(!isServicesOpen)}
                 className="flex items-center justify-between text-sm font-medium text-text-primary py-2"
                 style={{ touchAction: "manipulation" }}
+                aria-expanded={isServicesOpen}
+                aria-controls="mobile-services-menu"
               >
                 {DICTIONARY.navbar.services}
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isServicesOpen ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isServicesOpen ? "rotate-180" : ""}`}  aria-hidden="true" />
               </button>
               
-              <div className={`grid transition-all duration-300 ease-in-out ${isServicesOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+              <div 
+                id="mobile-services-menu"
+                className={`grid transition-all duration-300 ease-in-out ${isServicesOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+              >
                 <div className="overflow-hidden">
                   <div className="flex flex-col pl-4 pt-2 space-y-6">
                     <MenuSection

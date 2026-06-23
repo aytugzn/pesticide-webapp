@@ -130,36 +130,36 @@ export async function kombinasyonKaydet(data: KombinasyonData) {
 ```
 firestore/
 │
-├── regions/
+├── bolge/
 │   └── {slug}/
-│       ├── name: "Bornova"
+│       ├── ad: "Bornova"
 │       ├── slug: "bornova"
-│       ├── description: "yoğun apartman bölgesi, eski binalar, nemli iklim"
-│       └── isActive: true
+│       ├── ozellikler: "yoğun apartman bölgesi, eski binalar, nemli iklim"
+│       └── aktif: true
 │
-├── pests/
+├── hasere/
 │   └── {slug}/
-│       ├── name: "Karınca"
+│       ├── ad: "Karınca"
 │       ├── slug: "karinca-ilaclama"
-│       ├── description: "yaz aylarında pik yapar, mutfak/nem kaynaklarından gelir"
-│       ├── imageUrl: "url"
-│       └── isActive: true
+│       ├── ozellikler: "yaz aylarında pik yapar, mutfak/nem kaynaklarından gelir"
+│       ├── gorsel: "url"
+│       └── aktif: true
 │
-├── combinations/
+├── kombinasyon/
 │   └── {bolge}_{hasere}/               # örn: "bornova_karinca-ilaclama"
-│       ├── region: "bornova"
-│       ├── pest: "karinca-ilaclama"
+│       ├── bolge: "bornova"
+│       ├── hasere: "karinca-ilaclama"
 │       ├── title: "Bornova Karınca İlaçlama | DMR İlaçlama"
 │       ├── h1: "Bornova'da Karınca İlaçlama Hizmeti"
 │       ├── metaDesc: "..."
-│       ├── ogGorsel: "url"
+│       ├── content: "..."
+│       ├── faq: [{question, answer}]
+│       ├── ogImage: "url"
+│       └── aktif: true
 │
 ├── rapor/
 │   └── {uuid}/
-│       ├── customerName: string
-│       ├── address: string
-│       ├── issueDate: timestamp
-│       └── [NOT: Hangi alanların (kullanılan ilaçlar, garanti vb.) kesin olarak ekleneceği müşteriyle (DMR İlaçlama) görüşülecek]
+│       └── [müşteriyle görüşülecek — DOLDUR]
 │
 ├── mesajlar/
 │   └── {id}/
@@ -214,11 +214,11 @@ Haşere özellikleri: ${hasere.ozellikler}
 - title: max 60 karakter
 - h1: max 70 karakter, doğal ve çekici
 - metaDesc: max 160 karakter, CTA içersin
-- icerik: 300-400 kelime, bölge ve haşere özelliklerini doğal entegre et, template hissi verme
-- faq: 3 adet soru-cevap
+- content: 300-400 kelime, bölge ve haşere özelliklerini doğal entegre et, template hissi verme
+- faq: 3 question-answer pairs
 
 Sadece JSON döndür, başka hiçbir şey yazma.
-Format: { title, h1, metaDesc, icerik, faq: [{soru, cevap}] }
+Format: { "title", "h1", "metaDesc", "content", "faq": [{"question", "answer"}] }
   `.trim();
 }
 ```
@@ -278,7 +278,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     openGraph: {
       title: data.title,
       description: data.metaDesc,
-      images: [data.ogGorsel],
+      images: [data.ogImage],
       locale: "tr_TR",
     },
     alternates: {
@@ -290,7 +290,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 ### noindex gereken sayfalar
 ```
-/rapor/[uuid]     → Dijital ilaçlama sertifikası (QR ile erişilir), indexlenmesin
+/rapor/[uuid]     → müşteri raporu, indexlenmesin
 /admin/*          → proxy.ts'de zaten korumalı
 ```
 
@@ -372,7 +372,7 @@ GEMINI_API_KEY                 # Google AI Studio — ücretsiz tier
 - [ ] app/(main)/[bolge-slug]/[hasere-slug]/page.tsx
 - [ ] app/sitemap.ts
 - [ ] app/robots.ts
-- [ ] features/reports/ (Dijital İlaçlama Sertifikası ve QR Kod Üretimi)
+- [ ] features/reports/ (QR rapor — müşteriyle görüşülecek)
 
 ---
 

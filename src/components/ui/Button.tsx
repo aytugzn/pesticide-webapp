@@ -26,8 +26,8 @@ const Button = ({
   const baseClasses = "inline-flex items-center justify-center font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants: Record<ButtonVariant, string> = {
-    primary: "bg-brand-primary text-white hover:bg-brand-primary-hover shadow-sm",
-    outline: "border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white",
+    primary: "bg-brand-primary text-brand-surface hover:bg-brand-primary-hover shadow-sm",
+    outline: "border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-surface",
     success: "bg-success-bg text-success-text hover:bg-success-border",
     icon: "bg-whatsapp/15 text-whatsapp hover:bg-whatsapp/25",
   };
