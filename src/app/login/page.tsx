@@ -1,0 +1,69 @@
+import { LoginForm } from "@/features/auth/components/LoginForm";
+import type { Metadata } from "next";
+import { DICTIONARY } from "@/constants/dictionary";
+
+const PAGE_CONTENT = {
+  badge:      "Yönetim Paneli",
+  brand:      "DMR İlaçlama",
+  tagline:    "Dezenfeksiyon & Çevre Sağlığı Hizmetleri",
+  location:   "İzmir",
+  loginTitle: "Giriş Yap",
+  description:"Devam etmek için kurumsal Google hesabınızla giriş yapın.",
+  copyright:  `© ${new Date().getFullYear()} DMR İlaçlama. Tüm hakları saklıdır.`,
+} as const;
+
+export const metadata: Metadata = {
+  title: `Giriş | ${PAGE_CONTENT.brand}`,
+  robots: { index: false, follow: false },
+};
+
+const LoginPage = () => (
+  <main className="min-h-screen flex">
+
+    {/* Left Panel: Brand */}
+    <div className="hidden lg:flex lg:w-1/2 bg-brand-primary flex-col justify-between p-14 relative overflow-hidden" aria-hidden="true">
+
+      {/* Decorative Circles */}
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/5 pointer-events-none" />
+      <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
+
+      <div className="relative z-10">
+        <p className="text-white/50 text-xs font-medium tracking-widest uppercase mb-16">
+          {PAGE_CONTENT.badge}
+        </p>
+        <p className="font-heading font-bold text-white text-5xl leading-snug mb-5">
+          {PAGE_CONTENT.brand}
+        </p>
+        <p className="text-white/60 text-lg font-light leading-relaxed max-w-xs">
+          {PAGE_CONTENT.tagline}
+        </p>
+      </div>
+
+      <div className="relative z-10 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+        <p className="text-white/35 text-xs">{PAGE_CONTENT.copyright}</p>
+      </div>
+    </div>
+
+    {/* Login Cart */}
+    <div className="flex-1 flex items-center justify-center px-8 py-12 bg-background">
+      <div className="w-full max-w-sm">
+
+        <div className="bg-brand-surface border border-brand-border rounded-brand-lg p-8 shadow-sm">
+          <div className="mb-8 text-center space-y-2">
+            <h1 className="text-2xl font-bold font-heading text-text-primary tracking-tight">
+              {DICTIONARY.auth.loginTitle}
+            </h1>
+            <p className="text-sm text-text-secondary">
+              {DICTIONARY.auth.loginSubtitle}
+            </p>
+          </div>
+          <LoginForm />
+        </div>
+      </div>
+    </div>
+
+  </main>
+);
+
+export default LoginPage;

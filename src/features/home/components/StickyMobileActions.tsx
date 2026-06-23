@@ -1,0 +1,57 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Phone, MessageCircle } from "lucide-react";
+import { DICTIONARY } from "@/constants/dictionary";
+
+export const StickyMobileActions = ({ 
+  telUrl, 
+  whatsappUrl 
+}: { 
+  telUrl: string; 
+  whatsappUrl: string; 
+}) => {
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // If the hero buttons are NOT intersecting (not visible), show sticky actions
+        setIsVisible(!entries[0].isIntersecting);
+      },
+      { threshold: 0 }
+    );
+
+    const heroButtons = document.getElementById("hero-actions");
+    if (heroButtons) {
+      observer.observe(heroButtons);
+    }
+
+    return () => {
+      if (heroButtons) observer.unobserve(heroButtons);
+    };
+  }, []);
+
+  return (
+    <div 
+      className={`fixed bottom-0 left-0 right-0 z-50 flex md:hidden transition-transform duration-300 ease-in-out shadow-2xl shadow-text-primary/10 border-t border-brand-border/20 ${
+        isVisible ? "translate-y-0" : "translate-y-full"
+      }`}
+    >
+      <a 
+        href={telUrl}
+        className="flex-1 flex items-center justify-center gap-2 bg-brand-primary text-white py-5 font-bold text-sm tracking-wide"
+      >
+        <Phone className="w-5 h-5" />
+        <span>{DICTIONARY.home.stickyActions.callNow}</span>
+      </a>
+      <a 
+        href={whatsappUrl}
+        className="flex-1 flex items-center justify-center gap-2 bg-whatsapp hover:bg-whatsapp-hover text-white py-5 font-bold text-sm tracking-wide"
+      >
+        <MessageCircle className="w-5 h-5 fill-white" />
+        <span>{DICTIONARY.home.stickyActions.whatsapp}</span>
+      </a>
+    </div>
+  );
+};

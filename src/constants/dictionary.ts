@@ -1,0 +1,62 @@
+export const DICTIONARY = {
+  navbar: {
+    logoAlt: "DMR İlaçlama Logo",
+    services: "Hizmetlerimiz",
+    about: "Hakkımızda",
+    contact: "İletişim",
+    pestsCol: "HAŞERE TÜRÜNE GÖRE",
+    regionsCol: "HİZMET BÖLGELERİ",
+    emptyPests: "Kayıtlı haşere bulunamadı.",
+    emptyRegions: "Kayıtlı bölge bulunamadı.",
+    callNow: "Hemen Ara",
+    callMeBack: "Biz Sizi Arayalım",
+    whatsappAria: "WhatsApp ile İletişime Geç",
+    mobileMenuAria: "Menüyü Aç",
+  },
+  auth: {
+    loginTitle: "Yönetim Paneli",
+    loginSubtitle: "Devam etmek için yetkili hesabınızla giriş yapın.",
+    loginButton: "Google ile Giriş Yap",
+    loadingButton: "Giriş yapılıyor...",
+    genericError: "Giriş yapılamadı. Lütfen tekrar deneyin.",
+  },
+  home: {
+    hero: {
+      tagline: "Profesyonel İlaçlama ve Dezenfeksiyon Hizmetleri",
+      titleLine1: "Bir Adım Önde,",
+      titleLine2: "Güvenle Adım Atın",
+      description1: "İşletmenizi veya evinizi zararlı böceklerden ve haşerelerden",
+      description2: "korumak için profesyonel ve garantili çözümler sunuyoruz.",
+      description3: "Zararlıların kabusunuz olmasına izin vermeyin. Hemen bizimle iletişime geçin.",
+      desktopCall: "Ara — Ücretsiz Keşif",
+    },
+    googleStats: {
+      businessName: "DMR İLAÇLAMA",
+      businessCategory: "İzmir Profesyonel İlaçlama Firması",
+      rating: "5.0",
+      reviewCount: "244",
+      reviewsText: "Google Yorumu",
+      verifiedBadgeAria: "Doğrulanmış İşletme",
+    },
+    googleReviews: {
+      title: "Müşterilerimiz Ne Diyor?",
+      description: "Google Haritalar üzerinden işletmemize yapılan gerçek ve doğrulanmış müşteri yorumları.",
+      viewAllButton: "Tüm Yorumları Google'da Gör",
+    },
+    stickyActions: {
+      callNow: "Hemen Ara",
+      whatsapp: "WhatsApp",
+    },
+  },
+  meta: {
+    title: "DMR İlaçlama | Profesyonel Böcek & Haşere İlaçlama",
+    description: "İzmir'de Sağlık Bakanlığı onaylı profesyonel böcek ve haşere ilaçlama. Eviniz ve iş yeriniz için garantili çözümler. Hemen arayın!",
+    defaultAlt: "DMR İlaçlama",
+    locale: "tr_TR",
+    type: "website",
+    twitterCard: "summary_large_image",
+    ogImageFallback: "/og-image.png",
+    ogImageWidth: 1200,
+    ogImageHeight: 630,
+  }
+} as const;
