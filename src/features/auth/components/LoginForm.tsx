@@ -45,15 +45,15 @@ export const LoginForm = () => {
         if (result.error === AUTH_ERRORS.UNAUTHORIZED_EMAIL) {
           await signOut(auth);
         }
-        setError(DICTIONARY.auth.genericError);
+        setError(DICTIONARY.auth.login.error);
         return;
       }
 
       router.push(ADMIN_PATH);
     } catch (err) {
       if (isPopupCancelled(err)) return;
-      setError(DICTIONARY.auth.genericError);
-      console.error(DICTIONARY.systemErrors.logs.loginError, err);
+      setError(DICTIONARY.auth.login.error);
+      console.error(DICTIONARY.systemErrors.logs.login, err);
     } finally {
       setLoading(false);
     }
@@ -78,11 +78,13 @@ export const LoginForm = () => {
         className="flex items-center justify-center gap-3 w-full px-5 py-3.5 bg-brand-surface border border-brand-border-strong text-text-primary rounded-brand-md text-sm font-medium shadow-xs cursor-pointer hover:bg-brand-primary-light hover:border-brand-border-strong transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
-          <span>{DICTIONARY.auth.loadingButton}</span>
+          <span>{DICTIONARY.auth.login.loadingButton}</span>
         ) : (
           <>
+            <h1 className="font-heading font-bold text-3xl text-text-primary mb-2 tracking-tight">{DICTIONARY.auth.login.title}</h1>
+            <p className="text-text-secondary">{DICTIONARY.auth.login.subtitle}</p>
             <LogIn className="w-5 h-5"  aria-hidden="true" />
-            <span>{DICTIONARY.auth.loginButton}</span>
+            <span>{DICTIONARY.auth.login.button}</span>
           </>
         )}
       </button>

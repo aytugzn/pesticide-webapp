@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Bug, ArrowRight } from "lucide-react";
+import { cn } from "@/utils/cn";
 
 interface ServiceCardProps {
   variant?: "default" | "viewAll";
@@ -21,7 +22,10 @@ export const ServiceCard = ({
       <Link
         href={href}
         aria-label={ariaLabel}
-        className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-brand-primary text-brand-surface overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-brand-primary/30 hover:-translate-y-1 ${className}`}
+        className={cn(
+          "group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-brand-primary text-brand-surface overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-brand-primary/30 hover:-translate-y-1",
+          className
+        )}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-brand-primary-hover to-brand-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
         
@@ -40,7 +44,10 @@ export const ServiceCard = ({
     <Link
       href={href}
       aria-label={ariaLabel}
-      className={`group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-surface-neutral hover:bg-brand-surface overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-brand-primary/5 hover:-translate-y-1 ${className}`}
+      className={cn(
+        "group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-surface-neutral hover:bg-brand-surface overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-brand-primary/5 hover:-translate-y-1",
+        className
+      )}
     >
       {/* Subtle hover gradient */}
       <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />

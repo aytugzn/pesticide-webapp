@@ -46,7 +46,7 @@ const GlobalError = ({
               className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary-hover text-brand-surface px-4 py-2.5 rounded-brand-md font-medium transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              {DICTIONARY.globalError.retryButton}
+              {DICTIONARY.globalError.buttons.retry}
             </button>
             
             <a
@@ -54,7 +54,7 @@ const GlobalError = ({
               className="flex-1 flex items-center justify-center gap-2 bg-brand-surface-light hover:bg-brand-surface-muted text-text-primary border border-brand-border px-4 py-2.5 rounded-brand-md font-medium transition-colors"
             >
               <Home className="w-4 h-4" />
-              {DICTIONARY.globalError.backToHome}
+              {DICTIONARY.globalError.buttons.home}
             </a>
           </div>
         </div>

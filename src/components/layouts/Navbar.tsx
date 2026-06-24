@@ -61,23 +61,24 @@ export const Navbar = async () => {
             <Link href={ROUTES.home} className="flex items-center gap-2">
               <Image 
                 src={logoImg} 
-                alt={DICTIONARY.navbar.logoAlt} 
+                alt={DICTIONARY.navbar.logo.alt} 
+                title={DICTIONARY.navbar.logo.title} 
                 width={160} 
                 height={40} 
                 priority 
-                className="h-10 md:h-12 w-auto dark:invert dark:brightness-0" 
+                className="h-10 lg:h-12 w-auto dark:invert dark:brightness-0" 
               />
             </Link>
           </div>
 
           {/* Desktop Navigation*/}
-          <nav className="hidden md:flex space-x-8 items-center h-full">
+          <nav className="hidden lg:flex space-x-8 items-center h-full">
             
             {/* Mega Menu Wrapper */}
             <div className="group h-full flex items-center">
-              <button className="flex items-center gap-1 text-sm font-medium text-text-primary group-hover:text-brand-primary transition-colors h-full">
-                {DICTIONARY.navbar.services}
-                <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform duration-200"  aria-hidden="true" />
+              <button className="text-sm font-medium text-text-primary hover:text-brand-primary transition-colors flex items-center group/btn">
+                {DICTIONARY.navbar.links.services}
+                <ChevronDown className="w-4 h-4 ml-1 opacity-50 group-hover/btn:opacity-100 group-hover/btn:rotate-180 transition-all duration-300" aria-hidden="true" />
               </button>
 
               {/* Mega Menu Dropdown */}
@@ -86,12 +87,13 @@ export const Navbar = async () => {
                   
                   {/* Left Column - According to pest type */}
                   <div className="w-64">
-                    <h3 className="text-xs font-bold text-text-muted tracking-wider uppercase mb-5 pb-2 border-b border-brand-border">
-                      {DICTIONARY.navbar.pestsCol}
+                    <h3 className="font-heading font-bold text-sm text-text-primary mb-4 flex items-center">
+                      <Bug className="w-4 h-4 mr-2 text-brand-primary" aria-hidden="true" />
+                      {DICTIONARY.navbar.columns.pests}
                     </h3>
-                    <ul className="space-y-4">
+                    <ul className="space-y-3">
                       {pests.length === 0 ? (
-                        <li className="text-sm text-text-muted">{DICTIONARY.navbar.emptyPests}</li>
+                        <li className="text-sm text-text-muted">{DICTIONARY.navbar.emptyStates.pests}</li>
                       ) : (
                         pests.map((pest) => (
                           <li key={pest.slug}>
@@ -99,7 +101,6 @@ export const Navbar = async () => {
                               href={`${ROUTES.pestBase}/${pest.slug}`}
                               className="flex items-center gap-3 text-sm text-text-secondary hover:text-brand-primary transition-colors group/item"
                             >
-                              <Bug className="w-4 h-4 text-text-muted group-hover/item:text-brand-primary transition-colors"  aria-hidden="true" />
                               <span className="font-medium">{pest.name}</span>
                             </Link>
                           </li>
@@ -110,12 +111,13 @@ export const Navbar = async () => {
 
                   {/* Right Column - According to region */}
                   <div className="w-64">
-                    <h3 className="text-xs font-bold text-text-muted tracking-wider uppercase mb-5 pb-2 border-b border-brand-border">
-                      {DICTIONARY.navbar.regionsCol}
+                    <h3 className="font-heading font-bold text-sm text-text-primary mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 mr-2 text-brand-primary" aria-hidden="true" />
+                      {DICTIONARY.navbar.columns.regions}
                     </h3>
-                    <ul className="space-y-4">
+                    <ul className="space-y-3">
                       {regions.length === 0 ? (
-                        <li className="text-sm text-text-muted">{DICTIONARY.navbar.emptyRegions}</li>
+                        <li className="text-sm text-text-muted">{DICTIONARY.navbar.emptyStates.regions}</li>
                       ) : (
                         regions.map((region) => (
                           <li key={region.slug}>
@@ -136,12 +138,12 @@ export const Navbar = async () => {
               </div>
             </div>
 
-            <NavLink href={ROUTES.about}>{DICTIONARY.navbar.about}</NavLink>
-            <NavLink href={ROUTES.contact}>{DICTIONARY.navbar.contact}</NavLink>
+            <NavLink href={ROUTES.about}>{DICTIONARY.navbar.links.about}</NavLink>
+            <NavLink href={ROUTES.contact}>{DICTIONARY.navbar.links.contact}</NavLink>
           </nav>
 
           {/* Mobile Navigation */}
-          <MobileMenu pests={pests} regions={regions} />
+          <MobileMenu pests={pests} regions={regions} whatsappUrl={whatsappUrl} telUrl={telUrl} />
 
           {/* Right Actions (Scroll Aware) */}
           <NavbarActions whatsappUrl={whatsappUrl} telUrl={telUrl} />

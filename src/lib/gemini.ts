@@ -5,7 +5,7 @@ import { AppError } from "./exceptions";
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  throw new AppError(DICTIONARY.systemErrors.geminiApiKeyMissing, "ENV_MISSING");
+  throw new AppError(DICTIONARY.systemErrors.env.gemini, "ENV_MISSING");
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);

@@ -1,5 +1,6 @@
 import { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes, forwardRef } from "react";
 import Link from "next/link";
+import { cn } from "@/utils/cn";
 
 type ButtonVariant = "primary" | "outline" | "success" | "icon";
 type ButtonSize = "sm" | "md" | "lg" | "icon";
@@ -39,7 +40,12 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
     icon: "w-10 h-10 rounded-full",
   };
 
-  const classes = `${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`;
+  const classes = cn(
+    baseClasses,
+    variants[variant],
+    sizes[size],
+    className
+  );
 
   if ("href" in props && props.href) {
     const { href, external, ...linkProps } = props as ButtonAsLinkProps;

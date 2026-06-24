@@ -1,19 +1,10 @@
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
-
-const PAGE_CONTENT = {
-  badge:      "Yönetim Paneli",
-  brand:      "DMR İlaçlama",
-  tagline:    "Dezenfeksiyon & Çevre Sağlığı Hizmetleri",
-  location:   "İzmir",
-  loginTitle: "Giriş Yap",
-  description:"Devam etmek için kurumsal Google hesabınızla giriş yapın.",
-  copyright:  `© ${new Date().getFullYear()} DMR İlaçlama. Tüm hakları saklıdır.`,
-} as const;
+import { CopyrightText } from "@/components/ui/CopyrightText";
 
 export const metadata: Metadata = {
-  title: `Giriş | ${PAGE_CONTENT.brand}`,
+  title: DICTIONARY.auth.login.page.metadataTitle,
   robots: { index: false, follow: false },
 };
 
@@ -29,19 +20,21 @@ const LoginPage = () => (
 
       <div className="relative z-10">
         <p className="text-brand-surface/50 text-xs font-medium tracking-widest uppercase mb-16">
-          {PAGE_CONTENT.badge}
+          {DICTIONARY.auth.login.page.badge}
         </p>
         <p className="font-heading font-bold text-brand-surface text-5xl leading-snug mb-5">
-          {PAGE_CONTENT.brand}
+          {DICTIONARY.auth.login.page.brand}
         </p>
         <p className="text-brand-surface/60 text-lg font-light leading-relaxed max-w-xs">
-          {PAGE_CONTENT.tagline}
+          {DICTIONARY.auth.login.page.tagline}
         </p>
       </div>
 
       <div className="relative z-10 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-surface/30" aria-hidden="true" />
-        <p className="text-brand-surface/35 text-xs">{PAGE_CONTENT.copyright}</p>
+        <p className="text-brand-surface/35 text-xs">
+          <CopyrightText text={DICTIONARY.auth.login.page.copyright} />
+        </p>
       </div>
     </div>
 
@@ -52,10 +45,10 @@ const LoginPage = () => (
         <div className="bg-brand-surface border border-brand-border rounded-brand-lg p-8 shadow-sm">
           <div className="mb-8 text-center space-y-2">
             <h1 className="text-2xl font-bold font-heading text-text-primary tracking-tight">
-              {DICTIONARY.auth.loginTitle}
+              {DICTIONARY.auth.login.title}
             </h1>
             <p className="text-sm text-text-secondary">
-              {DICTIONARY.auth.loginSubtitle}
+              {DICTIONARY.auth.login.subtitle}
             </p>
           </div>
           <LoginForm />

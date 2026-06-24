@@ -27,3 +27,11 @@ export const HOME_ERRORS = {
 } as const;
 
 export type HomeErrorCode = keyof typeof HOME_ERRORS;
+
+export type HomeData = {
+  slides: HeroSlideDoc[];
+  pests: import("@/types").PestDoc[];
+  customReviews: GoogleReviewDoc[];
+  viewAllReviewsUrl: string;
+  settings?: import("@/types").SettingsDoc;
+};

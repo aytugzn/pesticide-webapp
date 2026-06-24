@@ -105,6 +105,6 @@ export const extractAndParseJson = <T = unknown,>(text: string): T => {
     // 3. Parse the cleaned string
     return JSON.parse(cleanText) as T;
   } catch (error) {
-    throw new AppError(`${DICTIONARY.systemErrors.jsonParseFailed}${text.substring(0, 100)}...`, "JSON_PARSE_ERROR");
+    throw new AppError(`${DICTIONARY.systemErrors.api.jsonParseFailed}${text.substring(0, 100)}...`, "JSON_PARSE_ERROR");
   }
 }

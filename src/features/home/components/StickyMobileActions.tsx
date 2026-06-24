@@ -14,22 +14,17 @@ export const StickyMobileActions = ({
   const [isVisible, setIsVisible] = useState<boolean>(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // If the hero buttons are NOT intersecting (not visible), show sticky actions
-        setIsVisible(!entries[0].isIntersecting);
-      },
-      { threshold: 0 }
-    );
-
-    const heroButtons = document.getElementById("hero-actions");
-    if (heroButtons) {
-      observer.observe(heroButtons);
-    }
-
-    return () => {
-      if (heroButtons) observer.unobserve(heroButtons);
+    const handleScroll = () => {
+      const heroButtons = document.getElementById("hero-actions");
+      if (heroButtons) {
+        setIsVisible(heroButtons.getBoundingClientRect().bottom < 0);
+      }
     };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Initial state check on load
+
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (

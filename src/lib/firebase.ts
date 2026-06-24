@@ -10,7 +10,7 @@ const required = [
 ];
 
 if (required.some((v) => !v)) {
-  throw new AppError(DICTIONARY.systemErrors.firebaseClientEnvMissing, "ENV_MISSING");
+  throw new AppError(DICTIONARY.systemErrors.env.firebaseClient, "ENV_MISSING");
 }
 
 const firebaseConfig = {

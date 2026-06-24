@@ -24,7 +24,7 @@ export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; te
 
   return (
     <div 
-      className={`hidden md:flex items-center gap-3 transition-all duration-500 transform ${
+      className={`hidden lg:flex items-center gap-3 transition-all duration-500 transform ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
       }`}
     >

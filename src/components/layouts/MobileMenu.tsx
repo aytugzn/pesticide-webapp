@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, ChevronDown, Bug, MapPin } from "lucide-react";
+import { Menu, ChevronDown, Bug, MapPin, Phone, MessageCircle, PhoneCall } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
+import { Drawer } from "@/components/ui/Drawer";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import type { PestDoc, RegionDoc } from "@/types";
 
 type MobileMenuProps = {
   pests: PestDoc[];
   regions: RegionDoc[];
+  whatsappUrl: string;
+  telUrl: string;
 };
 
 const MenuSection = ({
@@ -52,7 +56,7 @@ const MenuSection = ({
   </div>
 );
 
-export const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
+export const MobileMenu = ({ pests, regions, whatsappUrl, telUrl }: MobileMenuProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isServicesOpen, setIsServicesOpen] = useState<boolean>(false);
 
@@ -63,74 +67,104 @@ export const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
   };
 
   return (
-    <div className="md:hidden flex items-center">
+    <div className="lg:hidden flex items-center">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-3 rounded-md text-text-primary active:bg-foreground/10 transition-colors touch-manipulation"
-        aria-label={DICTIONARY.navbar.mobileMenuAria}
+        aria-label={DICTIONARY.navbar.mobileMenu.openAria}
       >
-        {isOpen ? <X className="w-6 h-6 pointer-events-none"  aria-hidden="true" /> : <Menu className="w-6 h-6 pointer-events-none"  aria-hidden="true" />}
+        <Menu className="w-6 h-6 pointer-events-none"  aria-hidden="true" />
       </button>
 
-      {/* Full Screen Overlay Menu */}
-      <div 
-        className={`fixed inset-x-0 top-20 bottom-0 bg-brand-surface border-t border-brand-border shadow-2xl z-[999] flex flex-col overflow-y-auto transition-all duration-300 ease-out
-          ${isOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-4 invisible'}`}
+      <Drawer 
+        isOpen={isOpen} 
+        onClose={closeMenu} 
+        title={DICTIONARY.navbar.mobileMenu.title}
       >
-        <div className="flex flex-col p-6 space-y-6">
-            
-            {/* Services Accordion */}
-            <div className="flex flex-col border-b border-brand-border pb-4">
-              <button 
-                onClick={() => setIsServicesOpen(!isServicesOpen)}
-                className="flex items-center justify-between text-sm font-medium text-text-primary py-2 touch-manipulation"
-                aria-expanded={isServicesOpen}
-                aria-controls="mobile-services-menu"
-              >
-                {DICTIONARY.navbar.services}
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isServicesOpen ? "rotate-180" : ""}`}  aria-hidden="true" />
-              </button>
-              
-              <div 
-                id="mobile-services-menu"
-                className={`grid transition-all duration-300 ease-in-out ${isServicesOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-              >
-                <div className="overflow-hidden">
-                  <div className="flex flex-col pl-4 pt-2 space-y-6">
-                    <MenuSection
-                      title={DICTIONARY.navbar.pestsCol}
-                      items={pests}
-                      emptyMessage={DICTIONARY.navbar.emptyPests}
-                      baseUrl={ROUTES.pestBase}
-                      Icon={Bug}
-                      onItemClick={closeMenu}
-                    />
-                    
-                    <MenuSection
-                      title={DICTIONARY.navbar.regionsCol}
-                      items={regions}
-                      emptyMessage={DICTIONARY.navbar.emptyRegions}
-                      baseUrl={ROUTES.regionBase}
-                      Icon={MapPin}
-                      onItemClick={closeMenu}
-                    />
-                  </div>
-                </div>
+        <nav aria-label={DICTIONARY.navbar.mobileMenu.navAria} className="flex flex-col">
+          {/* Services Accordion */}
+          <div className="flex flex-col border-b border-brand-border pb-4">
+          <button 
+            onClick={() => setIsServicesOpen(!isServicesOpen)}
+            className="flex items-center justify-between text-sm font-medium text-text-primary py-2 touch-manipulation"
+            aria-expanded={isServicesOpen}
+            aria-controls="mobile-services-menu"
+          >
+            {DICTIONARY.navbar.links.services}
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isServicesOpen ? "rotate-180" : ""}`}  aria-hidden="true" />
+          </button>
+          
+          <div 
+            id="mobile-services-menu"
+            className={`grid transition-all duration-300 ease-in-out ${isServicesOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+          >
+            <div className="overflow-hidden">
+              <div className="flex flex-col pl-4 pt-2 space-y-6">
+                <MenuSection
+                  title={DICTIONARY.navbar.columns.pests}
+                  items={pests}
+                  emptyMessage={DICTIONARY.navbar.emptyStates.pests}
+                  baseUrl={ROUTES.pestBase}
+                  Icon={Bug}
+                  onItemClick={closeMenu}
+                />
+                
+                <MenuSection
+                  title={DICTIONARY.navbar.columns.regions}
+                  items={regions}
+                  emptyMessage={DICTIONARY.navbar.emptyStates.regions}
+                  baseUrl={ROUTES.regionBase}
+                  Icon={MapPin}
+                  onItemClick={closeMenu}
+                />
               </div>
             </div>
-
-            {/* Other Links */}
-            <div className="flex flex-col space-y-4 pt-2">
-              <Link href={ROUTES.about} onClick={closeMenu} className="text-sm font-medium text-text-primary py-2">
-                {DICTIONARY.navbar.about}
-              </Link>
-              <Link href={ROUTES.contact} onClick={closeMenu} className="text-sm font-medium text-text-primary py-2">
-                {DICTIONARY.navbar.contact}
-              </Link>
-            </div>
-
           </div>
         </div>
+
+        {/* Other Links */}
+        <div className="flex flex-col space-y-4 pt-2">
+          <Link href={ROUTES.about} onClick={closeMenu} className="text-sm font-medium text-text-primary py-2">
+            {DICTIONARY.navbar.links.about}
+          </Link>
+          <Link href={ROUTES.contact} onClick={closeMenu} className="text-sm font-medium text-text-primary py-2">
+            {DICTIONARY.navbar.links.contact}
+          </Link>
+          </div>
+        </nav>
+
+        {/* Bottom Actions */}
+        <div className="mt-auto pt-8 flex flex-col gap-3">
+          <div className="flex gap-3">
+            <Button 
+              href={telUrl}
+              variant="primary"
+              className="flex-1 justify-center px-2 font-bold shadow-sm"
+            >
+              <Phone className="w-4 h-4 mr-2" aria-hidden="true" />
+              <span className="truncate">{DICTIONARY.social.phone.callNow}</span>
+            </Button>
+            <Button 
+              href={whatsappUrl}
+              variant="success"
+              className="flex-1 justify-center border border-whatsapp/50 dark:border-whatsapp/30 px-2 font-bold shadow-sm"
+              external
+            >
+              <MessageCircle className="w-4 h-4 mr-2 fill-current" aria-hidden="true" />
+              <span className="truncate">{DICTIONARY.social.whatsapp.text}</span>
+            </Button>
+          </div>
+          <Button 
+            href={ROUTES.contact}
+            onClick={closeMenu}
+            variant="outline"
+            className="w-full justify-center bg-brand-surface font-bold shadow-sm"
+          >
+            <PhoneCall className="w-4 h-4 mr-2" aria-hidden="true" />
+            <span>{DICTIONARY.social.phone.callMeBack}</span>
+          </Button>
+        </div>
+      </Drawer>
       </div>
   );
 };

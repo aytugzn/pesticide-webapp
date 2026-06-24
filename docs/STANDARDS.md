@@ -97,5 +97,6 @@ We have a centralized, highly strict error handling architecture.
 - **NO UI Hallucinations**: Do NOT invent features or placeholder texts (e.g., adding "Görsel Bekleniyor" because an image is missing). Stick EXACTLY to the requested design.
 - **URL vs. Code Language Separation**: URLs (`href="/hizmetler"`) MUST remain in Turkish for SEO. However, everything the user does not see (IDs, variables, Firestore fields) MUST remain in English. DO NOT translate URLs to English.
 - **Respect CSS Variables**: If a color looks wrong in dark mode, DO NOT swap the variables around. Fix the underlying CSS variable definition in `globals.css` instead of hardcoding a hack.
+- **Dependency Awareness & Smart Merging**: Before modifying a component, BE AWARE of its dependencies and how it merges props. DO NOT use brute-force hacks like `!important` (e.g., `!px-2`) to override CSS. If a component uses naive string concatenation for `className`, upgrade it to use the `cn()` utility (`tailwind-merge` + `clsx`) for intelligent merging.
 
 > **FINAL WARNING**: Do not attempt to bypass these rules for "quick fixes". Every PR, feature, and modification must strictly adhere to this manifesto.

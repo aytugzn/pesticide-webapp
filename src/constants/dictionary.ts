@@ -1,23 +1,46 @@
 import { deepFreeze } from "../utils/deep-freeze";
 
 const navbarDict = {
-  logoAlt: "DMR İlaçlama Logo",
-  services: "Hizmetlerimiz",
-  about: "Hakkımızda",
-  contact: "İletişim",
-  pestsCol: "HAŞERE TÜRÜNE GÖRE",
-  regionsCol: "HİZMET BÖLGELERİ",
-  emptyPests: "Kayıtlı haşere bulunamadı.",
-  emptyRegions: "Kayıtlı bölge bulunamadı.",
-  mobileMenuAria: "Menüyü Aç",
+  logo: {
+    alt: "DMR İlaçlama Logo",
+    title: "DMR İlaçlama - Profesyonel Çözümler",
+  },
+  links: {
+    services: "Hizmetlerimiz",
+    about: "Hakkımızda",
+    contact: "İletişim",
+  },
+  columns: {
+    pests: "HAŞERE TÜRÜNE GÖRE",
+    regions: "HİZMET BÖLGELERİ",
+  },
+  emptyStates: {
+    pests: "Kayıtlı haşere bulunamadı.",
+    regions: "Kayıtlı bölge bulunamadı.",
+  },
+  mobileMenu: {
+    title: "Menü",
+    openAria: "Menüyü Aç",
+    closeAria: "Kapat",
+    navAria: "Mobil Menü Bağlantıları",
+  },
 };
 
 const authDict = {
-  loginTitle: "Yönetim Paneli",
-  loginSubtitle: "Devam etmek için yetkili hesabınızla giriş yapın.",
-  loginButton: "Google ile Giriş Yap",
-  loadingButton: "Giriş yapılıyor...",
-  genericError: "Giriş yapılamadı. Lütfen tekrar deneyin.",
+  login: {
+    title: "Yönetim Paneli",
+    subtitle: "Devam etmek için yetkili hesabınızla giriş yapın.",
+    button: "Google ile Giriş Yap",
+    loadingButton: "Giriş yapılıyor...",
+    error: "Giriş yapılamadı. Lütfen tekrar deneyin.",
+    page: {
+      badge: "Yönetim Paneli",
+      brand: "DMR İlaçlama",
+      tagline: "Dezenfeksiyon & Çevre Sağlığı Hizmetleri",
+      copyright: "© {year} DMR İlaçlama. Tüm hakları saklıdır.",
+      metadataTitle: "Giriş | DMR İlaçlama",
+    }
+  }
 };
 
 const socialDict = {
@@ -62,6 +85,7 @@ const homeDict = {
     viewAllButton: "Tüm Yorumları Google'da Gör",
     ariaStars: "5 yıldızlı müşteri memnuniyeti",
     ariaRating: "yıldızlı değerlendirme",
+    avatarTitleSuffix: "Müşteri Değerlendirmesi",
   },
   services: {
     title: "Hizmetlerimiz",
@@ -77,15 +101,26 @@ const homeDict = {
 };
 
 const metaDict = {
-  title: "İzmir Profesyonel Böcek & Haşere İlaçlama | DMR",
-  description: "İzmir'de Sağlık Bakanlığı onaylı ruhsatlı ilaçlar ile profesyonel böcek ve haşere ilaçlama. Eviniz ve iş yeriniz için garantili çözümler. Hemen arayın!",
-  defaultAlt: "DMR İlaçlama",
-  locale: "tr_TR",
-  type: "website",
-  twitterCard: "summary_large_image",
-  ogImageFallback: "/og-image.png",
-  ogImageWidth: 1200,
-  ogImageHeight: 630,
+  default: {
+    title: "İzmir Profesyonel Böcek & Haşere İlaçlama | DMR",
+    description: "İzmir'de Sağlık Bakanlığı onaylı ruhsatlı ilaçlar ile profesyonel böcek ve haşere ilaçlama. Eviniz ve iş yeriniz için garantili çözümler. Hemen arayın!",
+    keywords: ["böcek ilaçlama", "izmir böcek ilaçlama", "haşere ilaçlama", "fare ilaçlama", "pire ilaçlama", "apartman ilaçlama", "dmr ilaçlama", "profesyonel ilaçlama"],
+    author: "DMR İlaçlama",
+    publisher: "DMR İlaçlama",
+    alt: "DMR İlaçlama",
+    locale: "tr_TR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  og: {
+    image: {
+      fallback: "/og-image.png",
+      width: 1200,
+      height: 630,
+    }
+  }
 };
 
 const geminiDict = {
@@ -127,21 +162,27 @@ const adminDict = {
 const globalErrorDict = {
   title: "Bir Şeyler Ters Gitti",
   description: "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin veya daha sonra tekrar ziyaret edin.",
-  retryButton: "Tekrar Dene",
-  backToHome: "Ana Sayfaya Dön",
+  buttons: {
+    retry: "Tekrar Dene",
+    home: "Ana Sayfaya Dön",
+  }
 };
 
 const systemErrorsDict = {
-  firebaseClientEnvMissing: "CRITICAL ERROR: Firebase client environment variables are missing!",
-  firebaseAdminEnvMissing: "CRITICAL ERROR: Firebase Admin .env variables are missing!",
-  geminiApiKeyMissing: "CRITICAL ERROR: GEMINI_API_KEY environment variable is missing.",
-  googlePlacesApiMissing: "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
-  googlePlacesApiFailed: "Google Places API request failed",
-  googlePlacesApiNoData: "Google Places API warning: No valid data found in response",
-  jsonParseFailed: "Failed to extract JSON from AI response. Raw text: ",
+  env: {
+    firebaseClient: "CRITICAL ERROR: Firebase client environment variables are missing!",
+    firebaseAdmin: "CRITICAL ERROR: Firebase Admin .env variables are missing!",
+    gemini: "CRITICAL ERROR: GEMINI_API_KEY environment variable is missing.",
+    googlePlaces: "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
+  },
+  api: {
+    googlePlacesFailed: "Google Places API request failed",
+    googlePlacesNoData: "Google Places API warning: No valid data found in response",
+    jsonParseFailed: "Failed to extract JSON from AI response. Raw text: ",
+  },
   logs: {
     homeDataFetch: "Error occurred while fetching home page data",
-    loginError: "Error occurred during login process",
+    login: "Error occurred during login process",
     sessionCreation: "Error occurred while creating session",
     navbarDataFetch: "Error occurred while fetching navbar data",
     layoutSettingsFetch: "Error occurred while fetching layout settings",

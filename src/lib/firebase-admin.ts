@@ -9,7 +9,7 @@ const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
 if (!projectId || !clientEmail || !privateKey) {
-  throw new AppError(DICTIONARY.systemErrors.firebaseAdminEnvMissing, "ENV_MISSING");
+  throw new AppError(DICTIONARY.systemErrors.env.firebaseAdmin, "ENV_MISSING");
 }
 
 if (!getApps().length) {

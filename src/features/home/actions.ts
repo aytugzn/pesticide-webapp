@@ -1,20 +1,10 @@
 import { adminDb } from "@/lib/firebase-admin";
-import type { HeroSlideDoc, GoogleReviewDoc, HomeErrorCode } from "./types";
-import { HOME_ERRORS } from "./types";
+import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
 import type { SettingsDoc, PestDoc } from "@/types";
 import type { ActionResponse } from "@/types";
 import { DICTIONARY } from "@/constants/dictionary";
 import { parseSettingsDoc, parsePestDoc } from "@/utils/parsers";
 import { cacheTag } from "next/cache";
-
-export type HomeData = {
-  slides: HeroSlideDoc[];
-  settings: SettingsDoc;
-  pests: PestDoc[];
-  customReviews: GoogleReviewDoc[];
-  viewAllReviewsUrl: string;
-};
-
 
 export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorCode>> => {
   "use cache";

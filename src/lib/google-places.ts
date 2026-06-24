@@ -20,7 +20,7 @@ export const getGooglePlaceDetails = async (placeId?: string): Promise<ActionRes
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    console.error(DICTIONARY.systemErrors.googlePlacesApiMissing);
+    console.error(DICTIONARY.systemErrors.env.googlePlaces);
     return { success: false, error: "INVALID_CONFIGURATION" };
   }
 
@@ -36,14 +36,14 @@ export const getGooglePlaceDetails = async (placeId?: string): Promise<ActionRes
     });
 
     if (!response.ok) {
-      console.error(DICTIONARY.systemErrors.googlePlacesApiFailed, { status: response.status });
+      console.error(DICTIONARY.systemErrors.api.googlePlacesFailed, { status: response.status });
       return { success: false, error: "PLACES_API_FAILED" };
     }
 
     const data = await response.json();
 
     if (!data.rating && !data.userRatingCount) {
-      console.warn(DICTIONARY.systemErrors.googlePlacesApiNoData);
+      console.warn(DICTIONARY.systemErrors.api.googlePlacesNoData);
       return { success: false, error: "NO_VALID_DATA" };
     }
 
@@ -55,7 +55,7 @@ export const getGooglePlaceDetails = async (placeId?: string): Promise<ActionRes
     return { success: true, data: { stats } };
 
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.googlePlacesApiFailed, error);
+    console.error(DICTIONARY.systemErrors.api.googlePlacesFailed, error);
     return { success: false, error: "FETCH_FAILED" };
   }
 }

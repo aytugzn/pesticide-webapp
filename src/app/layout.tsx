@@ -34,26 +34,40 @@ const getLayoutSettings = async () => {
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const settings = await getLayoutSettings();
-  let defaultOgImage = settings.defaultOgImage || DICTIONARY.meta.ogImageFallback;
-  const title = DICTIONARY.meta.title;
-  const description = DICTIONARY.meta.description;
+  let defaultOgImage = settings.defaultOgImage || DICTIONARY.meta.og.image.fallback;
+  const title = DICTIONARY.meta.default.title;
+  const description = DICTIONARY.meta.default.description;
 
   return {
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://dmrilaclama.com"),
     title,
     description,
+    keywords: DICTIONARY.meta.default.keywords,
+    authors: [{ name: DICTIONARY.meta.default.author }],
+    publisher: DICTIONARY.meta.default.publisher,
+    alternates: {
+      canonical: "/",
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+      },
+    },
     openGraph: {
       title,
       description,
       images: [
         {
           url: defaultOgImage,
-          width: DICTIONARY.meta.ogImageWidth,
-          height: DICTIONARY.meta.ogImageHeight,
-          alt: DICTIONARY.meta.defaultAlt,
+          width: DICTIONARY.meta.og.image.width,
+          height: DICTIONARY.meta.og.image.height,
+          alt: DICTIONARY.meta.default.alt,
         },
       ],
-      locale: DICTIONARY.meta.locale,
+      locale: DICTIONARY.meta.default.locale,
       type: "website",
     },
     twitter: {
@@ -73,8 +87,8 @@ const RootLayout = ({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "name": DICTIONARY.meta.title,
-    "description": DICTIONARY.meta.description,
+    "name": DICTIONARY.meta.default.title,
+    "description": DICTIONARY.meta.default.description,
     "url": process.env.NEXT_PUBLIC_SITE_URL || "https://dmrilaclama.com",
     "areaServed": "İzmir, Turkey",
     "address": {

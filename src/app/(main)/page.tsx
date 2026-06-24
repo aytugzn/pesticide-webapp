@@ -13,8 +13,8 @@ import { getHomeData } from "@/features/home/actions";
 import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
 
 export const metadata: Metadata = {
-  title: DICTIONARY.meta.title,
-  description: DICTIONARY.meta.description,
+  title: DICTIONARY.meta.default.title,
+  description: DICTIONARY.meta.default.description,
 };
 
 const DEFAULT_SETTINGS: SettingsDoc = {
