@@ -17,12 +17,15 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-import type { ErrorInfo } from "next/error";
+type GlobalErrorProps = {
+  error: Error & { digest?: string };
+  reset: () => void;
+};
 
 const GlobalError = ({
   error: _error,
-  unstable_retry,
-}: ErrorInfo) => {
+  reset,
+}: GlobalErrorProps) => {
   return (
     <html lang="tr" className={`${inter.variable} ${montserrat.variable} h-full`}>
       <body className="min-h-full flex flex-col items-center justify-center bg-surface-neutral p-4 font-sans text-center">
@@ -42,7 +45,7 @@ const GlobalError = ({
 
           <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
             <button
-              onClick={() => unstable_retry()}
+              onClick={() => reset()}
               className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary-hover text-brand-surface px-4 py-2.5 rounded-brand-md font-medium transition-colors"
             >
               <RotateCcw className="w-4 h-4" />

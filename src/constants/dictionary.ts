@@ -253,7 +253,8 @@ const systemErrorsDict = {
     globalDataFetch: "Error occurred while fetching global data",
     layoutSettingsFetch: "Error occurred while fetching layout settings",
     telegramSend: "Error occurred while sending telegram message",
-    telegramConfig: "Sistem yapılandırma hatası (Loglandı).",
+    telegramConfig: "System configuration error (Logged)",
+    tokenVerification: "Token verification error",
   }
 };
 

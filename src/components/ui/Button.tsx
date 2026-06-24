@@ -3,8 +3,8 @@ import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { CLICK_EFFECT } from "@/constants/ui";
 
-type ButtonVariant = "primary" | "outline" | "success" | "icon" | "unstyled";
-type ButtonSize = "sm" | "md" | "lg" | "icon" | "none";
+export type ButtonVariant = "primary" | "outline" | "success" | "icon" | "unstyled";
+export type ButtonSize = "sm" | "md" | "lg" | "icon" | "none";
 
 type BaseProps = {
   variant?: ButtonVariant;
@@ -18,6 +18,22 @@ type ButtonAsLinkProps = BaseProps & AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 export type ButtonProps = ButtonAsButtonProps | ButtonAsLinkProps;
 
+export const buttonVariants: Record<ButtonVariant, string> = {
+  primary: "bg-brand-primary text-brand-surface hover:bg-brand-primary-hover shadow-sm",
+  outline: "border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-surface",
+  success: "bg-success-bg text-success-text hover:bg-success-border",
+  icon: "bg-whatsapp/15 text-whatsapp hover:bg-whatsapp/25",
+  unstyled: "",
+};
+
+export const buttonSizes: Record<ButtonSize, string> = {
+  sm: "h-9 px-3 text-xs gap-1.5 rounded-brand-md",
+  md: "h-10 px-4 text-sm gap-2 rounded-brand-md",
+  lg: "h-12 px-6 text-base gap-2 rounded-brand-lg",
+  icon: "w-10 h-10 rounded-full",
+  none: "",
+};
+
 export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
   variant = "primary",
   size = "md",
@@ -25,29 +41,15 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
   className = "",
   ...props
 }, ref) => {
-  const variants: Record<ButtonVariant, string> = {
-    primary: "bg-brand-primary text-brand-surface hover:bg-brand-primary-hover shadow-sm",
-    outline: "border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-surface",
-    success: "bg-success-bg text-success-text hover:bg-success-border",
-    icon: "bg-whatsapp/15 text-whatsapp hover:bg-whatsapp/25",
-    unstyled: "",
-  };
 
-  const sizes: Record<ButtonSize, string> = {
-    sm: "h-9 px-3 text-xs gap-1.5 rounded-brand-md",
-    md: "h-10 px-4 text-sm gap-2 rounded-brand-md",
-    lg: "h-12 px-6 text-base gap-2 rounded-brand-lg",
-    icon: "w-10 h-10 rounded-full",
-    none: "",
-  };
 
   const classes = cn(
     variant !== "unstyled" && [
       "inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
       CLICK_EFFECT
     ],
-    variants[variant],
-    sizes[size],
+    buttonVariants[variant],
+    buttonSizes[size],
     className
   );
 

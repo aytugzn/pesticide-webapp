@@ -1,3 +1,5 @@
+// WARNING: This file should only be imported by Client Components.
+// Use firebase-admin.ts for Server Components.
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -6,7 +8,12 @@ import { DICTIONARY } from "@/constants/dictionary";
 
 const required = [
   process.env.NEXT_PUBLIC_FIRESTORE_API_KEY,
+  process.env.NEXT_PUBLIC_FIRESTORE_AUTH_DOMAIN,
   process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID,
+  process.env.NEXT_PUBLIC_FIRESTORE_STORAGE_BUCKET,
+  process.env.NEXT_PUBLIC_FIRESTORE_MESSAGING_SENDER_ID,
+  process.env.NEXT_PUBLIC_FIRESTORE_APP_ID,
+  process.env.NEXT_PUBLIC_FIRESTORE_MEASUREMENT_ID,
 ];
 
 if (required.some((v) => !v)) {

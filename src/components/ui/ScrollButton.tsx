@@ -1,38 +1,55 @@
 "use client";
 
-import { Button, type ButtonProps } from "@/components/ui/Button";
+import { ReactNode, ButtonHTMLAttributes } from "react";
+import { cn } from "@/utils/cn";
+import { CLICK_EFFECT } from "@/constants/ui";
+import { buttonVariants, buttonSizes, type ButtonVariant, type ButtonSize } from "@/components/ui/Button";
 
-type ScrollButtonProps = Omit<ButtonProps, "href"> & {
+type ScrollButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   targetId: string;
+  children?: ReactNode;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
 };
 
 /**
  * A client component button that smoothly scrolls to a specified target section
  * without changing the URL hash (better for SEO and history).
  */
-export const ScrollButton = ({ 
+export const ScrollButton = ({
   children,
   onClick,
   targetId,
-  ...props 
+  variant = "primary",
+  size = "md",
+  className = "",
+  ...props
 }: ScrollButtonProps) => {
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    
-    // Call any custom onClick passed in (e.g., to close mobile menu)
+
     if (onClick) {
-      onClick(e as any);
+      onClick(e);
     }
 
-    const targetSection = document.getElementById(targetId);
-    if (targetSection) {
-      targetSection.scrollIntoView({ behavior: "smooth" });
-    }
+    document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const classes = cn(
+    variant !== "unstyled" && [
+      "inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+      CLICK_EFFECT,
+    ],
+    buttonVariants[variant],
+    buttonSizes[size],
+    className
+  );
+
   return (
-    <Button onClick={handleClick} {...props as any}>
+    <button onClick={handleClick} className={classes} {...props}>
       {children}
-    </Button>
+    </button>
   );
 };

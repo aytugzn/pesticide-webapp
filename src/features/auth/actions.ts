@@ -9,7 +9,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 
 const ALLOWED_EMAILS = [process.env.ADMIN_EMAIL || ""];
-const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 gün
+const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 days
 
 export const createSession = async (idToken: string): Promise<ActionResponse<void, AuthErrorCode>> => {
   const expiresIn = SESSION_DURATION * 1000;

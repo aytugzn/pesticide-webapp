@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
-// Brief: /admin/* ve /rapor/* → disallow
-// /login → noindex (metadata'da yönetiliyor, ama robots.txt'te de güvende olsun)
+// Brief: /admin/* and /rapor/* -> disallow
+// /login -> noindex (handled in metadata, but adding to robots.txt for redundancy)
 const robots = (): MetadataRoute.Robots => ({
   rules: [
     {

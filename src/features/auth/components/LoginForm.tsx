@@ -81,8 +81,6 @@ export const LoginForm = () => {
           <span>{DICTIONARY.auth.login.loadingButton}</span>
         ) : (
           <>
-            <h1 className="font-heading font-bold text-3xl text-text-primary mb-2 tracking-tight">{DICTIONARY.auth.login.title}</h1>
-            <p className="text-text-secondary">{DICTIONARY.auth.login.subtitle}</p>
             <LogIn className="w-5 h-5"  aria-hidden="true" />
             <span>{DICTIONARY.auth.login.button}</span>
           </>

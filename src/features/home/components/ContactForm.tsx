@@ -131,7 +131,9 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
   );
 };
 
-function SubmitButton({ dict }: { dict: any }) {
+type ContactFormDict = typeof DICTIONARY.home.contact.form;
+
+function SubmitButton({ dict }: { dict: ContactFormDict }) {
   const { pending } = useFormStatus();
 
   return (

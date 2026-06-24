@@ -5,9 +5,7 @@ import { adminDb } from "@/lib/firebase-admin";
 // Static pages + active regions + active pests + active combinations
 // Combinations get highest priority (0.9) — most SEO-valuable pages
 
-type RegionDoc = { slug: string };
-type PestDoc = { slug: string };
-type CombinationDoc = { region: string; pest: string };
+import type { RegionDoc, PestDoc, CombinationDoc } from "@/types";
 
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
