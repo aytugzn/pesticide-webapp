@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatTemplate } from "@/utils/template";
 
-interface CopyrightTextProps {
+type CopyrightTextProps = {
   text: string;
 }
 
@@ -15,7 +16,7 @@ export const CopyrightText = ({ text }: CopyrightTextProps) => {
 
   return (
     <span>
-      {text.replace("{year}", year)}
+      {formatTemplate(text, { year })}
     </span>
   );
 };

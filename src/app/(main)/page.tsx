@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getGooglePlaceDetails } from "@/lib/google-places";
-import { Hero } from "@/features/home/components/Hero";
-import { ServicesSection } from "@/features/home/components/ServicesSection";
-import { GoogleReviewsSection } from "@/features/home/components/GoogleReviewsSection";
+import { Hero } from "@/features/home/components/sections/Hero";
+import { ServicesSection } from "@/features/home/components/sections/ServicesSection";
+import { WhyUsSection } from "@/features/home/components/sections/WhyUsSection";
+import { GoogleReviewsSection } from "@/features/home/components/sections/GoogleReviewsSection";
+import { ContactSection } from "@/features/home/components/sections/ContactSection";
 import { StickyMobileActions } from "@/features/home/components/StickyMobileActions";
 import { AlternatingSections } from "@/components/layout/AlternatingSections";
-import { HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK, SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK, REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK, DEFAULT_PHONE } from "@/constants/ui";
-import type { SettingsDoc, PestDoc } from "@/types";
-import type { HeroSlideDoc, GoogleReviewDoc } from "@/features/home/types";
+import {
+  HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  DEFAULT_PHONE,
+} from "@/constants/ui";
+import type { RegionDoc, SettingsDoc, PestDoc } from "@/types";
+import type { GoogleReviewDoc, HeroSlideDoc } from "@/features/home/types";
 import { getHomeData } from "@/features/home/actions";
-import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
+import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 
 export const metadata: Metadata = {
   title: DICTIONARY.meta.default.title,
@@ -33,11 +40,17 @@ const HomePage = async () => {
   let viewAllReviewsUrl: string = "#";
   let settings: SettingsDoc = DEFAULT_SETTINGS;
 
+  let regions: RegionDoc[] = [];
+
   if (!homeDataResponse.success) {
-    console.error(DICTIONARY.systemErrors.logs.homeDataFetch, homeDataResponse.error);
+    console.error(
+      DICTIONARY.systemErrors.logs.homeDataFetch,
+      homeDataResponse.error,
+    );
   } else if (homeDataResponse.data) {
     slides = homeDataResponse.data.slides;
     pests = homeDataResponse.data.pests;
+    regions = homeDataResponse.data.regions;
     customReviews = homeDataResponse.data.customReviews;
     viewAllReviewsUrl = homeDataResponse.data.viewAllReviewsUrl;
     settings = homeDataResponse.data.settings || DEFAULT_SETTINGS;
@@ -52,15 +65,20 @@ const HomePage = async () => {
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
   const telUrl = generateTelUrl(rawPhone);
   // Delays are defined in seconds in the database/constants, but Embla expects milliseconds
-  const heroAutoplayDelay = (settings.heroAutoplayDelay || HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK) * 1000;
-  const servicesAutoplayDelay = (settings.servicesAutoplayDelay || SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK) * 1000;
-  const reviewsAutoplayDelay = (settings.reviewsAutoplayDelay || REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK) * 1000;
+  const heroAutoplayDelay =
+    (settings.heroAutoplayDelay || HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK) * 1000;
+  const servicesAutoplayDelay =
+    (settings.servicesAutoplayDelay ||
+      SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK) * 1000;
+  const reviewsAutoplayDelay =
+    (settings.reviewsAutoplayDelay || REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK) *
+    1000;
 
   return (
     <main className="flex-1 flex flex-col w-full">
       <AlternatingSections>
-        <Hero 
-          slides={slides} 
+        <Hero
+          slides={slides}
           telUrl={telUrl}
           whatsappUrl={whatsappUrl}
           autoplayDelay={heroAutoplayDelay}
@@ -69,7 +87,13 @@ const HomePage = async () => {
           facebookUrl={settings.facebookUrl}
         />
         <ServicesSection pests={pests} autoplayDelay={servicesAutoplayDelay} />
-        <GoogleReviewsSection autoplayDelay={reviewsAutoplayDelay} reviews={customReviews} viewAllUrl={viewAllReviewsUrl} />
+        <WhyUsSection />
+        <GoogleReviewsSection
+          autoplayDelay={reviewsAutoplayDelay}
+          reviews={customReviews}
+          viewAllUrl={viewAllReviewsUrl}
+        />
+        <ContactSection pests={pests} regions={regions} />
       </AlternatingSections>
       {/* Mobile Sticky Bottom Bar (Placed here to escape local z-index stacking contexts) */}
       <StickyMobileActions telUrl={telUrl} whatsappUrl={whatsappUrl} />

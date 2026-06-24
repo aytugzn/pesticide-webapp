@@ -31,6 +31,7 @@ export type HomeErrorCode = keyof typeof HOME_ERRORS;
 export type HomeData = {
   slides: HeroSlideDoc[];
   pests: import("@/types").PestDoc[];
+  regions: import("@/types").RegionDoc[];
   customReviews: GoogleReviewDoc[];
   viewAllReviewsUrl: string;
   settings?: import("@/types").SettingsDoc;

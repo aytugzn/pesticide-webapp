@@ -16,6 +16,7 @@ export const ROUTES = {
   contact: "/iletisim",
   pestBase: "/hasere",
   regionBase: "/bolge",
+  regions: "/bolgeler",
 } as const;
 
 export const SESSION_COOKIE_NAME = "admin_session" as const;

@@ -20,10 +20,13 @@ const proxy = async (request: NextRequest) => {
   try {
     await adminAuth.verifySessionCookie(session, true);
     return NextResponse.next();
+
   } catch (error) {
     console.error("Token doğrulama hatası:", error);
     const response = NextResponse.redirect(new URL(ROUTES.login, request.url));
+
     response.cookies.delete(SESSION_COOKIE_NAME);
+
     return response;
   }
 };
@@ -32,4 +35,4 @@ export const config = {
   matcher: ["/admin/:path*"],
 };
 
-export { proxy };
+export default proxy;

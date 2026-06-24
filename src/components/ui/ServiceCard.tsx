@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Bug, ArrowRight } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { CLICK_EFFECT } from "@/constants/ui";
 
-interface ServiceCardProps {
+type ServiceCardProps = {
   variant?: "default" | "viewAll";
   href: string;
   title: string;
@@ -24,6 +25,7 @@ export const ServiceCard = ({
         aria-label={ariaLabel}
         className={cn(
           "group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-brand-primary text-brand-surface overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-brand-primary/30 hover:-translate-y-1",
+          CLICK_EFFECT,
           className
         )}
       >
@@ -46,6 +48,7 @@ export const ServiceCard = ({
       aria-label={ariaLabel}
       className={cn(
         "group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-surface-neutral hover:bg-brand-surface overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-brand-primary/5 hover:-translate-y-1",
+        CLICK_EFFECT,
         className
       )}
     >

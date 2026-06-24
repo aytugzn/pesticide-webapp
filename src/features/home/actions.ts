@@ -1,26 +1,23 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
-import type { SettingsDoc, PestDoc } from "@/types";
 import type { ActionResponse } from "@/types";
 import { DICTIONARY } from "@/constants/dictionary";
-import { parseSettingsDoc, parsePestDoc } from "@/utils/parsers";
+import { getGlobalData } from "@/lib/global-data";
 import { cacheTag } from "next/cache";
 
 export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorCode>> => {
   "use cache";
   cacheTag("home-data");
-  
+
   try {
-    const [sliderSnap, settingsSnap, pestsSnap, reviewsSnap] = await Promise.all([
+    const { pests, regions, settings } = await getGlobalData();
+
+    const [sliderSnap, reviewsSnap] = await Promise.all([
       adminDb.collection("settings").doc("heroSlider").get(),
-      adminDb.collection("settings").doc("general").get(),
-      adminDb.collection("pests").where("isActive", "==", true).get(),
       adminDb.collection("settings").doc("reviews").get()
     ]);
 
     let slides: HeroSlideDoc[] = [];
-    let settings: SettingsDoc = {};
-    let pests: PestDoc[] = [];
     let customReviews: GoogleReviewDoc[] = [];
     let viewAllReviewsUrl: string = "#";
 
@@ -33,14 +30,6 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
           order: Number(s.order) || 0
         })) as HeroSlideDoc[];
       }
-    }
-
-    if (settingsSnap.exists) {
-      settings = parseSettingsDoc(settingsSnap.data());
-    }
-
-    if (!pestsSnap.empty) {
-      pests = pestsSnap.docs.map(doc => parsePestDoc(doc.data()));
     }
 
     if (reviewsSnap.exists) {
@@ -62,6 +51,7 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
         slides,
         settings,
         pests,
+        regions,
         customReviews,
         viewAllReviewsUrl
       }

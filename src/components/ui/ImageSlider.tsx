@@ -6,21 +6,27 @@ import Image from "next/image";
 import { ImagePlaceholder } from "./ImagePlaceholder";
 import { HERO_IMAGE_SIZES } from "@/constants/ui";
 
-export interface SliderImage {
+export type SliderImage = {
   id: string;
   url: string;
   altText?: string;
+  title?: string;
 }
 
-interface ImageSliderProps {
+type ImageSliderProps = {
   images: SliderImage[];
   autoplayDelay?: number;
 }
 
 export const ImageSlider = ({ images, autoplayDelay = 5000 }: ImageSliderProps) => {
+  const isSingleImage = images?.length === 1;
+
   const [emblaRef] = useEmblaCarousel(
-    { loop: true }, 
-    [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })]
+    { 
+      loop: !isSingleImage,
+      watchDrag: !isSingleImage 
+    }, 
+    isSingleImage ? [] : [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })]
   );
 
   if (!images || images.length === 0) {
@@ -35,6 +41,7 @@ export const ImageSlider = ({ images, autoplayDelay = 5000 }: ImageSliderProps) 
             <Image
               src={img.url}
               alt={img.altText || `Slide ${index + 1}`}
+              title={img.title || img.altText}
               fill
               priority={index === 0}
               className="object-cover"

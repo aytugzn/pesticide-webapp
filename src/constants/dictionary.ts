@@ -13,6 +13,8 @@ const navbarDict = {
   columns: {
     pests: "HAŞERE TÜRÜNE GÖRE",
     regions: "HİZMET BÖLGELERİ",
+    viewAllPests: "Tüm Hizmetleri Gör",
+    viewAllRegions: "Tüm Bölgeleri Gör",
   },
   emptyStates: {
     pests: "Kayıtlı haşere bulunamadı.",
@@ -98,6 +100,68 @@ const homeDict = {
     viewAllServicesDesc: "Haşere ve kemirgen türlerine yönelik sunduğumuz diğer tüm profesyonel hizmetleri inceleyin.",
     pestTitleSuffix: "İlaçlama",
   },
+  whyUs: {
+    title: "Nasıl Çalışırız?",
+    titlePrefix: "Farkımız ",
+    titleHighlight: "ve Kalitemiz",
+    description: "İzmir genelinde müşteri memnuniyeti odaklı çalışıyor, sorunu geçici değil kalıcı olarak çözüyoruz.",
+    steps: [
+      {
+        title: "Ücretsiz Keşif & Analiz",
+        description: "Mekanı inceliyor, böcek veya kemirgen türünü tespit ederek en doğru müdahale yöntemini belirliyoruz.",
+      },
+      {
+        title: "Sağlık Bakanlığı Onaylı İlaçlar",
+        description: "İnsan ve evcil hayvan sağlığına zarar vermeyen, kokusuz ve çevre dostu biyosidal ürünler kullanıyoruz.",
+      },
+      {
+        title: "Garantili ve Kesin Çözüm",
+        description: "Sadece var olanları değil, yuvaları da hedef alarak %100 kalıcı koruma sağlıyoruz.",
+      },
+      {
+        title: "7/24 Kesintisiz Destek",
+        description: "Uygulama sonrası da sizi yalnız bırakmıyor, her türlü sorunuz için hızlı destek veriyoruz.",
+      }
+    ]
+  },
+  contact: {
+    title: "BİZ SİZİ ARAYALIM",
+    titlePrefix: "Ücretsiz",
+    titleHighlight: "Keşif ve Danışma",
+    description: "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
+    form: {
+      name: "Adınız Soyadınız",
+      namePlaceholder: "Örn: Ahmet Demir",
+      phone: "Telefon Numaranız",
+      phonePlaceholder: "0555 555 55 55",
+      service: "Hangi Hizmetle İlgileniyorsunuz?",
+      servicePlaceholder: "Lütfen seçiniz",
+      region: "Bulunduğunuz Bölge",
+      regionPlaceholder: "Lütfen seçiniz",
+      other: "Diğer (Listede Yok)",
+      otherValue: "Diğer",
+      optionalText: "(İsteğe Bağlı)",
+      submit: "Hemen Aranma Talebi Oluştur",
+      submitting: "Gönderiliyor...",
+      success: "Talebiniz başarıyla alındı! En kısa sürede aranacaksınız.",
+      error: "Bir hata oluştu, lütfen daha sonra tekrar deneyin veya bizi arayın."
+    },
+    validation: {
+        nameRequired: "Lütfen adınızı ve soyadınızı girin.",
+        nameMin: "Adınız en az 2 karakter olmalıdır.",
+        nameMax: "Adınız çok uzun, lütfen kontrol edin.",
+        nameInvalid: "Geçerli bir isim giriniz.",
+        phoneRequired: "Lütfen telefon numaranızı girin.",
+        phoneRegex: "Lütfen geçerli bir telefon numarası girin (Sadece rakam, boşluk ve + işareti).",
+        phoneInvalid: "Lütfen telefon numaranızı eksiksiz (10 veya 11 hane) giriniz.",
+        invalidFormat: "Lütfen formdaki hataları düzeltin.",
+        rateLimit: "Çok fazla istek gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin.",
+    },
+    telegram: {
+      template: "🔔 YENİ ARANMA TALEBİ 🔔\n=====================\n👤 Ad Soyad: {name}\n📞 Telefon: {phone}\n🛠️ Hizmet: {service}\n📍 Bölge: {region}\n=====================",
+      notSpecified: "Belirtilmedi"
+    }
+  },
 };
 
 const metaDict = {
@@ -174,18 +238,22 @@ const systemErrorsDict = {
     firebaseAdmin: "CRITICAL ERROR: Firebase Admin .env variables are missing!",
     gemini: "CRITICAL ERROR: GEMINI_API_KEY environment variable is missing.",
     googlePlaces: "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
+    telegram: "CRITICAL ERROR: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing.",
   },
   api: {
     googlePlacesFailed: "Google Places API request failed",
     googlePlacesNoData: "Google Places API warning: No valid data found in response",
     jsonParseFailed: "Failed to extract JSON from AI response. Raw text: ",
+    telegramFailed: "Telegram API Error",
   },
   logs: {
     homeDataFetch: "Error occurred while fetching home page data",
     login: "Error occurred during login process",
     sessionCreation: "Error occurred while creating session",
-    navbarDataFetch: "Error occurred while fetching navbar data",
+    globalDataFetch: "Error occurred while fetching global data",
     layoutSettingsFetch: "Error occurred while fetching layout settings",
+    telegramSend: "Error occurred while sending telegram message",
+    telegramConfig: "Sistem yapılandırma hatası (Loglandı).",
   }
 };
 

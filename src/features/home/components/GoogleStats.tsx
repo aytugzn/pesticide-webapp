@@ -3,6 +3,7 @@
 import { Star, BadgeCheck } from "lucide-react";
 import Image from "next/image";
 import { DICTIONARY } from "@/constants/dictionary";
+import { ScrollButton } from "@/components/ui/ScrollButton";
 import logoImg from '@/../public/dmr.svg';
 import type { GoogleStatsDoc } from "@/features/home/types";
 
@@ -68,16 +69,13 @@ export const GoogleStats = ({ stats, instagramUrl, facebookUrl }: { stats?: Goog
                 <Star key={i} className="w-3.5 h-3.5 md:w-4 md:h-4 fill-google-yellow text-google-yellow"  aria-hidden="true" />
               ))}
             </div>
-            <a 
-              href="#google-reviews"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById("google-reviews")?.scrollIntoView({ behavior: "smooth" });
-              }}
+            <ScrollButton 
+              targetId="google-reviews"
+              variant="unstyled"
               className="text-xs md:text-sm font-medium text-text-muted hover:text-brand-primary hover:underline transition-all ml-0.5"
             >
               ({displayReviewCount} {DICTIONARY.home.googleStats.reviewsText})
-            </a>
+            </ScrollButton>
           </div>
         </div>
       </div>
