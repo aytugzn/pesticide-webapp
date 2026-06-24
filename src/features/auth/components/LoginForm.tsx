@@ -26,7 +26,7 @@ const isPopupCancelled = (error: unknown): boolean =>
   error.code === FIREBASE_ERROR_CODES.popupClosed;
 
 // Component
-const LoginForm = () => {
+export const LoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,5 +89,3 @@ const LoginForm = () => {
     </div>
   );
 };
-
-export { LoginForm };

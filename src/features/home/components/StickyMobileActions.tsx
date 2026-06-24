@@ -34,7 +34,7 @@ export const StickyMobileActions = ({
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 z-50 flex md:hidden transition-transform duration-300 ease-in-out shadow-2xl shadow-text-primary/10 border-t border-brand-border/20 ${
+      className={`fixed bottom-0 left-0 right-0 z-40 flex md:hidden transition-transform duration-300 ease-in-out shadow-2xl shadow-text-primary/10 border-t border-brand-border/20 ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
     >
@@ -42,8 +42,8 @@ export const StickyMobileActions = ({
         href={telUrl}
         className="flex-1 flex items-center justify-center gap-2 bg-brand-primary text-brand-surface py-5 font-bold text-sm tracking-wide"
       >
-        <Phone className="w-5 h-5"  aria-hidden="true" />
-        <span>{DICTIONARY.home.stickyActions.callNow}</span>
+        <Phone className="w-5 h-5 mb-0.5" aria-hidden="true" />
+        <span>{DICTIONARY.social.phone.callNow}</span>
       </a>
       <a 
         href={whatsappUrl}

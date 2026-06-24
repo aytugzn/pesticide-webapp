@@ -22,7 +22,5 @@ if (!getApps().length) {
   });
 }
 
-const adminDb = getFirestore();
-const adminAuth = getAuth();
-
-export { adminDb, adminAuth };
+export const adminDb = getFirestore();
+export const adminAuth = getAuth();

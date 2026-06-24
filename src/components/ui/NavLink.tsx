@@ -11,7 +11,7 @@ type NavLinkProps = {
   activeClassName?: string;
 };
 
-const NavLink = ({ 
+export const NavLink = ({ 
   href, 
   children, 
   className = "", 
@@ -31,5 +31,3 @@ const NavLink = ({
     </Link>
   );
 };
-
-export { NavLink };

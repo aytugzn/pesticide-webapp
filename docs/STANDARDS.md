@@ -63,9 +63,17 @@ We have a centralized, highly strict error handling architecture.
 - **Prompt Isolation**: NEVER pass the entire database context to the AI. Pass only strictly necessary `description` strings to prevent token overflow.
 - **JSON Parsing**: NEVER parse Gemini responses directly. All AI responses MUST be passed through the `extractAndParseJson` utility (`src/utils/parsers.ts`) which guarantees markdown stripping and structural validation before JSON execution.
 
-## 10. SEO & Meta Standards
+## 10. SEO & Meta Standards (100% SEO Focus)
+> **CORE DIRECTIVE**: SEO is the absolute highest priority of this project. You MUST apply every possible modern SEO best practice, even if not explicitly listed here. This includes optimizing Core Web Vitals (LCP, CLS), ensuring flawless internal linking, using semantic URLs, and maximizing crawlability.
 - **Metadata**: Every public page MUST export `generateMetadata` fetching data directly from Firestore.
+- **Semantic HTML**: UI must be built with strict HTML5 semantics. Use `<article>`, `<section>`, `<nav>`, `<aside>`, `<main>`, and `<header>` instead of arbitrary `<div>` tags wherever logically appropriate. Heading hierarchy (`<h1>` to `<h4>`) MUST be strictly sequential.
+- **Accessibility (A11y)**: 
+  - ALL interactive elements (buttons, links) without readable text MUST have an `aria-label`.
+  - ALL decorative icons and background elements MUST have `aria-hidden="true"`.
+  - ALL images MUST have descriptive `alt` tags.
 - **Structured Data**: Standard Schema.org JSON-LD (LocalBusiness, Service, FAQPage) MUST be injected into the DOM of every public route.
+- **Canonical URLs**: `alternates: { canonical: '...' }` MUST be implemented on all public pages once dynamic routing slugs are finalized to prevent duplicate content penalties.
+- **Analytics & Cookies (Pre-Launch)**: Before production deployment, a decision MUST be made between cookieless analytics (Plausible/Umami) requiring no banner, or Google Analytics 4 requiring a strict KVKK/GDPR cookie consent banner.
 - **Indexing Constraints**: `/admin/*` and `/rapor/*` routes MUST contain `robots: { index: false }` to strictly prevent crawler indexing.
 
 ## 11. Naming Conventions & Documentation
@@ -74,9 +82,12 @@ We have a centralized, highly strict error handling architecture.
   - `PascalCase.tsx` for React components (`LoginForm.tsx`)
   - `camelCase.ts` for utility/action files (`formatDate.ts`)
 - **Variables**: `camelCase` for variables and functions.
+- **Functions**: DO NOT use `function foo() {}`. ALL functions, components, and utilities MUST be declared as ES6 Arrow Functions (`const foo = () => {}`).
+- **Exports**: ALL named exports MUST be inline (`export const foo = ...`). DO NOT group exports at the bottom of the file (`export { foo };`). *Exception:* Next.js required default exports (`export default`) for pages and layouts.
 - **Constants**: `SCREAMING_SNAKE_CASE` for global constants (`DEFAULT_SETTINGS`, `ROUTES`).
 - **Interfaces**: `PascalCase` with `Doc` suffix for Firestore models (`PestDoc`, `HeroSlideDoc`).
 - **JSDoc Comments**: ALL utility functions, Server Actions, and complex components MUST include standard `/** JSDoc */` comments explaining parameters, return types, and purpose. Never leave complex logic undocumented.
+- **Inline Styles**: DO NOT use inline `style={{}}` inside JSX tags. Always use Tailwind classes. If dynamic CSS variables or styles are absolutely required for runtime logic, extract the style object to a `const` above the `return` statement.
 
 ## 12. PAIN POINTS & STRICT PROHIBITIONS (Lessons Learned)
 *These rules are written in blood based on previous AI failures. Violating them is a critical offense.*

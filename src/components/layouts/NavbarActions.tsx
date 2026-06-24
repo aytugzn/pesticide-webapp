@@ -38,13 +38,13 @@ export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; te
         <MessageCircle className="w-5 h-5"  aria-hidden="true" />
       </Button>
       
-      <a 
+      <Button 
         href={telUrl} 
-        className="flex items-center gap-2 px-5 py-2.5 rounded-brand-md bg-brand-primary text-brand-surface text-sm font-bold hover:bg-brand-primary-hover transition-colors shadow-sm"
+        variant="primary"
       >
-        <Phone className="w-4 h-4 fill-brand-surface/20"  aria-hidden="true" />
-        <span>{DICTIONARY.navbar.callNow}</span>
-      </a>
+        <Phone className="w-5 h-5" aria-hidden="true" />
+        <span>{DICTIONARY.social.phone.callNow}</span>
+      </Button>
     </div>
   );
 };

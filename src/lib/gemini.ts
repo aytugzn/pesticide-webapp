@@ -21,10 +21,10 @@ export const geminiModel = genAI.getGenerativeModel({
  * @param pest - Object containing pest name and description
  * @returns Formatted prompt string requesting JSON output
  */
-export function buildCombinationPrompt(
+export const buildCombinationPrompt = (
   region: { name: string; description: string },
   pest: { name: string; description: string }
-): string {
+): string => {
   return `
 You are an SEO content writer. Write in ${DICTIONARY.gemini.outputLanguage}.
 

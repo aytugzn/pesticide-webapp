@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/Button";
 import { Phone, MessageCircle, PhoneCall } from "lucide-react";
 import { GoogleStats } from "./GoogleStats";
 import { ImageSlider } from "@/components/ui/ImageSlider";
-import { StickyMobileActions } from "./StickyMobileActions";
 import type { HeroSlideDoc, GoogleStatsDoc } from "@/features/home/types";
 
 export const Hero = ({ 
@@ -53,7 +52,7 @@ export const Hero = ({
                 className="!rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 justify-center bg-brand-surface"
               >
                 <Phone className="w-4 h-4 mr-1.5 flex-shrink-0"  aria-hidden="true" />
-                <span className="truncate">{DICTIONARY.home.stickyActions.callNow}</span>
+                <span className="truncate">{DICTIONARY.social.phone.callNow}</span>
               </Button>
 
               <Button 
@@ -71,7 +70,7 @@ export const Hero = ({
                 className="!rounded-full col-span-2 lg:col-span-1 px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-md hover:shadow-xl shadow-brand-primary/20 lg:flex-1 justify-center"
               >
                 <PhoneCall className="w-4 h-4 mr-1.5 flex-shrink-0"  aria-hidden="true" />
-                <span className="truncate">{DICTIONARY.navbar.callMeBack}</span>
+                <span className="truncate">{DICTIONARY.social.phone.callMeBack}</span>
               </Button>
             </div>
 
@@ -93,9 +92,6 @@ export const Hero = ({
 
         </div>
       </div>
-      
-      {/* Mobile Sticky Bottom Bar */}
-      <StickyMobileActions telUrl={telUrl} whatsappUrl={whatsappUrl} />
     </section>
   );
 };

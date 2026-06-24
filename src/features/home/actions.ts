@@ -5,7 +5,7 @@ import type { SettingsDoc, PestDoc } from "@/types";
 import type { ActionResponse } from "@/types";
 import { DICTIONARY } from "@/constants/dictionary";
 import { parseSettingsDoc, parsePestDoc } from "@/utils/parsers";
-import { unstable_cacheTag as cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 
 export type HomeData = {
   slides: HeroSlideDoc[];
@@ -16,7 +16,7 @@ export type HomeData = {
 };
 
 
-export async function getHomeData(): Promise<ActionResponse<HomeData, HomeErrorCode>> {
+export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorCode>> => {
   "use cache";
   cacheTag("home-data");
   

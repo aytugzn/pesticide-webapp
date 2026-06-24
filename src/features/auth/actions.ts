@@ -11,7 +11,7 @@ import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 const ALLOWED_EMAILS = [process.env.ADMIN_EMAIL || ""];
 const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 gün
 
-const createSession = async (idToken: string): Promise<ActionResponse<void, AuthErrorCode>> => {
+export const createSession = async (idToken: string): Promise<ActionResponse<void, AuthErrorCode>> => {
   const expiresIn = SESSION_DURATION * 1000;
 
   try {
@@ -41,10 +41,8 @@ const createSession = async (idToken: string): Promise<ActionResponse<void, Auth
   }
 };
 
-const revokeSession = async () => {
+export const revokeSession = async () => {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
   redirect(ROUTES.login);
 };
-
-export { createSession, revokeSession };

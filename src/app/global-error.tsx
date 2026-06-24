@@ -19,10 +19,10 @@ const montserrat = Montserrat({
 
 import type { ErrorInfo } from "next/error";
 
-export default function GlobalError({
+const GlobalError = ({
   error: _error,
   unstable_retry,
-}: ErrorInfo) {
+}: ErrorInfo) => {
   return (
     <html lang="tr" className={`${inter.variable} ${montserrat.variable} h-full`}>
       <body className="min-h-full flex flex-col items-center justify-center bg-surface-neutral p-4 font-sans text-center">
@@ -62,3 +62,5 @@ export default function GlobalError({
     </html>
   );
 }
+
+export default GlobalError;

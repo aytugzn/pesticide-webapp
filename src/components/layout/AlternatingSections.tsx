@@ -19,10 +19,12 @@ export const AlternatingSections = ({
   blobClassName = STYLES.blob,
   dividerClassName = STYLES.divider,
 }: AlternatingSectionsProps) => {
+  const sectionBgStyle = { '--section-bg': 'var(--surface-neutral)' } as React.CSSProperties;
+
   return (
     <div className="flex flex-col w-full">
       {React.Children.map(children, (child, index) => (
-        <div className={wrapperClassName} style={{ '--section-bg': 'var(--surface-neutral)' } as React.CSSProperties}>
+        <div className={wrapperClassName} style={sectionBgStyle}>
           <div className="relative z-10 w-full">
             {child}
           </div>

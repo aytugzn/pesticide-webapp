@@ -4,6 +4,7 @@ import { getGooglePlaceDetails } from "@/lib/google-places";
 import { Hero } from "@/features/home/components/Hero";
 import { ServicesSection } from "@/features/home/components/ServicesSection";
 import { GoogleReviewsSection } from "@/features/home/components/GoogleReviewsSection";
+import { StickyMobileActions } from "@/features/home/components/StickyMobileActions";
 import { AlternatingSections } from "@/components/layout/AlternatingSections";
 import { HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK, SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK, REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK, DEFAULT_PHONE } from "@/constants/ui";
 import type { SettingsDoc, PestDoc } from "@/types";
@@ -70,6 +71,8 @@ const HomePage = async () => {
         <ServicesSection pests={pests} autoplayDelay={servicesAutoplayDelay} />
         <GoogleReviewsSection autoplayDelay={reviewsAutoplayDelay} reviews={customReviews} viewAllUrl={viewAllReviewsUrl} />
       </AlternatingSections>
+      {/* Mobile Sticky Bottom Bar (Placed here to escape local z-index stacking contexts) */}
+      <StickyMobileActions telUrl={telUrl} whatsappUrl={whatsappUrl} />
     </main>
   );
 };

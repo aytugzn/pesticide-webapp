@@ -87,7 +87,7 @@ export const GoogleStats = ({ stats, instagramUrl, facebookUrl }: { stats?: Goog
           href={finalInstagramUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2 md:p-2.5 rounded-full bg-brand-surface/50 border border-brand-border/50 text-text-secondary hover:text-instagram hover:border-instagram/30 hover:bg-instagram/5 transition-all"
+          className="p-2.5 sm:p-3 rounded-full bg-brand-surface border border-brand-border/50 text-instagram hover:bg-instagram/5 hover:scale-110 transition-all duration-300 shadow-sm"
           aria-label={DICTIONARY.social.instagram.aria}
         >
           <InstagramIcon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
@@ -96,7 +96,7 @@ export const GoogleStats = ({ stats, instagramUrl, facebookUrl }: { stats?: Goog
           href={finalFacebookUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2 md:p-2.5 rounded-full bg-brand-surface/50 border border-brand-border/50 text-text-secondary hover:text-facebook hover:border-facebook/30 hover:bg-facebook/5 transition-all"
+          className="p-2.5 sm:p-3 rounded-full bg-brand-surface border border-brand-border/50 text-facebook hover:bg-facebook/5 hover:scale-110 transition-all duration-300 shadow-sm"
           aria-label={DICTIONARY.social.facebook.aria}
         >
           <FacebookIcon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />

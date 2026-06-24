@@ -2,6 +2,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { Star } from "lucide-react";
 import { ReviewCard } from "./ReviewCard";
+import { REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK } from "@/constants/ui";
 import type { GoogleReviewDoc } from "@/features/home/types";
 
 
@@ -15,6 +16,19 @@ export const GoogleReviewsSection = ({
   autoplayDelay?: number,
   viewAllUrl?: string
 }) => {
+  // Ensure we have enough reviews to fill a wide screen (at least 6-8 items per set)
+  // so the marquee doesn't run out of content on large desktop monitors.
+  const baseReviews = [...reviews];
+  if (baseReviews.length > 0) {
+    while (baseReviews.length < 8) {
+      baseReviews.push(...reviews);
+    }
+  }
+
+  const marqueeStyle = { 
+    animationDuration: `${(autoplayDelay || (REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK * 1000)) / 1000}s` 
+  };
+
   return (
     <section id="google-reviews" className="w-full py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,13 +61,21 @@ export const GoogleReviewsSection = ({
 
             {/* Scrolling Track */}
             <div 
-              className="flex gap-6 animate-marquee group-hover:[animation-play-state:paused] w-max"
-              style={{ animationDuration: `${(autoplayDelay || 40000) / 1000}s` }}
+              className="flex animate-marquee group-hover:[animation-play-state:paused] w-max"
+              style={marqueeStyle}
             >
-              {/* We duplicate the reviews array to create a seamless infinite loop */}
-              {[...reviews, ...reviews].map((review, idx) => (
-                <ReviewCard key={`${review.id}-${idx}`} review={review} />
-              ))}
+              {/* We use two exact copies of the blocks. 
+                  pr-6 matches gap-6 perfectly so the math for -50% translation is flawless. */}
+              <div className="flex gap-6 pr-6">
+                {baseReviews.map((review, idx) => (
+                  <ReviewCard key={`set1-${review.id}-${idx}`} review={review} />
+                ))}
+              </div>
+              <div className="flex gap-6 pr-6" aria-hidden="true">
+                {baseReviews.map((review, idx) => (
+                  <ReviewCard key={`set2-${review.id}-${idx}`} review={review} />
+                ))}
+              </div>
             </div>
           </div>
         ) : (

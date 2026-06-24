@@ -1,4 +1,4 @@
-import { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
+import { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes, forwardRef } from "react";
 import Link from "next/link";
 
 type ButtonVariant = "primary" | "outline" | "success" | "icon";
@@ -16,13 +16,13 @@ type ButtonAsLinkProps = BaseProps & AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 export type ButtonProps = ButtonAsButtonProps | ButtonAsLinkProps;
 
-const Button = ({
+export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(({
   variant = "primary",
   size = "md",
   children,
   className = "",
   ...props
-}: ButtonProps) => {
+}, ref) => {
   const baseClasses = "inline-flex items-center justify-center font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants: Record<ButtonVariant, string> = {
@@ -45,23 +45,23 @@ const Button = ({
     const { href, external, ...linkProps } = props as ButtonAsLinkProps;
     if (external || href.startsWith("http") || href.startsWith("tel:") || href.startsWith("mailto:")) {
       return (
-        <a href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined} className={classes} {...linkProps}>
+        <a ref={ref as React.Ref<HTMLAnchorElement>} href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined} className={classes} {...linkProps}>
           {children}
         </a>
       );
     }
     return (
-      <Link href={href} className={classes} {...linkProps}>
+      <Link ref={ref as React.Ref<HTMLAnchorElement>} href={href} className={classes} {...linkProps}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button className={classes} {...(props as ButtonAsButtonProps)}>
+    <button ref={ref as React.Ref<HTMLButtonElement>} className={classes} {...(props as ButtonAsButtonProps)}>
       {children}
     </button>
   );
-};
+});
 
-export { Button };
+Button.displayName = "Button";

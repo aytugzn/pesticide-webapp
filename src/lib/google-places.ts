@@ -1,6 +1,6 @@
 import type { GoogleStatsDoc } from "@/features/home/types";
 import type { ActionResponse } from "@/types";
-import { unstable_cacheTag as cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { DICTIONARY } from "@/constants/dictionary";
 
 /**
@@ -10,7 +10,7 @@ import { DICTIONARY } from "@/constants/dictionary";
  * @param placeId - The unique Google Place ID for the business
  * @returns ActionResponse containing GoogleStatsDoc or error
  */
-export async function getGooglePlaceDetails(placeId?: string): Promise<ActionResponse<{ stats: GoogleStatsDoc | null }>> {
+export const getGooglePlaceDetails = async (placeId?: string): Promise<ActionResponse<{ stats: GoogleStatsDoc | null }>> => {
   "use cache";
   cacheTag("google-places");
 

@@ -52,7 +52,7 @@ const MenuSection = ({
   </div>
 );
 
-const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
+export const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isServicesOpen, setIsServicesOpen] = useState<boolean>(false);
 
@@ -66,9 +66,8 @@ const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
     <div className="md:hidden flex items-center">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-3 rounded-md text-text-primary active:bg-foreground/10 transition-colors"
+        className="p-3 rounded-md text-text-primary active:bg-foreground/10 transition-colors touch-manipulation"
         aria-label={DICTIONARY.navbar.mobileMenuAria}
-        style={{ touchAction: "manipulation" }}
       >
         {isOpen ? <X className="w-6 h-6 pointer-events-none"  aria-hidden="true" /> : <Menu className="w-6 h-6 pointer-events-none"  aria-hidden="true" />}
       </button>
@@ -84,8 +83,7 @@ const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
             <div className="flex flex-col border-b border-brand-border pb-4">
               <button 
                 onClick={() => setIsServicesOpen(!isServicesOpen)}
-                className="flex items-center justify-between text-sm font-medium text-text-primary py-2"
-                style={{ touchAction: "manipulation" }}
+                className="flex items-center justify-between text-sm font-medium text-text-primary py-2 touch-manipulation"
                 aria-expanded={isServicesOpen}
                 aria-controls="mobile-services-menu"
               >
@@ -136,5 +134,3 @@ const MobileMenu = ({ pests, regions }: MobileMenuProps) => {
       </div>
   );
 };
-
-export { MobileMenu };

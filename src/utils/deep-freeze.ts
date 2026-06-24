@@ -5,7 +5,7 @@
  * @param obj - The object to deep freeze
  * @returns The deep-frozen object
  */
-export function deepFreeze<T extends object>(obj: T): T {
+export const deepFreeze = <T extends object>(obj: T): T => {
   const propNames = Reflect.ownKeys(obj);
 
   for (const name of propNames) {

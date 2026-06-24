@@ -1,4 +1,6 @@
 import type { PestDoc, RegionDoc, SettingsDoc } from "@/types";
+import { AppError } from "@/lib/exceptions";
+import { DICTIONARY } from "@/constants/dictionary";
 
 /**
  * Parses and validates raw Firestore data into a SettingsDoc.
@@ -6,7 +8,7 @@ import type { PestDoc, RegionDoc, SettingsDoc } from "@/types";
  * @param data - Raw data from Firestore
  * @returns Type-safe SettingsDoc object
  */
-export function parseSettingsDoc(data: unknown): SettingsDoc {
+export const parseSettingsDoc = (data: unknown): SettingsDoc => {
   if (!data || typeof data !== "object") return {};
   
   const d = data as Record<string, unknown>;
@@ -29,7 +31,7 @@ export function parseSettingsDoc(data: unknown): SettingsDoc {
  * @param data - Raw data from Firestore
  * @returns Type-safe PestDoc object
  */
-export function parsePestDoc(data: unknown): PestDoc {
+export const parsePestDoc = (data: unknown): PestDoc => {
   if (!data || typeof data !== "object") {
     return { name: "", slug: "", isActive: false };
   }
@@ -51,7 +53,7 @@ export function parsePestDoc(data: unknown): PestDoc {
  * @param data - Raw data from Firestore
  * @returns Type-safe RegionDoc object
  */
-export function parseRegionDoc(data: unknown): RegionDoc {
+export const parseRegionDoc = (data: unknown): RegionDoc => {
   if (!data || typeof data !== "object") {
     return { name: "", slug: "", isActive: false };
   }
@@ -73,7 +75,7 @@ export function parseRegionDoc(data: unknown): RegionDoc {
  * @returns The parsed JSON object
  * @throws AppError if JSON extraction or parsing fails
  */
-export function extractAndParseJson<T = unknown>(text: string): T {
+export const extractAndParseJson = <T = unknown,>(text: string): T => {
   try {
     // 1. Remove markdown code blocks if present (```json ... ```)
     let cleanText = text.replace(/```(?:json)?\n?/g, "").replace(/```\n?/g, "").trim();
@@ -103,6 +105,6 @@ export function extractAndParseJson<T = unknown>(text: string): T {
     // 3. Parse the cleaned string
     return JSON.parse(cleanText) as T;
   } catch (error) {
-    throw new Error(`Failed to extract JSON from AI response. Raw text: ${text.substring(0, 100)}...`);
+    throw new AppError(`${DICTIONARY.systemErrors.jsonParseFailed}${text.substring(0, 100)}...`, "JSON_PARSE_ERROR");
   }
 }

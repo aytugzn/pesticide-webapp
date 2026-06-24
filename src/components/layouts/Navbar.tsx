@@ -12,9 +12,9 @@ import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
 import logoImg from '@/../public/dmr.svg'
 import { type PestDoc, type RegionDoc, type SettingsDoc } from "@/types";
 import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
-import { unstable_cacheTag as cacheTag } from "next/cache";
+import { cacheTag } from "next/cache";
 
-async function getNavbarData() {
+const getNavbarData = async () => {
   "use cache";
   cacheTag("navbar");
 
@@ -33,7 +33,7 @@ async function getNavbarData() {
 
 
 
-const Navbar = async () => {
+export const Navbar = async () => {
   let pests: PestDoc[] = [];
   let regions: RegionDoc[] = [];
   let settings: SettingsDoc = {};
@@ -151,5 +151,3 @@ const Navbar = async () => {
     </header>
   );
 };
-
-export { Navbar };

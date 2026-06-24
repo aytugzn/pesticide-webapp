@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import { adminDb } from "@/lib/firebase-admin";
 import { DICTIONARY } from "@/constants/dictionary";
+import { cacheTag } from "next/cache";
+import { parseSettingsDoc } from "@/utils/parsers";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,10 +18,8 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-import { unstable_cacheTag as cacheTag } from "next/cache";
-import { parseSettingsDoc } from "@/utils/parsers";
 
-async function getLayoutSettings() {
+const getLayoutSettings = async () => {
   "use cache";
   cacheTag("layout-settings");
   
@@ -32,13 +32,14 @@ async function getLayoutSettings() {
   }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
+export const generateMetadata = async (): Promise<Metadata> => {
   const settings = await getLayoutSettings();
   let defaultOgImage = settings.defaultOgImage || DICTIONARY.meta.ogImageFallback;
   const title = DICTIONARY.meta.title;
   const description = DICTIONARY.meta.description;
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://dmrilaclama.com"),
     title,
     description,
     openGraph: {
@@ -68,13 +69,35 @@ const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) => (
-  <html
-    lang="tr"
-    className={`${inter.variable} ${montserrat.variable} h-full`}
-  >
-    <body className="min-h-full flex flex-col">{children}</body>
-  </html>
-);
+}>) => {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": DICTIONARY.meta.title,
+    "description": DICTIONARY.meta.description,
+    "url": process.env.NEXT_PUBLIC_SITE_URL || "https://dmrilaclama.com",
+    "areaServed": "İzmir, Turkey",
+    "address": {
+      "@type": "PostalAddress",
+      "addressRegion": "İzmir",
+      "addressCountry": "TR"
+    }
+  };
+
+  return (
+    <html
+      lang="tr"
+      className={`${inter.variable} ${montserrat.variable} h-full`}
+    >
+      <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        {children}
+      </body>
+    </html>
+  );
+};
 
 export default RootLayout;

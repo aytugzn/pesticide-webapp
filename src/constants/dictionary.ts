@@ -9,8 +9,6 @@ const navbarDict = {
   regionsCol: "HİZMET BÖLGELERİ",
   emptyPests: "Kayıtlı haşere bulunamadı.",
   emptyRegions: "Kayıtlı bölge bulunamadı.",
-  callNow: "Hemen Ara",
-  callMeBack: "Biz Sizi Arayalım",
   mobileMenuAria: "Menüyü Aç",
 };
 
@@ -35,6 +33,10 @@ const socialDict = {
     text: "WhatsApp",
     aria: "WhatsApp ile İletişime Geç",
   },
+  phone: {
+    callNow: "Hemen Ara",
+    callMeBack: "Biz Sizi Arayalım",
+  },
 };
 
 const homeDict = {
@@ -45,7 +47,6 @@ const homeDict = {
     description1: "İşletmenizi veya evinizi zararlı böceklerden ve haşerelerden",
     description2: "korumak için profesyonel ve garantili çözümler sunuyoruz.",
     description3: "Zararlıların kabusunuz olmasına izin vermeyin. Hemen bizimle iletişime geçin.",
-    desktopCall: "Ara — Ücretsiz Keşif",
   },
   googleStats: {
     businessName: "DMR İLAÇLAMA",
@@ -73,13 +74,10 @@ const homeDict = {
     viewAllServicesDesc: "Haşere ve kemirgen türlerine yönelik sunduğumuz diğer tüm profesyonel hizmetleri inceleyin.",
     pestTitleSuffix: "İlaçlama",
   },
-  stickyActions: {
-    callNow: "Hemen Ara",
-  },
 };
 
 const metaDict = {
-  title: "DMR İlaçlama | Profesyonel Böcek & Haşere İlaçlama",
+  title: "İzmir Profesyonel Böcek & Haşere İlaçlama | DMR",
   description: "İzmir'de Sağlık Bakanlığı onaylı ruhsatlı ilaçlar ile profesyonel böcek ve haşere ilaçlama. Eviniz ve iş yeriniz için garantili çözümler. Hemen arayın!",
   defaultAlt: "DMR İlaçlama",
   locale: "tr_TR",
@@ -91,9 +89,6 @@ const metaDict = {
 };
 
 const geminiDict = {
-  errors: {
-    missingApiKey: "GEMINI_API_KEY ortam değişkeni bulunamadı.",
-  },
   model: "gemini-2.0-flash",
   outputLanguage: "Turkish",
   jsonFormat: '{ "title": "...", "h1": "...", "metaDesc": "...", "content": "...", "faq": [{"question": "...", "answer": "..."}] }',
@@ -143,6 +138,7 @@ const systemErrorsDict = {
   googlePlacesApiMissing: "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
   googlePlacesApiFailed: "Google Places API request failed",
   googlePlacesApiNoData: "Google Places API warning: No valid data found in response",
+  jsonParseFailed: "Failed to extract JSON from AI response. Raw text: ",
   logs: {
     homeDataFetch: "Error occurred while fetching home page data",
     loginError: "Error occurred during login process",
