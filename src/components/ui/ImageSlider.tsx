@@ -22,12 +22,7 @@ export const ImageSlider = ({
   images,
   autoplayDelay = 5000,
 }: ImageSliderProps) => {
-  // Early guard BEFORE hooks
-  if (!images || images.length === 0) {
-    return <ImagePlaceholder />;
-  }
-
-  const isSingleImage = images.length === 1;
+  const isSingleImage = images?.length === 1;
 
   const [emblaRef] = useEmblaCarousel(
     {
@@ -38,6 +33,10 @@ export const ImageSlider = ({
       ? []
       : [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })],
   );
+
+  if (!images || images.length === 0) {
+    return <ImagePlaceholder />;
+  }
 
   return (
     <div className="overflow-hidden w-full h-full relative" ref={emblaRef}>

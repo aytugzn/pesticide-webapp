@@ -3,41 +3,41 @@
 /* Brand Tokens - Light */
 :root {
   /* Layout */
-  --background: #ffffff; 
+  --background: #ffffff;
   --foreground: #0f172a;
 
   /* Brand */
-  --brand-primary:        #1f6b3a;
-  --brand-primary-hover:  #175430;
-  --brand-primary-light:  #e6f2eb;
-  
-/* Surface */
---brand-surface:        #ffffff;
---brand-surface-light:  #f4f7f5; 
---brand-surface-muted:  #e8f0eb; 
---surface-neutral:      #fafafa;
-  
+  --brand-primary: #1f6b3a;
+  --brand-primary-hover: #175430;
+  --brand-primary-light: #e6f2eb;
+
+  /* Surface */
+  --brand-surface: #ffffff;
+  --brand-surface-light: #f4f7f5;
+  --brand-surface-muted: #e8f0eb;
+  --surface-neutral: #fafafa;
+
   /* Border */
---brand-border:         #d1ddd6;
---brand-border-strong:  #a8bcb0; 
+  --brand-border: #d1ddd6;
+  --brand-border-strong: #a8bcb0;
 
   /* Text */
-  --text-primary:   #0f172a;
+  --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted:     #94a3b8;
+  --text-muted: #94a3b8;
 
   /* Status - Light */
-  --color-error-bg:     #fef2f2;
+  --color-error-bg: #fef2f2;
   --color-error-border: #fecaca;
-  --color-error-text:   #ef4444;
+  --color-error-text: #ef4444;
 
-  --color-success-bg:     #f0fdf4;
+  --color-success-bg: #f0fdf4;
   --color-success-border: #bbf7d0;
-  --color-success-text:   #16a34a;
+  --color-success-text: #16a34a;
 
-  --color-info-bg:        #f0f9ff;
-  --color-info-border:    #bae6fd;
-  --color-info-text:      #0284c7;
+  --color-info-bg: #f0f9ff;
+  --color-info-border: #bae6fd;
+  --color-info-text: #0284c7;
 
   /* Radius */
   --radius-sm: 0.375rem;
@@ -46,86 +46,86 @@
   --radius-xl: 1rem;
 
   /* Social & Brand */
-  --whatsapp: #25D366;
+  --whatsapp: #25d366;
   --whatsapp-hover: #128c7e;
-  --google-blue: #4285F4;
-  --google-yellow: #FABB05;
-  --instagram: #E1306C;
-  --facebook: #1877F2;
+  --google-blue: #4285f4;
+  --google-yellow: #fabb05;
+  --instagram: #e1306c;
+  --facebook: #1877f2;
 }
 
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #111f17;        
+    --background: #111f17;
     --foreground: #f8fafc;
-    
-    --brand-primary:        #2d9653;
-    --brand-primary-hover:  #278548;
-    --brand-primary-light:  #1a3324;
-    
-    --brand-surface:        #172212; 
-    --brand-surface-light:  #1e2e1f; 
-    --brand-surface-muted:  #243326;  
-    --surface-neutral:      #131c0f;
-    
-    --brand-border:         #2d4435; 
-    --brand-border-strong:  #3d5c46;  
-    
-    --text-primary:   #f8fafc;
+
+    --brand-primary: #2d9653;
+    --brand-primary-hover: #278548;
+    --brand-primary-light: #1a3324;
+
+    --brand-surface: #172212;
+    --brand-surface-light: #1e2e1f;
+    --brand-surface-muted: #243326;
+    --surface-neutral: #131c0f;
+
+    --brand-border: #2d4435;
+    --brand-border-strong: #3d5c46;
+
+    --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --text-muted:     #64748b;
+    --text-muted: #64748b;
 
-    --color-error-bg:     #450a0a;
+    --color-error-bg: #450a0a;
     --color-error-border: #7f1d1d;
-    --color-error-text:   #fca5a5;
+    --color-error-text: #fca5a5;
 
-    --color-success-bg:     #052e16;
+    --color-success-bg: #052e16;
     --color-success-border: #14532d;
-    --color-success-text:   #4ade80;
+    --color-success-text: #4ade80;
 
-    --color-info-bg:        #082f49;
-    --color-info-border:    #0c4a6e;
-    --color-info-text:      #38bdf8;
+    --color-info-bg: #082f49;
+    --color-info-border: #0c4a6e;
+    --color-info-text: #38bdf8;
   }
 }
 /* Tailwind v4 Theme Registration */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
-  --font-sans:    var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono:    ui-monospace, SFMono-Regular, monospace;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
   --font-heading: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
 
   /* Brand */
-  --color-brand-primary:       var(--brand-primary);
+  --color-brand-primary: var(--brand-primary);
   --color-brand-primary-hover: var(--brand-primary-hover);
   --color-brand-primary-light: var(--brand-primary-light);
-  --color-brand-surface:       var(--brand-surface);
+  --color-brand-surface: var(--brand-surface);
   --color-brand-surface-light: var(--brand-surface-light);
   --color-brand-surface-muted: var(--brand-surface-muted);
-  --color-surface-neutral:     var(--surface-neutral);
-  --color-brand-border:        var(--brand-border);
+  --color-surface-neutral: var(--surface-neutral);
+  --color-brand-border: var(--brand-border);
   --color-brand-border-strong: var(--brand-border-strong);
 
   /* Text */
-  --color-text-primary:   var(--text-primary);
+  --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
-  --color-text-muted:     var(--text-muted);
+  --color-text-muted: var(--text-muted);
 
   /* Status */
-  --color-error-bg:       var(--color-error-bg);
-  --color-error-border:   var(--color-error-border);
-  --color-error-text:     var(--color-error-text);
-  
-  --color-success-bg:     var(--color-success-bg);
-  --color-success-border: var(--color-success-border);
-  --color-success-text:   var(--color-success-text);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-border: var(--color-error-border);
+  --color-error-text: var(--color-error-text);
 
-  --color-info-bg:        var(--color-info-bg);
-  --color-info-border:    var(--color-info-border);
-  --color-info-text:      var(--color-info-text);
+  --color-success-bg: var(--color-success-bg);
+  --color-success-border: var(--color-success-border);
+  --color-success-text: var(--color-success-text);
+
+  --color-info-bg: var(--color-info-bg);
+  --color-info-border: var(--color-info-border);
+  --color-info-text: var(--color-info-text);
 
   /* Border radius */
   --radius-brand-sm: var(--radius-sm);
@@ -149,8 +149,12 @@
   --animate-marquee: marquee 40s linear infinite;
 
   @keyframes marquee {
-    0% { transform: translateX(0%); }
-    100% { transform: translateX(-50%); }
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
   }
 }
 
@@ -176,7 +180,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
   }
 }

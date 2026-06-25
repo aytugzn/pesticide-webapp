@@ -38,6 +38,7 @@ We have a centralized, highly strict error handling architecture.
 - **Immutability**: Use the `deepFreeze` utility (`src/utils/deep-freeze.ts`) when exporting constant objects (like `DICTIONARY` or `ROUTES`).
 
 ## 5. Caching & Data Mutation (Next.js 16)
+- **On-Demand Revalidation Only**: We strictly use on-demand revalidation (e.g. `updateTag`, `revalidateTag`) instead of time-based ISR (e.g. `export const revalidate = 86400`). Do NOT use time-based revalidation exports or cron jobs for caching updates unless explicitly required.
 - **Read-Your-Writes**: Inside Server Actions, always use `updateTag("tag-name")` to ensure the cache expires and fresh data is read in the same request. Do NOT use `revalidateTag` for user-triggered mutations.
 - **Cache Components**: Use the top-level `cacheComponents: true` config and the `"use cache"` directive inside page components.
 - **Uncached Data**: Use `refresh()` from `next/cache` inside Server Actions to refresh client-side UI without touching the server cache.

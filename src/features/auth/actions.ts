@@ -1,6 +1,6 @@
 "use server";
 
-import { adminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_ERRORS, type AuthErrorCode } from "./types";
@@ -15,13 +15,13 @@ export const createSession = async (idToken: string): Promise<ActionResponse<voi
   const expiresIn = SESSION_DURATION * 1000;
 
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
 
     if (!ALLOWED_EMAILS.includes(decodedToken.email ?? "")) {
       return { success: false, error: AUTH_ERRORS.UNAUTHORIZED_EMAIL };
     }
 
-    const sessionCookie = await adminAuth.createSessionCookie(idToken, {
+    const sessionCookie = await getAdminAuth().createSessionCookie(idToken, {
       expiresIn,
     });
 

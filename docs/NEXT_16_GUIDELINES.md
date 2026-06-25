@@ -1,48 +1,72 @@
-# Next.js 16.x Features & Guidelines
+# Next.js 16.x Features & Guidelines (16.0, 16.1, 16.2)
 
 > **IMPORTANT CONTEXT FOR AI AGENTS**: This project is built on Next.js 16.x (released late 2025 / early 2026). The following features, breaking changes, and APIs are actively used in this codebase. **Do NOT assume Next.js 14 or 15 constraints.**
 
-## 1. Network Boundary: `proxy.ts`
-- **Replaces `middleware.ts`**: The `middleware.ts` file convention is deprecated and replaced by `proxy.ts`.
-- **Runtime**: `proxy.ts` runs on the **Node.js runtime** (not the Edge runtime).
-- **Impact**: You can directly use Node.js modules and libraries like `firebase-admin` inside `proxy.ts` without edge-compatibility issues.
-- **Usage**: Export a default function named `proxy(request: NextRequest)`.
+## 1. Network Boundary & Runtime Architecture
 
-## 2. Caching: Cache Components & `use cache`
-- **Opt-in Caching**: Caching is entirely opt-in. All dynamic code is executed at request time by default.
-- **`use cache` Directive**: Used to cache pages, components, and functions. It leverages the compiler to automatically generate cache keys.
-- **Config**: Enabled via `cacheComponents: true` in `next.config.ts`. (Replaces the old `experimental.ppr` and `experimental.dynamicIO` flags).
+- **`proxy.ts` (formerly `middleware.ts`)**: The `middleware.ts` file convention is deprecated and replaced by `proxy.ts`. 
+  - **Runtime**: It runs on the **Node.js runtime** (not the Edge runtime), meaning you can safely use Node.js modules like `firebase-admin` directly.
+  - **Usage**: Export a default function named `proxy(request: NextRequest)`.
 
-## 3. Improved Caching APIs
-- **`revalidateTag()`**: Now **requires** a `cacheLife` profile as the second argument for stale-while-revalidate (SWR) behavior.
-  - Example: `revalidateTag('blog-posts', 'max')` or `revalidateTag('products', { expire: 3600 })`.
-- **`updateTag()`**: A new Server Actions-only API that provides read-your-writes semantics (expires and immediately reads fresh data within the same request).
-- **`refresh()`**: A new Server Actions-only API for refreshing uncached data only, without touching the cache.
+- **Async Params & Cookies (Breaking Change)**: Properties like `params`, `searchParams`, `cookies()`, `headers()`, and `draftMode()` MUST be accessed asynchronously.
+  - *Wrong:* `const id = params.id;`
+  - *Right:* `const { id } = await params;`
 
-## 4. Routing and Navigation
-- **`next/link` View Transitions**: The `<Link>` component now accepts a `transitionTypes` prop (e.g., `transitionTypes={['slide']}`) to trigger different animations based on navigation direction.
-- **Layout Deduplication**: Shared layouts are downloaded only once during prefetching.
-- **Incremental Prefetching**: Only parts not already in the cache are prefetched.
+- **Parallel Routes**: All parallel route slots (e.g., `@modal`) now require explicit `default.js` or `default.tsx` files. Builds will fail without them.
 
-## 5. Development & Tooling
-- **Turbopack**: Now the default bundler for all Next.js projects.
-- **Filesystem Caching**: `turbopackFileSystemCacheForDev: true` caches compiler artifacts on disk for significantly faster restarts.
-- **Bundle Analyzer**: Use `next experimental-analyze` for an interactive UI to inspect production bundles.
-- **Node.js Debugger**: Use `next dev --inspect` and `next start --inspect` to attach the Node.js debugger.
-- **DevTools MCP**: Integrated Model Context Protocol for AI agents to access routing, caching, unified logs, and detailed stack traces.
+## 2. Caching: Cache Components & New APIs
 
-## 6. Error Handling
-- **New Default Error Page**: Built-in 500 error page is redesigned.
-- **Hydration Diff Indicator**: Error overlay explicitly shows `+ Client / - Server` diffs for hydration mismatches.
-- **`unstable_catchError()`**: Provides granular control of error boundaries at the component level. Catches errors without interfering with framework APIs like `redirect()` or `notFound()`.
-- **`unstable_retry()`**: Available in `error.tsx`. It calls `router.refresh()` and `reset()` within a `startTransition()` to refetch data and re-render the segment from the server.
+- **Cache Components (Opt-in)**: Caching is entirely opt-in now. All dynamic code is executed at request time by default.
+  - Enabled via `cacheComponents: true` in `next.config.ts` (replacing the old `experimental.ppr` and `experimental.dynamicIO` flags).
+  - Use the `"use cache"` directive to cache pages, components, and functions, generating cache keys automatically via the compiler.
 
-## 7. Breaking Changes & Deprecations
+- **Refined Caching APIs**:
+  - **`revalidateTag(tag, profile)`**: Now requires a `cacheLife` profile as the second argument (e.g., `'max'`, `'hours'`) for stale-while-revalidate (SWR) behavior.
+  - **`updateTag(tag)`**: A new Server Actions-only API providing **read-your-writes** semantics (expires and immediately reads fresh data within the same request).
+  - **`refresh()`**: A new Server Actions-only API for refreshing **uncached** data only, without touching the server cache.
+
+## 3. Routing and Navigation Enhancements
+
+- **Enhanced Routing**:
+  - **Layout Deduplication**: Shared layouts are downloaded only once during prefetching.
+  - **Incremental Prefetching**: Only parts not already in the cache are prefetched. Cancels requests when links leave the viewport.
+  - **`experimental.prefetchInlining`**: Bundles all segment data for a route into a single response, reducing prefetch requests.
+- **View Transitions (React 19.2)**: The `<Link>` component accepts a `transitionTypes` prop (e.g., `<Link href="/about" transitionTypes={['slide']}>`) to trigger animations based on direction.
+- **Multiple Icon Formats**: Multiple icon files (e.g., `icon.png` and `icon.svg`) with the same base name are handled automatically for browser fallback support.
+
+## 4. Development Experience (DX) & Tooling
+
+- **Turbopack (Stable & Default)**: Now the default bundler for all Next.js projects.
+  - Up to 2-5x faster production builds and ~400% faster `next dev` Time-to-URL startup.
+  - **Filesystem Caching (Stable)**: Compiler artifacts are stored on disk for significantly faster compile times on restart (~10x faster).
+- **Next.js Bundle Analyzer**: Run `next experimental-analyze` for an interactive UI to inspect production bundles, filter by route, and trace imports.
+- **Next.js DevTools MCP**: Model Context Protocol integration allows AI agents to access routing, caching behavior, unified logs, and detailed stack traces directly.
+- **Easier Debugging**: Pass `--inspect` to `next dev` AND `next start` to easily attach the Node.js debugger.
+- **Server Function Logging**: Dev terminal logs Server Function execution, showing the function name, arguments, execution time, and file location.
+- **Hydration Diff Indicator**: Hydration mismatch errors now explicitly show `+ Client / - Server` diffs.
+- **Error Causes in Dev Overlay**: The error overlay displays `Error.cause` chains up to 5 levels deep.
+- **External Dependencies**: Turbopack automatically handles transitive external dependencies in `serverExternalPackages` without warnings.
+
+## 5. Error Handling & Recovery
+
+- **New Default Error Page**: The built-in 500 error page shown in production has been redesigned.
+- **`unstable_catchError()`**: Provides granular control of error boundaries at the component level. It integrates with Next.js out of the box, meaning it safely bypasses framework errors like `redirect()` and `notFound()`.
+- **`unstable_retry()`**: Available via props in the `error.tsx` convention. It provides built-in retry logic by calling `router.refresh()` and `reset()` within a `startTransition()` to refetch data and re-render the segment from the server.
+
+## 6. Performance Improvements
+
+- **Faster Rendering (RSC)**: Server Components payload deserialization is up to 350% faster, leading to 25% to 60% faster rendering to HTML in real-world apps.
+- **React Compiler (Stable)**: Enabled via `reactCompiler: true` in `next.config.ts`. Automatically memoizes components, reducing re-renders with zero manual code changes.
+- **ImageResponse**: Generating images (like OG images) is 2x to 20x faster. It includes improved CSS/SVG coverage and now uses Geist Sans as the default font.
+
+## 7. Breaking Changes & Removals
+
 - **Minimum Requirements**: Node.js 20.9.0+ and TypeScript 5.1.0+.
-- **Sync Params/Cookies**: `params`, `searchParams`, `cookies()`, `headers()`, and `draftMode()` MUST be accessed asynchronously (e.g., `await params`).
-- **`next/image` Default Sizes**: The `minimumCacheTTL` defaults to 4 hours (14400s). `16` is removed from default `imageSizes`.
-- **Linting**: `next build` no longer runs linting by default. Use ESLint directly.
-- **Parallel Routes**: All parallel route slots now require explicit `default.js` files.
-
----
-**Note to AI Agents**: When implementing new features, always refer to these Next.js 16.x paradigms, especially regarding `proxy.ts` for auth routing and `use cache` + `updateTag()` for Firestore integrations.
+- **Linting**: `next build` no longer runs linting by default. Use ESLint or Biome directly.
+- **Removals**: AMP support and `experimental.ppr` have been completely removed.
+- **`next/image` Defaults**: 
+  - `minimumCacheTTL` changed from 60s to 4 hours (14400s).
+  - The `16` size was removed from default `imageSizes`.
+  - `images.qualities` defaults to `[75]`.
+  - Security restriction blocks local IP optimization by default (`images.dangerouslyAllowLocalIP`).
+- **Build Adapters API**: Stable API for deployment platforms to modify Next.js configuration or process build outputs.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 import { ArrowRight } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
@@ -33,13 +34,13 @@ const AdminPage = () => (
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" role="list">
         {NAV_ITEMS.map(({ label, href }) => (
           <li key={href}>
-            <a
+            <Link
               href={href}
               className="flex items-center justify-between px-5 py-4 bg-brand-surface border border-brand-border rounded-brand-lg text-text-primary text-sm font-medium hover:border-brand-border-strong hover:bg-brand-surface-light transition-colors duration-150"
             >
               <span>{label}</span>
               <ArrowRight size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 import { DICTIONARY } from "@/constants/dictionary";
 
@@ -19,7 +19,7 @@ const proxy = async (request: NextRequest) => {
   }
 
   try {
-    await adminAuth.verifySessionCookie(session, true);
+    await getAdminAuth().verifySessionCookie(session, true);
     return NextResponse.next();
 
   } catch (error) {
@@ -30,6 +30,11 @@ const proxy = async (request: NextRequest) => {
 
     return response;
   }
+};
+
+
+export const config = {
+  matcher: ['/admin/:path*'],
 };
 
 export default proxy;

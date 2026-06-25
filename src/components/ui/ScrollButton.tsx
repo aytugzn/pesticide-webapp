@@ -4,6 +4,7 @@ import { ReactNode, ButtonHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 import { CLICK_EFFECT } from "@/constants/ui";
 import { buttonVariants, buttonSizes, type ButtonVariant, type ButtonSize } from "@/components/ui/Button";
+import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 
 type ScrollButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   targetId: string;
@@ -16,6 +17,7 @@ type ScrollButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 /**
  * A client component button that smoothly scrolls to a specified target section
  * without changing the URL hash (better for SEO and history).
+ * Includes robust user-interruptible requestAnimationFrame logic.
  */
 export const ScrollButton = ({
   children,
@@ -27,6 +29,8 @@ export const ScrollButton = ({
   ...props
 }: ScrollButtonProps) => {
 
+  const scrollTo = useSmoothScroll();
+
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
@@ -34,7 +38,7 @@ export const ScrollButton = ({
       onClick(e);
     }
 
-    document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+    scrollTo(targetId);
   };
 
   const classes = cn(

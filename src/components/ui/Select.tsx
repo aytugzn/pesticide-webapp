@@ -73,7 +73,7 @@ export const Select = ({
         <label htmlFor={id} className="text-sm font-bold text-text-primary">
           {label}{" "}
           {optionalText && (
-            <span className="font-normal text-text-muted">{optionalText}</span>
+            <span className="block sm:inline font-normal text-text-muted">{optionalText}</span>
           )}
         </label>
       )}

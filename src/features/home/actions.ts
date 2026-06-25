@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebase-admin";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
 import type { ActionResponse } from "@/types";
 import { DICTIONARY } from "@/constants/dictionary";
@@ -10,8 +10,8 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
 
   try {
     const [sliderSnap, reviewsSnap] = await Promise.all([
-      adminDb.collection("settings").doc("heroSlider").get(),
-      adminDb.collection("settings").doc("reviews").get()
+      getAdminDb().collection("settings").doc("heroSlider").get(),
+      getAdminDb().collection("settings").doc("reviews").get()
     ]);
 
     let slides: HeroSlideDoc[] = [];

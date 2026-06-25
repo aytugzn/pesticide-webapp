@@ -17,6 +17,7 @@ export const ROUTES = {
   pestBase: "/hasere",
   regionBase: "/bolge",
   regions: "/bolgeler",
+  certificates: "/izinler-sertifikalar",
   
   // Legal
   privacy: "/gizlilik-politikasi",

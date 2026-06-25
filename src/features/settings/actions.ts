@@ -1,7 +1,7 @@
-import { adminDb } from "@/lib/firebase-admin";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
 import { DICTIONARY } from "@/constants/dictionary";
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { SETTINGS_ERRORS, type SettingsErrorCode, type GlobalData } from "./types";
 
@@ -15,9 +15,9 @@ export const getGlobalData = async (): Promise<GlobalData> => {
 
   try {
     const [pestsSnap, regionsSnap, settingsSnap] = await Promise.all([
-      adminDb.collection("pests").where("isActive", "==", true).get(),
-      adminDb.collection("regions").where("isActive", "==", true).get(),
-      adminDb.collection("settings").doc("general").get(),
+      getAdminDb().collection("pests").where("isActive", "==", true).get(),
+      getAdminDb().collection("regions").where("isActive", "==", true).get(),
+      getAdminDb().collection("settings").doc("general").get(),
     ]);
 
     return {
@@ -38,7 +38,7 @@ export const getGlobalData = async (): Promise<GlobalData> => {
 export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, SettingsErrorCode>> => {
   try {
     // 1. Get current settings to find googlePlaceId
-    const settingsDoc = await adminDb.collection("settings").doc("general").get();
+    const settingsDoc = await getAdminDb().collection("settings").doc("general").get();
     
     if (!settingsDoc.exists) {
       return { success: false, error: SETTINGS_ERRORS.SETTINGS_NOT_FOUND };
@@ -86,7 +86,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
     const reviewCount = data.userRatingCount?.toString() || "0";
 
     // 3. Update Firestore with new data
-    await adminDb.collection("settings").doc("general").set({
+    await getAdminDb().collection("settings").doc("general").set({
       googleStats: {
         rating,
         reviewCount,
@@ -94,8 +94,8 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
       }
     }, { merge: true });
 
-    // 4. Purge the global-data cache so the frontend sees the new data
-    updateTag("global-data");
+    // 4. NOTE: Deliberately skipping updateTag("global-data") here.
+    // Revalidation will be handled by a global "Publish" button later.
 
     return { success: true };
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { createSession } from "../actions";
 import { AUTH_ERRORS } from "../types";
 import { LogIn } from "lucide-react";
@@ -33,13 +33,13 @@ export const LoginForm = () => {
 
     try {
       const provider = new GoogleAuthProvider();
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(getFirebaseAuth(), provider);
       const idToken = await credential.user.getIdToken();
       const result = await createSession(idToken);
 
       if (!result.success) {
         if (result.error === AUTH_ERRORS.UNAUTHORIZED_EMAIL) {
-          await signOut(auth);
+          await signOut(getFirebaseAuth());
         }
         setError(DICTIONARY.auth.login.error);
         return;

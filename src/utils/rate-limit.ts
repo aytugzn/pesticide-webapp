@@ -9,7 +9,14 @@
  * @returns `true` if the request is allowed, `false` if blocked
  */
 
-const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
+const globalForRateLimit = globalThis as unknown as {
+  rateLimitMap: Map<string, { count: number; lastReset: number }>;
+};
+
+const rateLimitMap = globalForRateLimit.rateLimitMap || new Map<string, { count: number; lastReset: number }>();
+if (process.env.NODE_ENV !== "production") {
+  globalForRateLimit.rateLimitMap = rateLimitMap;
+}
 
 export const rateLimit = (ip: string, limit: number, windowMs: number): boolean => {
   const now = Date.now();
