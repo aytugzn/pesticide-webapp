@@ -13,9 +13,10 @@ import {
   REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   DEFAULT_PHONE,
 } from "@/constants/ui";
-import type { RegionDoc, SettingsDoc, PestDoc } from "@/types";
+import type { SettingsDoc } from "@/types";
 import type { GoogleReviewDoc, HeroSlideDoc } from "@/features/home/types";
 import { getHomeData } from "@/features/home/actions";
+import { getGlobalData } from "@/features/settings/actions";
 import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 
 export const metadata: Metadata = {
@@ -31,15 +32,18 @@ const DEFAULT_SETTINGS: SettingsDoc = {
 };
 
 const HomePage = async () => {
-  const homeDataResponse = await getHomeData();
+  const [homeDataResponse, globalData] = await Promise.all([
+    getHomeData(),
+    getGlobalData(),
+  ]);
 
   let slides: HeroSlideDoc[] = [];
-  let pests: PestDoc[] = [];
   let customReviews: GoogleReviewDoc[] = [];
   let viewAllReviewsUrl: string = "#";
-  let settings: SettingsDoc = DEFAULT_SETTINGS;
-
-  let regions: RegionDoc[] = [];
+  
+  const pests = globalData.pests || [];
+  const regions = globalData.regions || [];
+  const settings = globalData.settings || DEFAULT_SETTINGS;
 
   if (!homeDataResponse.success) {
     console.error(
@@ -49,11 +53,8 @@ const HomePage = async () => {
   } else if (homeDataResponse.data) {
     const d = homeDataResponse.data;
     slides = d.slides;
-    pests = d.pests;
-    regions = d.regions;
     customReviews = d.customReviews;
     viewAllReviewsUrl = d.viewAllReviewsUrl;
-    settings = d.settings || DEFAULT_SETTINGS;
   }
 
   // Read Google Places data directly from settings (Database single source of truth)

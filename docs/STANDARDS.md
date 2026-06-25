@@ -85,6 +85,7 @@ We have a centralized, highly strict error handling architecture.
   - `camelCase.ts` for utility/action files (`formatDate.ts`)
 - **Variables**: `camelCase` for variables and functions.
 - **Functions**: DO NOT use `function foo() {}`. ALL functions, components, and utilities MUST be declared as ES6 Arrow Functions (`const foo = () => {}`).
+- **Imports**: ALL imports MUST be declared explicitly at the very top of the file. DO NOT use inline dynamic imports for types (e.g., `import("@/types").MyType`).
 - **Exports**: ALL named exports MUST be inline (`export const foo = ...`). DO NOT group exports at the bottom of the file (`export { foo };`). *Exception:* Next.js required default exports (`export default`) for pages and layouts.
 - **Constants**: `SCREAMING_SNAKE_CASE` for global constants (`DEFAULT_SETTINGS`, `ROUTES`).
 - **Interfaces**: `PascalCase` with `Doc` suffix for Firestore models (`PestDoc`, `HeroSlideDoc`).

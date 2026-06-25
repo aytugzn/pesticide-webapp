@@ -32,8 +32,4 @@ const proxy = async (request: NextRequest) => {
   }
 };
 
-export const config = {
-  matcher: ["/admin/:path*"],
-};
-
 export default proxy;

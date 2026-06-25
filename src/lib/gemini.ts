@@ -2,17 +2,23 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AppError } from "./exceptions";
 
-const apiKey = process.env.GEMINI_API_KEY;
+let cachedModel: ReturnType<typeof GoogleGenerativeAI.prototype.getGenerativeModel> | null = null;
 
-if (!apiKey) {
-  throw new AppError(DICTIONARY.systemErrors.env.gemini, "ENV_MISSING");
-}
+export const getGeminiModel = () => {
+  if (cachedModel) return cachedModel;
 
-const genAI = new GoogleGenerativeAI(apiKey);
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new AppError(DICTIONARY.systemErrors.env.gemini, "ENV_MISSING");
+  }
 
-export const geminiModel = genAI.getGenerativeModel({
-  model: DICTIONARY.gemini.model,
-});
+  const genAI = new GoogleGenerativeAI(apiKey);
+  cachedModel = genAI.getGenerativeModel({
+    model: DICTIONARY.gemini.model,
+  });
+
+  return cachedModel;
+};
 
 /**
  * Builds a strictly formatted prompt for Gemini AI to generate SEO content.

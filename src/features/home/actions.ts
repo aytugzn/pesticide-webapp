@@ -2,7 +2,6 @@ import { adminDb } from "@/lib/firebase-admin";
 import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
 import type { ActionResponse } from "@/types";
 import { DICTIONARY } from "@/constants/dictionary";
-import { getGlobalData } from "@/features/settings/actions";
 import { cacheTag } from "next/cache";
 
 export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorCode>> => {
@@ -10,8 +9,6 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
   cacheTag("home-data");
 
   try {
-    const { pests, regions, settings } = await getGlobalData();
-
     const [sliderSnap, reviewsSnap] = await Promise.all([
       adminDb.collection("settings").doc("heroSlider").get(),
       adminDb.collection("settings").doc("reviews").get()
@@ -49,9 +46,6 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
       success: true,
       data: {
         slides,
-        settings,
-        pests,
-        regions,
         customReviews,
         viewAllReviewsUrl
       }

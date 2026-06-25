@@ -78,6 +78,7 @@ export const ReviewCard = ({
           }
           className={`block cursor-pointer ${containerClasses}`}
           aria-hidden="true"
+          tabIndex={-1}
         >
           {content}
         </div>

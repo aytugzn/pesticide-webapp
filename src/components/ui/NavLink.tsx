@@ -18,7 +18,7 @@ export const NavLink = ({
   activeClassName = "text-brand-primary" 
 }: NavLinkProps) => {
   const pathname = usePathname();
-  const isActive = pathname === href || (pathname?.startsWith(href) && href !== "/");
+  const isActive = pathname === href || (href !== "/" && pathname?.startsWith(`${href}/`));
 
   return (
     <Link 
