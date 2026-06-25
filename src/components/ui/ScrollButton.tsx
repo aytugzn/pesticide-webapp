@@ -39,7 +39,7 @@ export const ScrollButton = ({
 
   const classes = cn(
     variant !== "unstyled" && [
-      "inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+      "inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
       CLICK_EFFECT,
     ],
     buttonVariants[variant],

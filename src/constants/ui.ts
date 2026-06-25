@@ -8,3 +8,4 @@ export const SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK = 4; // seconds
 export const REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK = 40; // seconds
 export const HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK = 5; // seconds
 export const DEFAULT_PHONE = "905000000000";
+export const NAVBAR_SCROLL_THRESHOLD = 400; // pixels (Scroll distance to hide ContactStrip and show NavbarActions)

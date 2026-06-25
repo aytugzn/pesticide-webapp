@@ -15,7 +15,7 @@ export const sanitizePhoneToDigits = (phone: string): string => {
     }
   }
   return result;
-}
+};
 
 /**
  * Generates a WhatsApp API URL (wa.me) using a raw phone number.
@@ -26,7 +26,7 @@ export const sanitizePhoneToDigits = (phone: string): string => {
 export const generateWhatsAppUrl = (phone: string): string => {
   const digits = sanitizePhoneToDigits(phone);
   return `https://wa.me/${digits}`;
-}
+};
 
 /**
  * Generates a Telephone Link (tel:) using a raw phone number.
@@ -37,7 +37,7 @@ export const generateWhatsAppUrl = (phone: string): string => {
 export const generateTelUrl = (phone: string): string => {
   const digits = sanitizePhoneToDigits(phone);
   return `tel:+${digits}`;
-}
+};
 
 /**
  * Formats a phone number input as "0 (5XX) XXX XX XX".
@@ -84,7 +84,7 @@ export const formatTurkishPhoneInput = (value: string): string => {
   }
 
   return formatted;
-}
+};
 
 /**
  * Normalizes any valid Turkish phone into the canonical E.164 format (+905551234567).
@@ -103,4 +103,4 @@ export const normalizeTurkishPhone = (value: string): string => {
     return "+90" + digits;
   }
   return "+" + digits; 
-}
+};

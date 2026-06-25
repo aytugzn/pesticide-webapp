@@ -24,6 +24,7 @@ We have a centralized, highly strict error handling architecture.
 - **No Native Errors**: Do NOT use `throw new Error("message")`. 
 - **`AppError` Class**: All thrown errors must be an instance of `AppError` (`src/lib/exceptions.ts`).
 - **`DICTIONARY` Pattern**: Every single hardcoded text, log message, or error message MUST be pulled from `src/constants/dictionary.ts`. No string literals are allowed.
+- **Check for Duplicates**: Before adding a new text to `DICTIONARY`, ALWAYS check if it already exists. Do not create duplicate texts. Move globally shared text (e.g. copyright) to a common object.
 - **English Logs, Comments & No Emojis**: ALL internal console logs (console.log, console.error, etc.) and ALL inline comments/JSDoc MUST be strictly in English. Emojis are STRICTLY PROHIBITED in logs and comments to maintain a professional and clean codebase.
 - **Structured Logging**: When logging errors with dynamic data, use objects: `console.error(DICTIONARY.systemErrors.apiFailed, { status })`.
 - **Global Boundary**: Unhandled errors are caught by `src/app/global-error.tsx` which uses Next.js 16's `unstable_retry()`.

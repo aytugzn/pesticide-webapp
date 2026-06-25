@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
-
-const SCROLL_THRESHOLD = 400;
+import { NAVBAR_SCROLL_THRESHOLD } from "@/constants/ui";
 
 export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; telUrl: string }) => {
   const [isVisible, setIsVisible] = useState<boolean>(false);
@@ -13,7 +12,7 @@ export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; te
   useEffect(() => {
     const handleScroll = () => {
       // Show buttons after scrolling past the defined threshold
-      setIsVisible(window.scrollY > SCROLL_THRESHOLD);
+      setIsVisible(window.scrollY > NAVBAR_SCROLL_THRESHOLD);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });

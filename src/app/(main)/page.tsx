@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
-import { getGooglePlaceDetails } from "@/lib/google-places";
 import { Hero } from "@/features/home/components/sections/Hero";
 import { ServicesSection } from "@/features/home/components/sections/ServicesSection";
 import { WhyUsSection } from "@/features/home/components/sections/WhyUsSection";
@@ -48,18 +47,17 @@ const HomePage = async () => {
       homeDataResponse.error,
     );
   } else if (homeDataResponse.data) {
-    slides = homeDataResponse.data.slides;
-    pests = homeDataResponse.data.pests;
-    regions = homeDataResponse.data.regions;
-    customReviews = homeDataResponse.data.customReviews;
-    viewAllReviewsUrl = homeDataResponse.data.viewAllReviewsUrl;
-    settings = homeDataResponse.data.settings || DEFAULT_SETTINGS;
+    const d = homeDataResponse.data;
+    slides = d.slides;
+    pests = d.pests;
+    regions = d.regions;
+    customReviews = d.customReviews;
+    viewAllReviewsUrl = d.viewAllReviewsUrl;
+    settings = d.settings || DEFAULT_SETTINGS;
   }
 
-  // Fetch Google Places data
-  const placesResponse = await getGooglePlaceDetails(settings.googlePlaceId);
-  const stats = placesResponse.success ? placesResponse.data?.stats : null;
-  // Placeholder images
+  // Read Google Places data directly from settings (Database single source of truth)
+  const stats = settings.googleStats || null;
 
   const rawPhone = settings.phone || DEFAULT_PHONE;
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
@@ -75,7 +73,8 @@ const HomePage = async () => {
     1000;
 
   return (
-    <main className="flex-1 flex flex-col w-full">
+    // <main> lives in (main)/layout.tsx — this div avoids double-nested <main>
+    <div className="flex-1 flex flex-col w-full">
       <AlternatingSections>
         <Hero
           slides={slides}
@@ -97,7 +96,7 @@ const HomePage = async () => {
       </AlternatingSections>
       {/* Mobile Sticky Bottom Bar (Placed here to escape local z-index stacking contexts) */}
       <StickyMobileActions telUrl={telUrl} whatsappUrl={whatsappUrl} />
-    </main>
+    </div>
   );
 };
 

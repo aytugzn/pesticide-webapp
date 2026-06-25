@@ -17,4 +17,4 @@ export const deepFreeze = <T extends object>(obj: T): T => {
   }
 
   return Object.freeze(obj);
-}
+};

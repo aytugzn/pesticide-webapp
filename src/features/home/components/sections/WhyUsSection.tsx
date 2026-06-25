@@ -53,9 +53,9 @@ export const WhyUsSection = ({
 
           {/* Right: Simple Check List */}
           <div className="space-y-8 md:space-y-10">
-            {data.steps.map((step, index) => (
+            {data.steps.map((step) => (
               <CheckListItem 
-                key={index}
+                key={step.title}
                 title={step.title}
                 description={step.description}
               />

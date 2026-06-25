@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Navbar } from "@/components/layouts/Navbar";
+import { Footer } from "@/components/layouts/Footer";
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
   return (
@@ -8,7 +9,7 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 flex flex-col">
         {children}
       </main>
-      {/* Footer buraya gelecek */}
+      <Footer />
     </div>
   );
 };

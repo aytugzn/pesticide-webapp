@@ -8,11 +8,7 @@ import { createSession } from "../actions";
 import { AUTH_ERRORS } from "../types";
 import { LogIn } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
-
-// Constants
-const ADMIN_PATH = "/admin" as const;
-
-
+import { ROUTES } from "@/constants/routes";
 
 const FIREBASE_ERROR_CODES = {
   popupClosed: "auth/popup-closed-by-user",
@@ -49,7 +45,7 @@ export const LoginForm = () => {
         return;
       }
 
-      router.push(ADMIN_PATH);
+      router.push(ROUTES.admin);
     } catch (err) {
       if (isPopupCancelled(err)) return;
       setError(DICTIONARY.auth.login.error);

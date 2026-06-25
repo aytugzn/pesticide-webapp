@@ -39,7 +39,6 @@ const authDict = {
       badge: "Yönetim Paneli",
       brand: "DMR İlaçlama",
       tagline: "Dezenfeksiyon & Çevre Sağlığı Hizmetleri",
-      copyright: "© {year} DMR İlaçlama. Tüm hakları saklıdır.",
       metadataTitle: "Giriş | DMR İlaçlama",
     }
   }
@@ -147,21 +146,53 @@ const homeDict = {
       error: "Bir hata oluştu, lütfen daha sonra tekrar deneyin veya bizi arayın."
     },
     validation: {
-        nameRequired: "Lütfen adınızı ve soyadınızı girin.",
-        nameMin: "Adınız en az 2 karakter olmalıdır.",
-        nameMax: "Adınız çok uzun, lütfen kontrol edin.",
-        nameInvalid: "Geçerli bir isim giriniz.",
-        phoneRequired: "Lütfen telefon numaranızı girin.",
-        phoneRegex: "Lütfen geçerli bir telefon numarası girin (Sadece rakam, boşluk ve + işareti).",
-        phoneInvalid: "Lütfen telefon numaranızı eksiksiz (10 veya 11 hane) giriniz.",
-        invalidFormat: "Lütfen formdaki hataları düzeltin.",
-        rateLimit: "Çok fazla istek gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin.",
+      nameRequired: "Lütfen adınızı ve soyadınızı girin.",
+      nameMin: "Adınız en az 2 karakter olmalıdır.",
+      nameMax: "Adınız çok uzun, lütfen kontrol edin.",
+      nameInvalid: "Geçerli bir isim giriniz.",
+      phoneRequired: "Lütfen telefon numaranızı girin.",
+      phoneRegex: "Lütfen geçerli bir telefon numarası girin (Sadece rakam, boşluk ve + işareti).",
+      phoneInvalid: "Lütfen telefon numaranızı eksiksiz (10 veya 11 hane) giriniz.",
+      invalidFormat: "Lütfen formdaki hataları düzeltin.",
+      rateLimit: "Çok fazla istek gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin.",
     },
     telegram: {
       template: "🔔 YENİ ARANMA TALEBİ 🔔\n=====================\n👤 Ad Soyad: {name}\n📞 Telefon: {phone}\n🛠️ Hizmet: {service}\n📍 Bölge: {region}\n=====================",
       notSpecified: "Belirtilmedi"
     }
   },
+};
+
+const footerDict = {
+  brand: "DMR İlaçlama",
+  description: "İzmir genelinde Sağlık Bakanlığı onaylı, profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri sunuyoruz.",
+  sections: {
+    corporate: "Kurumsal",
+    services: "Hizmetlerimiz",
+    regions: "Hizmet Bölgeleri",
+    contact: "İletişim",
+  },
+  links: {
+    about: "Hakkımızda",
+    services: "Tüm Hizmetler",
+    contact: "İletişim",
+    certificates: "İzinler & Sertifikalar",
+    privacy: "Gizlilik Politikası",
+    terms: "Kullanım Koşulları",
+    kvkk: "KVKK Aydınlatma Metni",
+  },
+  contact: {
+    address: "İzmir, Karabağlar — 9073. Sk. 15A, 35160",
+    email: "info@dmrilaclama.com",
+    addressAria: "Adresimiz",
+    emailAria: "Bize E-posta Gönderin",
+    phoneAria: "Bizi Arayın",
+  },
+  developer: {
+    title: "Tarafından Geliştirildi",
+    name: "Aytuğ Uzun"
+  }
+
 };
 
 const metaDict = {
@@ -255,11 +286,33 @@ const systemErrorsDict = {
     telegramSend: "Error occurred while sending telegram message",
     telegramConfig: "System configuration error (Logged)",
     tokenVerification: "Token verification error",
+    cronJobFailed: "Cron job execution failed",
+  },
+  telegramReturns: {
+    missingConfig: "Missing Telegram configuration",
+    apiFailed: "Telegram API request failed",
+    networkError: "Network error sending Telegram message",
   }
 };
 
+const cronDict = {
+  responses: {
+    unauthorized: "Unauthorized request",
+    settingsNotFound: "Settings not found in database",
+    success: "Google Places stats updated successfully via cron.",
+    noUpdateNeeded: "No update needed. Time threshold has not passed yet.",
+    internalError: "Internal Server Error",
+  }
+};
+
+const globalDict = {
+  copyright: "© {year} DMR İlaçlama. Tüm hakları saklıdır.",
+};
+
 export const DICTIONARY = deepFreeze({
+  global: globalDict,
   navbar: navbarDict,
+  footer: footerDict,
   auth: authDict,
   home: homeDict,
   meta: metaDict,
@@ -268,4 +321,5 @@ export const DICTIONARY = deepFreeze({
   admin: adminDict,
   globalError: globalErrorDict,
   systemErrors: systemErrorsDict,
+  cron: cronDict,
 } as const);

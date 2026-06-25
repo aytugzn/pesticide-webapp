@@ -15,10 +15,22 @@ export const StickyMobileActions = ({
 
   useEffect(() => {
     const handleScroll = () => {
+      let shouldShow = false;
       const heroButtons = document.getElementById("hero-actions");
+      const footer = document.querySelector("footer");
+
       if (heroButtons) {
-        setIsVisible(heroButtons.getBoundingClientRect().bottom < 0);
+        shouldShow = heroButtons.getBoundingClientRect().bottom < 0;
       }
+
+      if (footer) {
+        // Hide if the footer is entering the viewport
+        if (footer.getBoundingClientRect().top <= window.innerHeight) {
+          shouldShow = false;
+        }
+      }
+
+      setIsVisible(shouldShow);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });

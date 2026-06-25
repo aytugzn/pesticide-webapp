@@ -33,7 +33,7 @@ const LoginPage = () => (
       <div className="relative z-10 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-surface/30" aria-hidden="true" />
         <p className="text-brand-surface/35 text-xs">
-          <CopyrightText text={DICTIONARY.auth.login.page.copyright} />
+          <CopyrightText text={DICTIONARY.global.copyright} />
         </p>
       </div>
     </div>

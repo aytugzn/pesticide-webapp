@@ -30,7 +30,7 @@ const getLayoutSettings = async () => {
     console.error(DICTIONARY.systemErrors.logs.layoutSettingsFetch, error);
     return {};
   }
-}
+};
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const settings = await getLayoutSettings();
@@ -77,7 +77,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
       images: [defaultOgImage],
     },
   };
-}
+};
 
 const RootLayout = ({
   children,

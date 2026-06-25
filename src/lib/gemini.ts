@@ -46,4 +46,4 @@ Generate:
 Return ONLY JSON, nothing else:
 ${DICTIONARY.gemini.jsonFormat}
   `.trim();
-}
+};

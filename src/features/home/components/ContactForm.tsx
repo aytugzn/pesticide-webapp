@@ -133,7 +133,7 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
 
 type ContactFormDict = typeof DICTIONARY.home.contact.form;
 
-function SubmitButton({ dict }: { dict: ContactFormDict }) {
+const SubmitButton = ({ dict }: { dict: ContactFormDict }) => {
   const { pending } = useFormStatus();
 
   return (
@@ -156,4 +156,4 @@ function SubmitButton({ dict }: { dict: ContactFormDict }) {
       )}
     </Button>
   );
-}
+};

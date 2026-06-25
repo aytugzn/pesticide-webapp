@@ -37,7 +37,7 @@ const contactSchema = z.object({
   region: z.string().max(100).optional(),
 });
 
-export async function sendContactForm(formData: FormData): Promise<SendContactResponse> {
+export const sendContactForm = async (formData: FormData): Promise<SendContactResponse> => {
   const parsed = contactSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
@@ -79,4 +79,4 @@ export async function sendContactForm(formData: FormData): Promise<SendContactRe
   }
 
   return { success: true };
-}
+};

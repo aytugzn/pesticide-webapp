@@ -45,7 +45,7 @@ export const MobileMenu = ({
   return (
     <div className="lg:hidden flex items-center">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((prev) => !prev)}
         className="p-3 rounded-md text-text-primary active:bg-foreground/10 transition-colors touch-manipulation"
         aria-label={DICTIONARY.navbar.mobileMenu.openAria}
       >
@@ -64,7 +64,7 @@ export const MobileMenu = ({
           {/* Services Accordion */}
           <div className="flex flex-col border-b border-brand-border pb-4">
             <button
-              onClick={() => setIsServicesOpen(!isServicesOpen)}
+              onClick={() => setIsServicesOpen((prev) => !prev)}
               className="flex items-center justify-between text-sm font-medium text-text-primary py-2 touch-manipulation"
               aria-expanded={isServicesOpen}
               aria-controls="mobile-services-menu"

@@ -10,19 +10,38 @@ import { DICTIONARY } from "@/constants/dictionary";
  */
 export const parseSettingsDoc = (data: unknown): SettingsDoc => {
   if (!data || typeof data !== "object") return {};
-  
+
   const d = data as Record<string, unknown>;
+
   return {
-    phone: d.phone ? String(d.phone) : undefined,
-    defaultOgImage: d.defaultOgImage ? String(d.defaultOgImage) : undefined,
-    heroAutoplayDelay: d.heroAutoplayDelay ? Number(d.heroAutoplayDelay) : undefined,
-    servicesAutoplayDelay: d.servicesAutoplayDelay ? Number(d.servicesAutoplayDelay) : undefined,
-    reviewsAutoplayDelay: d.reviewsAutoplayDelay ? Number(d.reviewsAutoplayDelay) : undefined,
-    googlePlaceId: d.googlePlaceId ? String(d.googlePlaceId) : undefined,
-    instagramUrl: d.instagramUrl ? String(d.instagramUrl) : undefined,
-    facebookUrl: d.facebookUrl ? String(d.facebookUrl) : undefined,
+    phone: typeof d.phone === "string" ? d.phone : undefined,
+    email: typeof d.email === "string" ? d.email : undefined,
+    address: typeof d.address === "string" ? d.address : undefined,
+    workingHours: typeof d.workingHours === "string" ? d.workingHours : undefined,
+    licenseNumber: typeof d.licenseNumber === "string" ? d.licenseNumber : undefined,
+    defaultOgImage: typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
+    heroAutoplayDelay: typeof d.heroAutoplayDelay === "number" ? d.heroAutoplayDelay : undefined,
+    servicesAutoplayDelay: typeof d.servicesAutoplayDelay === "number" ? d.servicesAutoplayDelay : undefined,
+    reviewsAutoplayDelay: typeof d.reviewsAutoplayDelay === "number" ? d.reviewsAutoplayDelay : undefined,
+    googlePlaceId: typeof d.googlePlaceId === "string" ? d.googlePlaceId : undefined,
+    instagramUrl: typeof d.instagramUrl === "string" ? d.instagramUrl : undefined,
+    facebookUrl: typeof d.facebookUrl === "string" ? d.facebookUrl : undefined,
+    googleStats:
+      d.googleStats && typeof d.googleStats === "object"
+        ? {
+            rating: typeof (d.googleStats as Record<string, unknown>).rating === "string" 
+              ? (d.googleStats as Record<string, unknown>).rating as string 
+              : "",
+            reviewCount: typeof (d.googleStats as Record<string, unknown>).reviewCount === "string" 
+              ? (d.googleStats as Record<string, unknown>).reviewCount as string 
+              : "",
+            lastUpdatedAt: typeof (d.googleStats as Record<string, unknown>).lastUpdatedAt === "number" 
+              ? (d.googleStats as Record<string, unknown>).lastUpdatedAt as number 
+              : undefined,
+          }
+        : undefined,
   };
-}
+};
 
 /**
  * Parses and validates raw Firestore data into a PestDoc.
@@ -44,7 +63,7 @@ export const parsePestDoc = (data: unknown): PestDoc => {
     imageUrl: d.imageUrl ? String(d.imageUrl) : undefined,
     isActive: Boolean(d.isActive ?? false),
   };
-}
+};
 
 /**
  * Parses and validates raw Firestore data into a RegionDoc.
@@ -65,7 +84,7 @@ export const parseRegionDoc = (data: unknown): RegionDoc => {
     description: d.description ? String(d.description) : undefined,
     isActive: Boolean(d.isActive ?? false),
   };
-}
+};
 
 /**
  * Robustly extracts and parses JSON from an AI text response.
@@ -107,4 +126,4 @@ export const extractAndParseJson = <T = unknown,>(text: string): T => {
   } catch (error) {
     throw new AppError(`${DICTIONARY.systemErrors.api.jsonParseFailed}${text.substring(0, 100)}...`, "JSON_PARSE_ERROR");
   }
-}
+};

@@ -18,7 +18,7 @@ export const sendTelegramMessage = async (message: string): Promise<TelegramResu
 
   if (!token || !chatId) {
     console.error(sysDict.env.telegram);
-    return { success: false, error: "Missing Telegram configuration", missingConfig: true };
+    return { success: false, error: sysDict.telegramReturns.missingConfig, missingConfig: true };
   }
 
   try {
@@ -36,12 +36,12 @@ export const sendTelegramMessage = async (message: string): Promise<TelegramResu
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       console.error(sysDict.api.telegramFailed, errorData);
-      return { success: false, error: "Telegram API request failed" };
+      return { success: false, error: sysDict.telegramReturns.apiFailed };
     }
 
     return { success: true };
   } catch (error) {
     console.error(sysDict.logs.telegramSend, error);
-    return { success: false, error: "Network error sending Telegram message" };
+    return { success: false, error: sysDict.telegramReturns.networkError };
   }
 };

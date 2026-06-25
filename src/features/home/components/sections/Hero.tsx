@@ -56,7 +56,8 @@ export const Hero = ({
               <Button
                 href={telUrl}
                 variant="outline"
-                className="!rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 justify-center bg-brand-surface"
+                size="none"
+                className="rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 inline-flex items-center justify-center gap-2 transition-all duration-200 bg-brand-surface"
               >
                 <Phone
                   className="w-4 h-4 mr-1.5 flex-shrink-0"
@@ -70,7 +71,8 @@ export const Hero = ({
               <Button
                 href={whatsappUrl}
                 variant="success"
-                className="!rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 justify-center border border-whatsapp/50 dark:border-whatsapp/30"
+                size="none"
+                className="rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 inline-flex items-center justify-center gap-2 transition-all duration-200 border border-whatsapp/50 dark:border-whatsapp/30"
                 external
               >
                 <MessageCircle
@@ -85,7 +87,8 @@ export const Hero = ({
               <ScrollButton
                 targetId="contact"
                 variant="primary"
-                className="!rounded-full col-span-2 lg:col-span-1 px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-md hover:shadow-xl shadow-brand-primary/20 lg:flex-1 justify-center"
+                size="none"
+                className="rounded-full col-span-2 lg:col-span-1 px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-md hover:shadow-xl shadow-brand-primary/20 lg:flex-1 inline-flex items-center justify-center gap-2 transition-all duration-200"
               >
                 <PhoneCall
                   className="w-4 h-4 mr-1.5 flex-shrink-0"

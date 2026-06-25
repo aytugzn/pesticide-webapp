@@ -17,6 +17,11 @@ export const ROUTES = {
   pestBase: "/hasere",
   regionBase: "/bolge",
   regions: "/bolgeler",
+  
+  // Legal
+  privacy: "/gizlilik-politikasi",
+  terms: "/kullanim-kosullari",
+  kvkk: "/kvkk-aydinlatma-metni",
 } as const;
 
 export const SESSION_COOKIE_NAME = "admin_session" as const;

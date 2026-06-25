@@ -56,9 +56,7 @@ export const Select = ({
   const handleSelect = (value: string) => {
     setSelectedValue(value);
     setIsOpen(false);
-    if (onChange) {
-      onChange(value);
-    }
+    onChange?.(value);
   };
 
   return (

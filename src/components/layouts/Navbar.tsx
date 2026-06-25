@@ -7,11 +7,12 @@ import { ChevronDown, Bug, MapPin } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { MobileMenu } from "./MobileMenu";
 import { NavbarActions } from "./NavbarActions";
+import { NavbarContactStrip } from "./NavbarContactStrip";
 import { MegaMenuColumn } from "./MegaMenuColumn";
 import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
 import logoImg from "@/../public/dmr.svg";
 import { type PestDoc, type RegionDoc, type SettingsDoc } from "@/types";
-import { getGlobalData } from "@/lib/global-data";
+import { getGlobalData } from "@/features/settings/actions";
 
 export const Navbar = async () => {
   let pests: PestDoc[] = [];
@@ -112,6 +113,14 @@ export const Navbar = async () => {
           <NavbarActions whatsappUrl={whatsappUrl} telUrl={telUrl} />
         </div>
       </div>
+      
+      {/* Scroll-aware Top Strip for Contact Info */}
+      <NavbarContactStrip 
+        phone={rawPhone} 
+        phoneHref={telUrl}
+        workingHours={settings.workingHours}
+        email={settings.email}
+      />
     </header>
   );
 };

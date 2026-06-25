@@ -8,7 +8,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import type { RegionDoc, PestDoc, CombinationDoc } from "@/types";
 
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dmrilaclama.com";
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${baseUrl}/`,                     priority: 1.0, changeFrequency: "weekly" },

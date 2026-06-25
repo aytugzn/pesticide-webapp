@@ -48,8 +48,9 @@ export const GoogleReviewsSection = ({
           <div className="mt-12 flex justify-center">
             <Button
               variant="outline"
+              size="none"
               href={viewAllUrl}
-              className="rounded-full px-8 py-6 font-bold shadow-sm"
+              className="rounded-full px-8 py-4 md:py-5 font-bold shadow-sm"
               external
             >
               {DICTIONARY.home.googleReviews.viewAllButton}
