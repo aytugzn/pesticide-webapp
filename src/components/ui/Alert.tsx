@@ -3,7 +3,7 @@ import { CheckCircle2, AlertCircle, Info } from "lucide-react";
 
 type AlertVariant = "success" | "error" | "info";
 
-interface AlertProps {
+type AlertProps = {
   variant?: AlertVariant;
   message: string;
   className?: string;

@@ -22,7 +22,8 @@ export const NavLink = ({
 
   return (
     <Link 
-      href={href} 
+      href={href}
+      aria-current={isActive ? "page" : undefined} 
       className={`text-sm font-medium transition-colors ${
         isActive ? activeClassName : "text-text-primary hover:text-brand-primary"
       } ${className}`}

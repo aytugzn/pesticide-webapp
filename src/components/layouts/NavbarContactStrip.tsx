@@ -1,8 +1,4 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { Phone, Clock, Mail } from "lucide-react";
-import { NAVBAR_SCROLL_THRESHOLD } from "@/constants/ui";
 
 type NavbarContactStripProps = {
   phone?: string;
@@ -17,30 +13,12 @@ export const NavbarContactStrip = ({
   workingHours,
   email,
 }: NavbarContactStripProps) => {
-  const [isVisible, setIsVisible] = useState(true);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Hide strip after scrolling past the defined threshold
-      setIsVisible(window.scrollY <= NAVBAR_SCROLL_THRESHOLD);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Check initial state
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   if (!phone && !workingHours && !email) return null;
 
   return (
-    <div
-      className={`hidden md:block bg-brand-primary/10 overflow-hidden transition-all duration-500 ease-in-out ${
-        isVisible ? "max-h-6 opacity-100" : "max-h-0 opacity-0"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-6">
-        <div className="flex items-center justify-between h-full text-xs font-semibold text-brand-primary">
+    <div className="hidden md:block bg-brand-primary/10 border-b border-brand-border/40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 w-full">
+        <div className="flex items-center justify-between text-xs font-semibold text-brand-primary">
           <div className="flex items-center gap-6">
             {phone && (
               <a

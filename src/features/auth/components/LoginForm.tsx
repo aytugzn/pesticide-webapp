@@ -6,9 +6,10 @@ import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { createSession } from "../actions";
 import { AUTH_ERRORS } from "../types";
-import { LogIn } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
+import { Button } from "@/components/ui/Button";
+import { GoogleIcon } from "@/components/ui/Icons";
 
 const FIREBASE_ERROR_CODES = {
   popupClosed: "auth/popup-closed-by-user",
@@ -56,32 +57,36 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5 w-full">
       {error && (
         <div
-          className="bg-error-bg border border-error-border text-error-text rounded-brand-md px-4 py-3 text-sm"
+          className="bg-error-bg/50 border border-error-border text-error-text rounded-xl px-4 py-3.5 text-sm font-medium animate-in fade-in slide-in-from-top-2"
           role="alert"
         >
           {error}
         </div>
       )}
 
-      <button
+      <Button
+        variant="unstyled"
+        size="none"
         id="google-login-btn"
         type="button"
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="flex items-center justify-center gap-3 w-full px-5 py-3.5 bg-brand-surface border border-brand-border-strong text-text-primary rounded-brand-md text-sm font-medium shadow-xs cursor-pointer hover:bg-brand-primary-light hover:border-brand-border-strong transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="group relative flex items-center justify-center gap-3 w-full px-5 py-3.5 bg-brand-surface text-text-primary border border-brand-border rounded-xl text-sm font-semibold shadow-sm hover:shadow-md hover:border-brand-primary/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
       >
         {loading ? (
-          <span>{DICTIONARY.auth.login.loadingButton}</span>
+          <div className="flex items-center gap-2">
+            <span>{DICTIONARY.auth.login.loadingButton}</span>
+          </div>
         ) : (
           <>
-            <LogIn className="w-5 h-5"  aria-hidden="true" />
+            <GoogleIcon className="w-4 h-4" />
             <span>{DICTIONARY.auth.login.button}</span>
           </>
         )}
-      </button>
+      </Button>
     </div>
   );
 };

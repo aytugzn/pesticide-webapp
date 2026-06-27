@@ -4,8 +4,6 @@ import { useState } from "react";
 import {
   Menu,
   ChevronDown,
-  Bug,
-  MapPin,
   Phone,
   MessageCircle,
   PhoneCall,
@@ -13,11 +11,10 @@ import {
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { ScrollButton } from "@/components/ui/ScrollButton";
-import { NAVBAR_DROPDOWN_MAX_ITEMS } from "@/constants/ui";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import { MegaMenuColumn } from "./MegaMenuColumn";
+import { MegaMenuColumns } from "./MegaMenuColumns";
 import type { PestDoc, RegionDoc } from "@/types";
 
 type MobileMenuProps = {
@@ -44,13 +41,15 @@ export const MobileMenu = ({
 
   return (
     <div className="lg:hidden flex items-center">
-      <button
+      <Button
+        variant="unstyled"
+        size="none"
         onClick={() => setIsOpen((prev) => !prev)}
         className="p-3 rounded-md text-text-primary active:bg-foreground/10 transition-colors touch-manipulation"
         aria-label={DICTIONARY.navbar.mobileMenu.openAria}
       >
         <Menu className="w-6 h-6 pointer-events-none" aria-hidden="true" />
-      </button>
+      </Button>
 
       <Drawer
         isOpen={isOpen}
@@ -63,9 +62,11 @@ export const MobileMenu = ({
         >
           {/* Services Accordion */}
           <div className="flex flex-col border-b border-brand-border pb-4">
-            <button
+            <Button
+              variant="unstyled"
+              size="none"
               onClick={() => setIsServicesOpen((prev) => !prev)}
-              className="flex items-center justify-between text-sm font-medium text-text-primary py-2 touch-manipulation"
+              className="flex items-center justify-between text-sm font-medium text-text-primary py-2 touch-manipulation w-full"
               aria-expanded={isServicesOpen}
               aria-controls="mobile-services-menu"
             >
@@ -74,7 +75,7 @@ export const MobileMenu = ({
                 className={`w-4 h-4 transition-transform duration-300 ${isServicesOpen ? "rotate-180" : ""}`}
                 aria-hidden="true"
               />
-            </button>
+            </Button>
 
             <div
               id="mobile-services-menu"
@@ -82,32 +83,11 @@ export const MobileMenu = ({
             >
               <div className="overflow-hidden">
                 <div className="flex flex-col pl-4 pt-2 space-y-6">
-                  <MegaMenuColumn
+                  <MegaMenuColumns
+                    pests={pests}
+                    regions={regions}
                     variant="mobile"
-                    title={DICTIONARY.navbar.columns.pests}
-                    icon={Bug}
-                    items={pests}
-                    emptyStateMessage={DICTIONARY.navbar.emptyStates.pests}
-                    baseRoute={ROUTES.pestBase}
-                    itemIcon={Bug}
                     onItemClick={closeMenu}
-                    maxItems={NAVBAR_DROPDOWN_MAX_ITEMS}
-                    viewAllText={DICTIONARY.navbar.columns.viewAllPests}
-                    viewAllRoute={ROUTES.services}
-                  />
-
-                  <MegaMenuColumn
-                    variant="mobile"
-                    title={DICTIONARY.navbar.columns.regions}
-                    icon={MapPin}
-                    items={regions}
-                    emptyStateMessage={DICTIONARY.navbar.emptyStates.regions}
-                    baseRoute={ROUTES.regionBase}
-                    itemIcon={MapPin}
-                    onItemClick={closeMenu}
-                    maxItems={NAVBAR_DROPDOWN_MAX_ITEMS}
-                    viewAllText={DICTIONARY.navbar.columns.viewAllRegions}
-                    viewAllRoute={ROUTES.regions}
                   />
                 </div>
               </div>

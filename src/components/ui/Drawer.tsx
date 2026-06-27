@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { cn } from "@/utils/cn";
+import { Button } from "@/components/ui/Button";
 
 type DrawerProps = {
   isOpen: boolean;
@@ -64,13 +65,14 @@ export const Drawer = ({
         {title && (
           <div className="flex items-center justify-between p-6 border-b border-brand-border/50 shrink-0">
             <span className="font-heading font-bold text-lg text-text-primary">{title}</span>
-            <button 
+            <Button 
+              variant="unstyled" size="none"
               onClick={onClose} 
               className="p-2 -mr-2 text-text-primary rounded-md active:bg-foreground/10 transition-colors touch-manipulation"
               aria-label={closeAriaLabel}
             >
               <X className="w-6 h-6" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
         )}
 

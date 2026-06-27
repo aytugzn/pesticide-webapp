@@ -1,9 +1,11 @@
 import React from "react";
 
+// Reduced blur intensity and removed complex blends for performance
 const STYLES = {
   sectionWrapper: "relative w-full overflow-hidden",
-  blob: "absolute top-0 left-1/2 -translate-x-1/2 -mt-32 w-full max-w-5xl h-96 bg-brand-primary/5 rounded-full blur-3xl pointer-events-none z-0",
-  divider: "absolute top-0 left-1/2 -translate-x-1/2 w-4/5 max-w-5xl h-px bg-gradient-to-r from-transparent via-brand-primary/10 to-transparent pointer-events-none z-0",
+  blob: "absolute top-0 left-1/2 -translate-x-1/2 -mt-32 w-full max-w-3xl h-64 bg-brand-primary/5 rounded-full blur-2xl pointer-events-none z-0",
+  divider:
+    "absolute top-0 left-1/2 -translate-x-1/2 w-4/5 max-w-5xl h-px bg-gradient-to-r from-transparent via-brand-primary/10 to-transparent pointer-events-none z-0",
 } as const;
 
 type AlternatingSectionsProps = {
@@ -11,9 +13,9 @@ type AlternatingSectionsProps = {
   wrapperClassName?: string;
   blobClassName?: string;
   dividerClassName?: string;
-}
+};
 
-export const AlternatingSections = ({ 
+export const AlternatingSections = ({
   children,
   wrapperClassName = STYLES.sectionWrapper,
   blobClassName = STYLES.blob,
@@ -26,15 +28,13 @@ export const AlternatingSections = ({
 
         return (
           <div className={wrapperClassName}>
-            <div className="relative z-10 w-full">
-              {child}
-            </div>
+            <div className="relative z-10 w-full">{child}</div>
 
-            {/* Spotlight effect hitting the last section (Reviews) */}
+            {/* Subtle highlight for the last section instead of expensive mix-blend */}
             {isLast && (
-              <div 
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl aspect-square bg-brand-primary/10 rounded-full blur-3xl pointer-events-none z-0 mix-blend-screen" 
-                aria-hidden="true" 
+              <div
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg aspect-square bg-brand-primary/5 rounded-full blur-2xl pointer-events-none z-0"
+                aria-hidden="true"
               />
             )}
 

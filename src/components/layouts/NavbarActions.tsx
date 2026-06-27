@@ -11,8 +11,15 @@ export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; te
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show buttons after scrolling past the defined threshold
-      setIsVisible(window.scrollY > NAVBAR_SCROLL_THRESHOLD);
+      const currentScrollY = window.scrollY;
+      
+      // Use hysteresis (deadband) to prevent infinite loop flickering
+      // when the sticky header's height changes.
+      if (currentScrollY > NAVBAR_SCROLL_THRESHOLD) {
+        setIsVisible(true);
+      } else if (currentScrollY < NAVBAR_SCROLL_THRESHOLD - 50) {
+        setIsVisible(false);
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -34,9 +41,9 @@ export const NavbarActions = ({ whatsappUrl, telUrl }: { whatsappUrl: string; te
         external
         aria-label={DICTIONARY.social.whatsapp.aria}
       >
-        <MessageCircle className="w-5 h-5"  aria-hidden="true" />
+        <MessageCircle className="w-5 h-5" aria-hidden="true" />
       </Button>
-      
+
       <Button 
         href={telUrl} 
         variant="primary"

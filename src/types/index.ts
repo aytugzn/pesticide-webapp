@@ -21,7 +21,7 @@ export type SettingsDoc = {
   };
 };
 
-export type CombinationDoc = { region: string; pest: string; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; ogImage?: string; isActive?: boolean; };
+export type CombinationDoc = { region: string; pest: string; regionName?: string; pestName?: string; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; ogImage?: string; isActive?: boolean; };
 
 export type ActionResponse<T = void, E = string> =
   | { success: true; data?: T }

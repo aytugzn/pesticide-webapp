@@ -1,4 +1,4 @@
-import type { PestDoc, RegionDoc, SettingsDoc } from "@/types";
+import type { PestDoc, RegionDoc, SettingsDoc, CombinationDoc } from "@/types";
 import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 
@@ -82,6 +82,45 @@ export const parseRegionDoc = (data: unknown): RegionDoc => {
     name: String(d.name || ""),
     slug: String(d.slug || ""),
     description: d.description ? String(d.description) : undefined,
+    isActive: Boolean(d.isActive ?? false),
+  };
+};
+
+/**
+ * Parses and validates raw Firestore data into a CombinationDoc.
+ * Ensures default values for required fields and safely parses the FAQ array.
+ * 
+ * @param data - Raw data from Firestore
+ * @returns Type-safe CombinationDoc object
+ */
+export const parseCombinationDoc = (data: unknown): CombinationDoc => {
+  if (!data || typeof data !== "object") {
+    return { region: "", pest: "", isActive: false };
+  }
+
+  const d = data as Record<string, unknown>;
+
+  let faq: { question: string; answer: string }[] | undefined;
+  if (Array.isArray(d.faq)) {
+    faq = d.faq
+      .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+      .map((item) => ({
+        question: String(item.question || ""),
+        answer: String(item.answer || ""),
+      }));
+  }
+
+  return {
+    region: String(d.region || ""),
+    pest: String(d.pest || ""),
+    regionName: d.regionName ? String(d.regionName) : undefined,
+    pestName: d.pestName ? String(d.pestName) : undefined,
+    title: d.title ? String(d.title) : undefined,
+    h1: d.h1 ? String(d.h1) : undefined,
+    metaDesc: d.metaDesc ? String(d.metaDesc) : undefined,
+    content: d.content ? String(d.content) : undefined,
+    faq,
+    ogImage: d.ogImage ? String(d.ogImage) : undefined,
     isActive: Boolean(d.isActive ?? false),
   };
 };

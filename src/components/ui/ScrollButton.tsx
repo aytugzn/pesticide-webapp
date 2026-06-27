@@ -1,9 +1,8 @@
 "use client";
 
 import { ReactNode, ButtonHTMLAttributes } from "react";
-import { cn } from "@/utils/cn";
-import { CLICK_EFFECT } from "@/constants/ui";
-import { buttonVariants, buttonSizes, type ButtonVariant, type ButtonSize } from "@/components/ui/Button";
+
+import { Button, type ButtonVariant, type ButtonSize } from "@/components/ui/Button";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 
 type ScrollButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -41,19 +40,15 @@ export const ScrollButton = ({
     scrollTo(targetId);
   };
 
-  const classes = cn(
-    variant !== "unstyled" && [
-      "inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
-      CLICK_EFFECT,
-    ],
-    buttonVariants[variant],
-    buttonSizes[size],
-    className
-  );
-
   return (
-    <button onClick={handleClick} className={classes} {...props}>
+    <Button 
+      variant={variant}
+      size={size}
+      className={className}
+      onClick={handleClick} 
+      {...props}
+    >
       {children}
-    </button>
+    </Button>
   );
 };

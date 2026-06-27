@@ -2,60 +2,65 @@ import { LoginForm } from "@/features/auth/components/LoginForm";
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { CopyrightText } from "@/components/ui/CopyrightText";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
+import logoImg from "@/../public/dmr_logo.svg";
 
 export const metadata: Metadata = {
   title: DICTIONARY.auth.login.page.metadataTitle,
   robots: { index: false, follow: false },
 };
 
+const ICON_SIZE = 16;
+
 const LoginPage = () => (
-  <main className="min-h-screen flex">
+  <main className="min-h-screen relative flex items-center justify-center bg-surface-neutral px-4">
+    {/* Back Button */}
+    <div className="absolute top-6 left-6 z-20">
+      <Link
+        href={ROUTES.home}
+        className="flex items-center gap-2 text-sm font-medium text-text-muted hover:text-text-primary transition-colors"
+      >
+        <ArrowLeft size={ICON_SIZE} aria-hidden="true" />
+        {DICTIONARY.admin.dashboard.backToSite}
+      </Link>
+    </div>
 
-    {/* Left Panel: Brand */}
-    <div className="hidden lg:flex lg:w-1/2 bg-brand-primary flex-col justify-between p-14 relative overflow-hidden">
-
-      {/* Decorative Circles */}
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-brand-surface/5 pointer-events-none" aria-hidden="true" />
-      <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full bg-brand-surface/5 pointer-events-none" aria-hidden="true" />
-
-      <div className="relative z-10">
-        <p className="text-brand-surface/50 text-xs font-medium tracking-widest uppercase mb-16">
-          {DICTIONARY.auth.login.page.badge}
-        </p>
-        <p className="font-heading font-bold text-brand-surface text-5xl leading-snug mb-5">
-          {DICTIONARY.auth.login.page.brand}
-        </p>
-        <p className="text-brand-surface/60 text-lg font-light leading-relaxed max-w-xs">
-          {DICTIONARY.auth.login.page.tagline}
+    <div className="w-full max-w-md bg-brand-surface rounded-2xl border border-brand-border shadow-sm overflow-hidden flex flex-col">
+      {/* Top section with Logo */}
+      <div className="pt-10 pb-6 px-8 flex flex-col items-center border-b border-brand-border/50 bg-brand-surface-light/30">
+        <div className="w-48 h-auto mb-6 relative">
+          <Image
+            src={logoImg}
+            alt={DICTIONARY.navbar.logo.alt}
+            width={300}
+            height={100}
+            className="w-full h-auto object-contain"
+            priority
+          />
+        </div>
+        <h1 className="text-xl font-bold text-text-primary text-center">
+          {DICTIONARY.auth.login.title}
+        </h1>
+        <p className="text-sm text-text-secondary mt-1.5 text-center">
+          {DICTIONARY.auth.login.subtitle}
         </p>
       </div>
 
-      <div className="relative z-10 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-brand-surface/30" aria-hidden="true" />
-        <p className="text-brand-surface/35 text-xs">
+      {/* Form Section */}
+      <div className="p-8">
+        <LoginForm />
+      </div>
+
+      {/* Footer */}
+      <div className="px-8 pb-6 text-center">
+        <p className="text-xs text-text-muted">
           <CopyrightText text={DICTIONARY.global.copyright} />
         </p>
       </div>
     </div>
-
-    {/* Login Cart */}
-    <div className="flex-1 flex items-center justify-center px-8 py-12 bg-background">
-      <div className="w-full max-w-sm">
-
-        <div className="bg-brand-surface border border-brand-border rounded-brand-lg p-8 shadow-sm">
-          <div className="mb-8 text-center space-y-2">
-            <h1 className="text-2xl font-bold font-heading text-text-primary tracking-tight">
-              {DICTIONARY.auth.login.title}
-            </h1>
-            <p className="text-sm text-text-secondary">
-              {DICTIONARY.auth.login.subtitle}
-            </p>
-          </div>
-          <LoginForm />
-        </div>
-      </div>
-    </div>
-
   </main>
 );
 

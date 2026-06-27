@@ -1,51 +1,89 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ROUTES } from "@/constants/routes";
-import { ArrowRight } from "lucide-react";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { DICTIONARY } from "@/constants/dictionary";
+import { Map, Bug, Sparkles } from "lucide-react";
+import { connection } from "next/server";
+import { StatCard } from "@/features/dashboard/components/StatCard";
+import { SystemStatusCard } from "@/features/dashboard/components/SystemStatusCard";
 
 export const metadata: Metadata = {
-  title: "Dashboard | DMR İlaçlama Yönetim Paneli",
+  title: `Dashboard | ${DICTIONARY.global.brand} ${DICTIONARY.admin.dashboard.subtitle}`,
   robots: { index: false, follow: false },
 };
 
-const NAV_ITEMS = [
-  { label: DICTIONARY.admin.dashboard.menu.regions,       href: ROUTES.adminRegions },
-  { label: DICTIONARY.admin.dashboard.menu.pests,      href: ROUTES.adminPests },
-  { label: DICTIONARY.admin.dashboard.menu.combinations, href: ROUTES.adminCombinations },
-  { label: DICTIONARY.admin.dashboard.menu.reports,       href: ROUTES.adminReports },
-  { label: DICTIONARY.admin.dashboard.menu.messages,       href: ROUTES.adminMessages },
-  { label: DICTIONARY.admin.dashboard.menu.reviews,       href: ROUTES.adminReviews },
-  { label: DICTIONARY.admin.dashboard.menu.settings,        href: ROUTES.adminSettings },
-] as const;
+const getDashboardStats = async () => {
+  await connection();
+  const db = getAdminDb();
+  const [regions, pests, combinations] = await Promise.all([
+    db.collection("regions").count().get(),
+    db.collection("pests").count().get(),
+    db.collection("combinations").count().get(),
+  ]);
 
-const AdminPage = () => (
-  <main className="min-h-screen bg-background p-8">
-    <header className="mb-10 border-b border-brand-border pb-6">
-      <p className="text-text-muted text-xs font-medium tracking-widest uppercase mb-1">
-        {DICTIONARY.admin.dashboard.subtitle}
-      </p>
-      <h1 className="font-heading font-bold text-text-primary text-3xl">
-        {DICTIONARY.admin.dashboard.title}
-      </h1>
-    </header>
+  return {
+    regions: regions.data().count,
+    pests: pests.data().count,
+    combinations: combinations.data().count,
+  };
+};
 
-    <nav aria-label={DICTIONARY.admin.dashboard.navAria}>
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" role="list">
-        {NAV_ITEMS.map(({ label, href }) => (
-          <li key={href}>
-            <Link
-              href={href}
-              className="flex items-center justify-between px-5 py-4 bg-brand-surface border border-brand-border rounded-brand-lg text-text-primary text-sm font-medium hover:border-brand-border-strong hover:bg-brand-surface-light transition-colors duration-150"
-            >
-              <span>{label}</span>
-              <ArrowRight size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
-            </Link>
-          </li>
+export default async function AdminPage() {
+  const stats = await getDashboardStats();
+  const d = DICTIONARY.admin.dashboard;
+
+  const cards = [
+    {
+      title: d.stats.totalRegions,
+      value: stats.regions,
+      icon: Map,
+      colorClass: "text-info-text",
+      bgClass: "bg-info-bg",
+    },
+    {
+      title: d.stats.totalPests,
+      value: stats.pests,
+      icon: Bug,
+      colorClass: "text-error-text",
+      bgClass: "bg-error-bg",
+    },
+    {
+      title: d.stats.totalCombinations,
+      value: stats.combinations,
+      icon: Sparkles,
+      colorClass: "text-brand-primary",
+      bgClass: "bg-brand-primary/10",
+    },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="font-heading font-bold text-text-primary text-3xl tracking-tight">
+          {d.title}
+        </h1>
+        <p className="text-text-muted mt-1">
+          {d.subtitle}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {cards.map((card, index) => (
+          <StatCard
+            key={index}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            colorClass={card.colorClass}
+            bgClass={card.bgClass}
+          />
         ))}
-      </ul>
-    </nav>
-  </main>
-);
 
-export default AdminPage;
+        {/* System Status Card */}
+        <SystemStatusCard 
+          title={d.stats.systemStatus} 
+          statusLabel={d.stats.active} 
+        />
+      </div>
+    </div>
+  );
+}

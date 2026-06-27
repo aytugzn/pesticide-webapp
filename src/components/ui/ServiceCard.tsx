@@ -11,6 +11,8 @@ type ServiceCardProps = {
   className?: string;
 }
 
+const ICON_SIZE = 20;
+
 export const ServiceCard = ({
   variant = "default",
   href,
@@ -36,7 +38,7 @@ export const ServiceCard = ({
         </h3>
         
         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-surface/20 flex items-center justify-center flex-shrink-0 group-hover:translate-x-2 transition-transform duration-300 relative z-10">
-          <ArrowRight size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
+          <ArrowRight size={ICON_SIZE} className="sm:w-6 sm:h-6" aria-hidden="true" />
         </div>
       </Link>
     );
@@ -57,7 +59,7 @@ export const ServiceCard = ({
       
       {/* Icon */}
       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-surface shadow-sm text-brand-primary flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-brand-primary group-hover:text-brand-surface transition-all duration-300 relative z-10">
-        <Bug size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
+        <Bug size={ICON_SIZE} className="sm:w-6 sm:h-6" aria-hidden="true" />
       </div>
       
       {/* Text */}

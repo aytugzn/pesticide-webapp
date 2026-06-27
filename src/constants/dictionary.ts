@@ -40,8 +40,8 @@ const authDict = {
       brand: "DMR İlaçlama",
       tagline: "Dezenfeksiyon & Çevre Sağlığı Hizmetleri",
       metadataTitle: "Giriş | DMR İlaçlama",
-    }
-  }
+    },
+  },
 };
 
 const socialDict = {
@@ -68,9 +68,11 @@ const homeDict = {
     tagline: "Profesyonel İlaçlama ve Dezenfeksiyon Hizmetleri",
     titleLine1: "Bir Adım Önde,",
     titleLine2: "Güvenle Adım Atın",
-    description1: "İşletmenizi veya evinizi zararlı böceklerden ve haşerelerden",
+    description1:
+      "İşletmenizi veya evinizi zararlı böceklerden ve haşerelerden",
     description2: "korumak için profesyonel ve garantili çözümler sunuyoruz.",
-    description3: "Zararlıların kabusunuz olmasına izin vermeyin. Hemen bizimle iletişime geçin.",
+    description3:
+      "Zararlıların kabusunuz olmasına izin vermeyin. Hemen bizimle iletişime geçin.",
   },
   googleStats: {
     businessName: "DMR İLAÇLAMA",
@@ -82,7 +84,8 @@ const homeDict = {
   },
   googleReviews: {
     title: "Müşterilerimiz Ne Diyor?",
-    description: "Google Haritalar üzerinden işletmemize yapılan gerçek ve doğrulanmış müşteri yorumları.",
+    description:
+      "Google Haritalar üzerinden işletmemize yapılan gerçek ve doğrulanmış müşteri yorumları.",
     viewAllButton: "Tüm Yorumları Google'da Gör",
     ariaStars: "5 yıldızlı müşteri memnuniyeti",
     ariaRating: "yıldızlı değerlendirme",
@@ -92,42 +95,51 @@ const homeDict = {
     title: "Hizmetlerimiz",
     titlePrefix: "Garantili ",
     titleHighlight: "Çözümler",
-    description: "İzmir genelinde sunduğumuz profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri.",
+    description:
+      "İzmir genelinde sunduğumuz profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri.",
     viewDetails: "İncele",
-    defaultPestDesc: "Sağlık Bakanlığı onaylı ve garantili yöntemlerle, alanınıza özel profesyonel ilaçlama çözümleri sunuyoruz.",
+    defaultPestDesc:
+      "Sağlık Bakanlığı onaylı ve garantili yöntemlerle, alanınıza özel profesyonel ilaçlama çözümleri sunuyoruz.",
     viewAllServices: "Tüm Hizmetlerimizi Görüntüle",
-    viewAllServicesDesc: "Haşere ve kemirgen türlerine yönelik sunduğumuz diğer tüm profesyonel hizmetleri inceleyin.",
+    viewAllServicesDesc:
+      "Haşere ve kemirgen türlerine yönelik sunduğumuz diğer tüm profesyonel hizmetleri inceleyin.",
     pestTitleSuffix: "İlaçlama",
   },
   whyUs: {
     title: "Nasıl Çalışırız?",
     titlePrefix: "Farkımız ",
     titleHighlight: "ve Kalitemiz",
-    description: "İzmir genelinde müşteri memnuniyeti odaklı çalışıyor, sorunu geçici değil kalıcı olarak çözüyoruz.",
+    description:
+      "İzmir genelinde müşteri memnuniyeti odaklı çalışıyor, sorunu geçici değil kalıcı olarak çözüyoruz.",
     steps: [
       {
         title: "Ücretsiz Keşif & Analiz",
-        description: "Mekanı inceliyor, böcek veya kemirgen türünü tespit ederek en doğru müdahale yöntemini belirliyoruz.",
+        description:
+          "Mekanı inceliyor, böcek veya kemirgen türünü tespit ederek en doğru müdahale yöntemini belirliyoruz.",
       },
       {
         title: "Sağlık Bakanlığı Onaylı İlaçlar",
-        description: "İnsan ve evcil hayvan sağlığına zarar vermeyen, kokusuz ve çevre dostu biyosidal ürünler kullanıyoruz.",
+        description:
+          "İnsan ve evcil hayvan sağlığına zarar vermeyen, kokusuz ve çevre dostu biyosidal ürünler kullanıyoruz.",
       },
       {
         title: "Garantili ve Kesin Çözüm",
-        description: "Sadece var olanları değil, yuvaları da hedef alarak %100 kalıcı koruma sağlıyoruz.",
+        description:
+          "Sadece var olanları değil, yuvaları da hedef alarak %100 kalıcı koruma sağlıyoruz.",
       },
       {
         title: "7/24 Kesintisiz Destek",
-        description: "Uygulama sonrası da sizi yalnız bırakmıyor, her türlü sorunuz için hızlı destek veriyoruz.",
-      }
-    ]
+        description:
+          "Uygulama sonrası da sizi yalnız bırakmıyor, her türlü sorunuz için hızlı destek veriyoruz.",
+      },
+    ],
   },
   contact: {
     title: "BİZ SİZİ ARAYALIM",
     titlePrefix: "Ücretsiz",
     titleHighlight: "Keşif ve Danışma",
-    description: "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
+    description:
+      "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
     form: {
       name: "Adınız Soyadınız",
       namePlaceholder: "Örn: Ahmet Demir",
@@ -143,7 +155,8 @@ const homeDict = {
       submit: "Hemen Aranma Talebi Oluştur",
       submitting: "Gönderiliyor...",
       success: "Talebiniz başarıyla alındı! En kısa sürede aranacaksınız.",
-      error: "Bir hata oluştu, lütfen daha sonra tekrar deneyin veya bizi arayın."
+      error:
+        "Bir hata oluştu, lütfen daha sonra tekrar deneyin veya bizi arayın.",
     },
     validation: {
       nameRequired: "Lütfen adınızı ve soyadınızı girin.",
@@ -151,21 +164,26 @@ const homeDict = {
       nameMax: "Adınız çok uzun, lütfen kontrol edin.",
       nameInvalid: "Geçerli bir isim giriniz.",
       phoneRequired: "Lütfen telefon numaranızı girin.",
-      phoneRegex: "Lütfen geçerli bir telefon numarası girin (Sadece rakam, boşluk ve + işareti).",
-      phoneInvalid: "Lütfen telefon numaranızı eksiksiz (10 veya 11 hane) giriniz.",
+      phoneRegex:
+        "Lütfen geçerli bir telefon numarası girin (Sadece rakam, boşluk ve + işareti).",
+      phoneInvalid:
+        "Lütfen telefon numaranızı eksiksiz (10 veya 11 hane) giriniz.",
       invalidFormat: "Lütfen formdaki hataları düzeltin.",
-      rateLimit: "Çok fazla istek gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin.",
+      rateLimit:
+        "Çok fazla istek gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin.",
     },
     telegram: {
-      template: "🔔 YENİ ARANMA TALEBİ 🔔\n=====================\n👤 Ad Soyad: {name}\n📞 Telefon: {phone}\n🛠️ Hizmet: {service}\n📍 Bölge: {region}\n=====================",
-      notSpecified: "Belirtilmedi"
-    }
+      template:
+        "🔔 YENİ ARANMA TALEBİ 🔔\n=====================\n👤 Ad Soyad: {name}\n📞 Telefon: {phone}\n🛠️ Hizmet: {service}\n📍 Bölge: {region}\n=====================",
+      notSpecified: "Belirtilmedi",
+    },
   },
 };
 
 const footerDict = {
   brand: "DMR İlaçlama",
-  description: "İzmir genelinde Sağlık Bakanlığı onaylı, profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri sunuyoruz.",
+  description:
+    "İzmir genelinde Sağlık Bakanlığı onaylı, profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri sunuyoruz.",
   sections: {
     corporate: "Kurumsal",
     services: "Hizmetlerimiz",
@@ -190,16 +208,25 @@ const footerDict = {
   },
   developer: {
     title: "Tarafından Geliştirildi",
-    name: "Aytuğ Uzun"
-  }
-
+    name: "Aytuğ Uzun",
+  },
 };
 
 const metaDict = {
   default: {
     title: "İzmir Profesyonel Böcek & Haşere İlaçlama | DMR",
-    description: "İzmir'de Sağlık Bakanlığı onaylı ruhsatlı ilaçlar ile profesyonel böcek ve haşere ilaçlama. Eviniz ve iş yeriniz için garantili çözümler. Hemen arayın!",
-    keywords: ["böcek ilaçlama", "izmir böcek ilaçlama", "haşere ilaçlama", "fare ilaçlama", "pire ilaçlama", "apartman ilaçlama", "dmr ilaçlama", "profesyonel ilaçlama"],
+    description:
+      "İzmir'de Sağlık Bakanlığı onaylı ruhsatlı ilaçlar ile profesyonel böcek ve haşere ilaçlama. Eviniz ve iş yeriniz için garantili çözümler. Hemen arayın!",
+    keywords: [
+      "böcek ilaçlama",
+      "izmir böcek ilaçlama",
+      "haşere ilaçlama",
+      "fare ilaçlama",
+      "pire ilaçlama",
+      "apartman ilaçlama",
+      "dmr ilaçlama",
+      "profesyonel ilaçlama",
+    ],
     author: "DMR İlaçlama",
     publisher: "DMR İlaçlama",
     alt: "DMR İlaçlama",
@@ -214,17 +241,25 @@ const metaDict = {
       fallback: "/og-image.png",
       width: 1200,
       height: 630,
-    }
-  }
+    },
+  },
 };
 
 const geminiDict = {
-  model: "gemini-2.0-flash",
+  model: "gemini-3.5-flash",
   outputLanguage: "Turkish",
-  jsonFormat: '{ "title": "...", "h1": "...", "metaDesc": "...", "content": "...", "faq": [{"question": "...", "answer": "..."}] }',
+  jsonFormat:
+    '{ "title": "...", "h1": "...", "metaDesc": "...", "content": "...", "faq": [{"question": "...", "answer": "..."}] }',
+  promptExamples: {
+    duration: "30-45 minutes",
+    generalAnswer:
+      "Süre, alanın büyüklüğüne ve istilanın durumuna göre değişiklik gösterir. Detaylı bilgi için uzmanlarımızla iletişime geçebilirsiniz.",
+    aboutCompanyHeading: "Neden",
+  },
 };
 
 const adminDict = {
+  ownerShortcut: "DMR",
   dashboard: {
     title: "DMR İlaçlama",
     subtitle: "Yönetim Paneli",
@@ -237,11 +272,27 @@ const adminDict = {
       messages: "Mesajlar",
       reviews: "Yorumlar",
       settings: "Ayarlar",
-    }
+    },
+    stats: {
+      totalRegions: "Toplam Bölge",
+      totalPests: "Toplam Haşere",
+      totalCombinations: "Oluşturulan Sayfa",
+      systemStatus: "Sistem Durumu",
+      active: "Sistem Aktif",
+    },
+    logout: "Çıkış Yap",
+    backToSite: "Siteye Dön",
+    sidebarToggle: "Menüyü Aç/Kapat",
   },
   regions: {
     title: "Bölgeler Yönetimi",
-    description: "İzmir ilçelerini ve hizmet bölgelerini buradan yönetebilirsiniz.",
+    description:
+      "İzmir ilçelerini ve hizmet bölgelerini buradan yönetebilirsiniz.",
+    previewModalTitle: "Canlı Önizleme Modu",
+    previewModalDesc: "Bu ekran içeriğin canlı sitede nasıl görüneceğini simüle eder.",
+    previewClose: "Önizlemeyi Kapat",
+    placeholderRegion: "Bölge",
+    placeholderPest: "Haşere",
     addRegion: "Yeni Bölge Ekle",
     editRegion: "Bölge Düzenle",
     formName: "Bölge Adı (Örn: Bornova)",
@@ -265,7 +316,7 @@ const adminDict = {
       actions: "İşlemler",
       active: "Aktif",
       passive: "Pasif",
-    }
+    },
   },
   pests: {
     title: "Haşereler Yönetimi",
@@ -285,11 +336,12 @@ const adminDict = {
       actions: "İşlemler",
       active: "Aktif",
       passive: "Pasif",
-    }
+    },
   },
   combinations: {
     title: "Kombinasyonlar (Yapay Zeka)",
-    description: "Bölge ve haşere eşleşmelerine özel SEO odaklı içerikleri Gemini AI ile üretip yönetin.",
+    description:
+      "Bölge ve haşere eşleşmelerine özel SEO odaklı içerikleri Gemini AI ile üretip yönetin.",
     generatorTitle: "Yeni İçerik Üret veya Düzenle",
     selectRegion: "Bölge Seçin",
     selectRegionEmpty: "-- Bölge Seç --",
@@ -302,18 +354,32 @@ const adminDict = {
     formH1: "H1 (Sayfa Ana Başlığı)",
     formMeta: "Meta Description (Arama Motoru Açıklaması)",
     formContent: "Sayfa İçeriği",
-    faqTitle: "Sıkça Sorulan Sorular (FAQ)",
+    faqTitle: "Sıkça Sorulan Sorular (SSS)",
     faqQ: "Soru",
     faqA: "Cevap",
+    previewMissingH1: "H1 girilmedi.",
+    missingFaqQuestion: "Soru {n}",
+    missingFaqAnswer: "Cevap girilmedi.",
     isActive: "Sayfayı Yayına Al (Aktif)",
     saveBtn: "İçeriği Kaydet",
     savingBtn: "Kaydediliyor...",
     tableTitle: "Üretilmiş Kombinasyonlar",
     tableEmpty: "Henüz üretilmiş kombinasyon bulunamadı.",
     errorRequired: "Lütfen bir bölge ve bir haşere seçin.",
-    successGen: "İçerik başarıyla üretildi! Aşağıdan düzenleyip kaydedebilirsiniz.",
+    successGen:
+      "İçerik başarıyla üretildi! Aşağıdan düzenleyip kaydedebilirsiniz.",
     successSave: "Kombinasyon başarıyla kaydedildi.",
+    errorSave: "Kombinasyon kaydedilirken bir hata oluştu.",
     successLoad: "Mevcut içerik yüklendi.",
+    draftRestored: "Kaydedilmemiş taslağınız otomatik olarak geri yüklendi.",
+    errorDefault: "Bir hata oluştu. Lütfen tekrar deneyin.",
+    delete: "Sil",
+    deleteConfirm: "Bu kombinasyonu silmek istediğinize emin misiniz?",
+    previewBtn: "Önizleme",
+    tooltipGenerate: "Bölge ve böcek seçerek AI ile SEO içeriği üretir",
+    tooltipRegenerate: "İçeriği sıfırlayıp baştan yeni içerik üretir",
+    tooltipPreview: "Sayfada nasıl görüneceğini test edin",
+    tooltipSave: "Değişiklikleri veritabanına kaydeder ve yayına alır",
     table: {
       region: "Bölge",
       pest: "Haşere",
@@ -321,7 +387,18 @@ const adminDict = {
       actions: "İşlemler",
       active: "Aktif",
       passive: "Pasif",
-    }
+      view: "Görüntüle",
+    },
+  },
+  tinymce: {
+    bold: "Kalın",
+    italic: "İtalik",
+    heading2: "H2 Başlık",
+    heading3: "H3 Başlık",
+    bulletList: "Madde İşaretli Liste",
+    orderedList: "Numaralı Liste",
+    undo: "Geri Al",
+    redo: "İleri Al",
   },
   reviews: {
     title: "Müşteri Yorumları",
@@ -335,29 +412,34 @@ const adminDict = {
     save: "Değişiklikleri Kaydet",
     saving: "Kaydediliyor...",
     cancel: "İptal",
-  }
+  },
 };
 
 const globalErrorDict = {
   title: "Bir Şeyler Ters Gitti",
-  description: "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin veya daha sonra tekrar ziyaret edin.",
+  description:
+    "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenilemeyi deneyin veya daha sonra tekrar ziyaret edin.",
   buttons: {
     retry: "Tekrar Dene",
     home: "Ana Sayfaya Dön",
-  }
+  },
 };
 
 const systemErrorsDict = {
   env: {
-    firebaseClient: "CRITICAL ERROR: Firebase client environment variables are missing!",
+    firebaseClient:
+      "CRITICAL ERROR: Firebase client environment variables are missing!",
     firebaseAdmin: "CRITICAL ERROR: Firebase Admin .env variables are missing!",
     gemini: "CRITICAL ERROR: GEMINI_API_KEY environment variable is missing.",
-    googlePlaces: "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
-    telegram: "CRITICAL ERROR: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing.",
+    googlePlaces:
+      "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
+    telegram:
+      "CRITICAL ERROR: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing.",
   },
   api: {
     googlePlacesFailed: "Google Places API request failed",
-    googlePlacesNoData: "Google Places API warning: No valid data found in response",
+    googlePlacesNoData:
+      "Google Places API warning: No valid data found in response",
     jsonParseFailed: "Failed to extract JSON from AI response. Raw text: ",
     telegramFailed: "Telegram API Error",
   },
@@ -385,12 +467,15 @@ const systemErrorsDict = {
     deleteCombination: "Error deleting combination",
     aiGeneration: "AI Generation Error",
     sitemapGeneration: "Sitemap generation failed",
+    logout: "Error occurred during logout process",
+    draftParse: "Error parsing saved draft data",
+    generateStaticParams: "Error generating static params",
   },
   telegramReturns: {
     missingConfig: "Missing Telegram configuration",
     apiFailed: "Telegram API request failed",
     networkError: "Network error sending Telegram message",
-  }
+  },
 };
 
 const cronDict = {
@@ -400,11 +485,18 @@ const cronDict = {
     success: "Google Places stats updated successfully via cron.",
     noUpdateNeeded: "No update needed. Time threshold has not passed yet.",
     internalError: "Internal Server Error",
-  }
+  },
 };
 
 const globalDict = {
   copyright: "© {year} DMR İlaçlama. Tüm hakları saklıdır.",
+  city: "İzmir",
+  brand: "DMR İlaçlama",
+  siteUrl: "https://dmrilaclama.com",
+  breadcrumb: "Sayfa Yolu",
+  overview: "Genel Bakış",
+  faqTitle: "Sıkça Sorulan Sorular",
+  loading: "Yükleniyor...",
 };
 
 export const DICTIONARY = deepFreeze({

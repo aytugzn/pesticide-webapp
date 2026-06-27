@@ -15,6 +15,7 @@ export type ButtonVariant =
   | "primary"
   | "outline"
   | "success"
+  | "danger"
   | "icon"
   | "unstyled";
 export type ButtonSize = "sm" | "md" | "lg" | "icon" | "none";
@@ -42,6 +43,7 @@ export const buttonVariants: Record<ButtonVariant, string> = {
   outline:
     "border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-surface",
   success: "bg-success-bg text-success-text hover:bg-success-border",
+  danger: "bg-error-text text-brand-surface hover:opacity-90 shadow-sm",
   icon: "bg-whatsapp/15 text-whatsapp hover:bg-whatsapp/25",
   unstyled: "",
 };

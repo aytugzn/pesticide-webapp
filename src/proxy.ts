@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebase-admin";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 import { DICTIONARY } from "@/constants/dictionary";
+import { AUTH_ERRORS } from "@/features/auth/types";
 
 const ADMIN_ROUTES = ROUTES.admin;
 
@@ -19,7 +20,13 @@ const proxy = async (request: NextRequest) => {
   }
 
   try {
-    await getAdminAuth().verifySessionCookie(session, true);
+    const decodedClaims = await getAdminAuth().verifySessionCookie(session, true);
+    
+    const allowedEmail = process.env.ADMIN_EMAIL || "";
+    if (decodedClaims.email !== allowedEmail) {
+      throw new Error(AUTH_ERRORS.UNAUTHORIZED_EMAIL);
+    }
+
     return NextResponse.next();
 
   } catch (error) {
