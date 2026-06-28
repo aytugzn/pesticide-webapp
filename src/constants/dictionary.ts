@@ -177,6 +177,14 @@ const homeDict = {
       template:
         "🔔 YENİ ARANMA TALEBİ 🔔\n=====================\n👤 Ad Soyad: {name}\n📞 Telefon: {phone}\n🛠️ Hizmet: {service}\n📍 Bölge: {region}\n=====================",
       notSpecified: "Belirtilmedi",
+      callButton: "📞 Hemen Ara",
+      resolveButton: "✅ Arandı / Kapat",
+      resolvedMessage: "✅ Bu talep işlenmiştir. Müşteri arandı.",
+      dbErrorMessage: "⚠️ Müşteri arandı ancak veritabanından bilgi güncellenemedi. Lütfen işlemi admin sayfasından kontrol edin.",
+      dbErrorAlert: "Veritabanı hatası! Lütfen admin paneline bakın.",
+    },
+    contactRequest: {
+      pendingLimitReached: "Aktif iletişim talepleriniz işlenme aşamasında. Lütfen bekleyin.",
     },
   },
 };
@@ -454,6 +462,10 @@ const systemErrorsDict = {
     telegramConfig: "System configuration error (Logged)",
     tokenVerification: "Token verification error",
     cronJobFailed: "Cron job execution failed",
+    contactRequestSave: "Error saving contact request to Firestore",
+    contactRequestResolve: "Error resolving contact request",
+    webhookSecret: "Telegram webhook secret mismatch — request rejected",
+    webhookInvalid: "Telegram webhook received an unrecognized payload",
     fetchRegions: "Error fetching regions",
     createRegion: "Error creating region",
     updateRegion: "Error updating region",

@@ -26,3 +26,19 @@ export type CombinationDoc = { region: string; pest: string; regionName?: string
 export type ActionResponse<T = void, E = string> =
   | { success: true; data?: T }
   | { success: false; error: E; message?: string };
+
+export type ContactRequestStatus = "pending" | "resolved";
+
+export type ContactRequestDoc = {
+  id?: string;
+  ip: string;
+  name: string;
+  phone: string;
+  service?: string;
+  region?: string;
+  status: ContactRequestStatus;
+  createdAt: number;
+  telegramMessageId?: number;
+  telegramChatId?: string;
+};
+

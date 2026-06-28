@@ -4,9 +4,14 @@ import { z } from "zod";
 import { headers } from "next/headers";
 import { DICTIONARY } from "@/constants/dictionary";
 import { formatTemplate } from "@/utils/template";
-import { rateLimit } from "@/utils/rate-limit";
-import { formatTurkishPhoneInput, sanitizePhoneToDigits } from "@/utils/phone";
-import { sendTelegramMessage } from "@/lib/telegram";
+import {
+  formatTurkishPhoneInput,
+  sanitizePhoneToDigits,
+  normalizeTurkishPhone
+} from "@/utils/phone";
+import { sendTelegramContactRequest } from "@/lib/telegram";
+import { getAdminDb } from "@/lib/firebase-admin";
+import type { ContactRequestDoc } from "@/types";
 
 type SendContactResponse = {
   success: boolean;
@@ -15,6 +20,9 @@ type SendContactResponse = {
 
 const uiDict = DICTIONARY.home.contact;
 const sysDict = DICTIONARY.systemErrors;
+
+// Max pending (unresolved) contact requests per IP
+const PENDING_LIMIT = 3;
 
 const contactSchema = z.object({
   name: z.string({
@@ -46,25 +54,38 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
 
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
-  
-  // Rate Limit: max 3 requests per minute
-  const isAllowed = rateLimit(ip, 3, 60000);
-  
-  if (!isAllowed) {
-    return { success: false, error: uiDict.validation.rateLimit };
+
+  const db = getAdminDb();
+  const pendingSnap = await db
+    .collection("contact_requests")
+    .where("ip", "==", ip)
+    .where("status", "==", "pending")
+    .get();
+
+  if (pendingSnap.size >= PENDING_LIMIT) {
+    return { success: false, error: uiDict.contactRequest.pendingLimitReached };
   }
 
   const { name, phone, service, region } = parsed.data;
 
+  // 1. Create an empty document reference (and ID) before saving to Firestore
+  const docRef = db.collection("contact_requests").doc();
+  const requestId = docRef.id;
+
+  // 2. Prepare the message
+  const cleanPhone = normalizeTurkishPhone(phone);
   const message = formatTemplate(uiDict.telegram.template, {
     name,
-    phone,
+    phone: cleanPhone,
+    rawPhone: cleanPhone,
     service: service || uiDict.telegram.notSpecified,
     region: region || uiDict.telegram.notSpecified,
   });
 
-  const result = await sendTelegramMessage(message);
+  // 3. Send to Telegram first
+  const result = await sendTelegramContactRequest(message, requestId);
 
+  // 4. If Telegram fails: return error, do NOT save anything to the database.
   if (!result.success) {
     if (result.missingConfig) {
       if (process.env.NODE_ENV === "production") {
@@ -73,9 +94,26 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
       console.warn(sysDict.logs.telegramConfig);
       return { success: true };
     }
-    
-    // API or network failed
     return { success: false, error: uiDict.form.error };
+  }
+
+  // 5. If Telegram is successful: save to the database using the previously generated ID
+  const requestData: Omit<ContactRequestDoc, "id"> = {
+    ip,
+    name,
+    phone,
+    service: service || "",
+    region: region || "",
+    status: "pending",
+    createdAt: Date.now(),
+    telegramMessageId: result.messageId,
+    telegramChatId: result.chatId,
+  };
+
+  try {
+    await docRef.set(requestData);
+  } catch (error) {
+    console.error(sysDict.logs.contactRequestSave, error);
   }
 
   return { success: true };
