@@ -25,7 +25,19 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
   const [formKey, setFormKey] = useState(0);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhone(formatTurkishPhoneInput(e.target.value));
+    const nativeEvent = e.nativeEvent as any;
+    let val = e.target.value;
+
+    // Fix backspace trap: if user deletes a formatting symbol, manually remove the preceding digit
+    if (nativeEvent.inputType === "deleteContentBackward") {
+      const oldDigits = phone.replace(/\D/g, "");
+      const newDigits = val.replace(/\D/g, "");
+      if (oldDigits === newDigits && newDigits.length > 0) {
+        val = newDigits.slice(0, -1);
+      }
+    }
+
+    setPhone(formatTurkishPhoneInput(val));
   };
 
   const handleFormChange = () => {
@@ -81,6 +93,7 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
             name="phone"
             type="tel"
             label={dict.phone}
+            optionalText={dict.phoneHint}
             placeholder={dict.phonePlaceholder}
             value={phone}
             onChange={handlePhoneChange}
