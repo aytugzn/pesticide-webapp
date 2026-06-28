@@ -57,7 +57,7 @@ export const ReviewsMarquee = ({
 
       {/* Scrolling Track */}
       <div
-        className="flex animate-marquee group-hover:[animation-play-state:paused] w-max"
+        className={`flex group-hover:[animation-play-state:paused] w-max ${mounted ? "animate-marquee" : ""}`}
         style={marqueeStyle}
       >
         {/* We use two exact copies of the blocks. 

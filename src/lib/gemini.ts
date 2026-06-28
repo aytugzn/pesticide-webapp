@@ -1,3 +1,5 @@
+import "server-only";
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AppError } from "./exceptions";

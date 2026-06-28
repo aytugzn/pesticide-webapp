@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 type ModalProps = {
   isOpen: boolean;
@@ -25,17 +25,7 @@ export const Modal = ({
   className,
   closeAriaLabel = DICTIONARY.navbar.mobileMenu.closeAria,
 }: ModalProps) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 

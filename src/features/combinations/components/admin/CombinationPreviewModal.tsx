@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +8,7 @@ import { CombinationHero } from "../public/CombinationHero";
 import { CombinationFaq } from "../public/CombinationFaq";
 import { CombinationCta } from "../public/CombinationCta";
 import { parseHtmlIntoSections } from "../../utils";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 export type CombinationPreviewModalProps = {
   isOpen: boolean;
@@ -37,13 +37,7 @@ export const CombinationPreviewModal = ({
   onClose,
   data,
 }: CombinationPreviewModalProps) => {
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "unset";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -77,7 +71,11 @@ export const CombinationPreviewModal = ({
       <div className="flex-1 overflow-y-auto">
         <div className="flex-1 flex flex-col w-full">
           <CombinationHero
-            data={data}
+            data={{
+              ...data,
+              region: data.regionSlug,
+              pest: data.pestSlug,
+            }}
             sliderImages={[]}
             regionSlug={data.regionSlug}
             pestSlug={data.pestSlug}

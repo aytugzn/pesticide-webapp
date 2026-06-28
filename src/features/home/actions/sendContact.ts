@@ -1,5 +1,7 @@
 "use server";
 
+import "server-only";
+
 import { z } from "zod";
 import { headers } from "next/headers";
 import { DICTIONARY } from "@/constants/dictionary";

@@ -1,12 +1,13 @@
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { ImageSlider } from "@/components/ui/ImageSlider";
+import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import type { CombinationDoc } from "@/types";
 
 type CombinationHeroProps = {
-  data: any;
-  sliderImages: any[];
+  data: CombinationDoc;
+  sliderImages: SliderImage[];
   regionSlug: string;
   pestSlug: string;
   regionName?: string;

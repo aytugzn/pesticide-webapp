@@ -102,7 +102,7 @@ const SidebarHeader = ({ onClose }: { onClose: () => void }) => (
       size="none"
       onClick={onClose}
       className="md:hidden text-text-muted hover:text-text-primary p-1 rounded-md"
-      aria-label="Menüyü Kapat"
+      aria-label={DICTIONARY.navbar.mobileMenu.closeAria}
     >
       <X size={CLOSE_ICON_SIZE} />
     </Button>

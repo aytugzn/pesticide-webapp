@@ -1,4 +1,6 @@
-"use server";
+"use server"
+
+import "server-only";
 
 import { getAdminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";

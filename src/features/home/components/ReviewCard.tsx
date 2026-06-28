@@ -13,18 +13,18 @@ export const ReviewCard = ({
 }) => {
   const avatarUrl = getAvatarUrl(review.authorName, review.authorPhotoUrl);
 
-  // Runtime background image style
-  const cloneAvatarStyle = { backgroundImage: `url(${avatarUrl})` };
-
   const content = (
     <>
       {/* Author Info */}
       <div className="flex items-center gap-4 mb-4">
         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-brand-surface-muted border border-brand-border flex-shrink-0">
           {isClone ? (
-            <div
-              className="w-full h-full bg-cover bg-center"
-              style={cloneAvatarStyle}
+            <img
+              src={avatarUrl}
+              alt={review.authorName}
+              title={`${review.authorName} - ${DICTIONARY.home.googleReviews.avatarTitleSuffix}`}
+              className="w-full h-full object-cover object-center"
+              loading="lazy"
             />
           ) : (
             <Image

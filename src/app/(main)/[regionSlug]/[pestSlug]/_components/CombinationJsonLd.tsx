@@ -1,8 +1,10 @@
 import { DICTIONARY } from "@/constants/dictionary";
 
+import type { CombinationDoc, SettingsDoc } from "@/types";
+
 type JsonLdProps = {
-  data: any;
-  settings: any;
+  data: CombinationDoc;
+  settings: SettingsDoc;
   regionSlug: string;
   baseUrl: string;
   canonicalUrl: string;
@@ -43,7 +45,7 @@ export const CombinationJsonLd = ({
         ? [
             {
               "@type": "FAQPage",
-              mainEntity: data.faq.map((item: any) => ({
+              mainEntity: data.faq.map((item: { question: string; answer: string }) => ({
                 "@type": "Question",
                 name: item.question,
                 acceptedAnswer: {

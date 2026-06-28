@@ -2,7 +2,20 @@
 
 import { useCallback } from "react";
 
+/**
+ * Custom hook providing a robust smooth scrolling behavior.
+ * Uses requestAnimationFrame (RAF) for fluid animation and handles 
+ * user interrupts (scroll, touch, mousedown) gracefully.
+ * Automatically accounts for a fixed or sticky navigation bar offset.
+ *
+ * @returns An object containing the `scrollTo` function.
+ */
 export const useSmoothScroll = () => {
+  /**
+   * Scrolls to the target element with a custom smooth animation.
+   *
+   * @param targetId - The ID of the element to scroll to.
+   */
   const scrollTo = useCallback((targetId: string) => {
     const element = document.getElementById(targetId);
     if (!element) return;

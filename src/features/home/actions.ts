@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getAdminDb } from "@/lib/firebase-admin";
 import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
 import type { ActionResponse } from "@/types";

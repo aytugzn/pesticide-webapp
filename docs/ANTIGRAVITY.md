@@ -87,11 +87,13 @@ src/
 ```
 
 ### Neden kombinasyon en değerli?
+
 - "bornova ilaçlama" → yüksek rekabet
 - "bornova karınca ilaçlama" → düşük rekabet, yüksek satın alma niyeti
 - 10 haşere × 15 ilçe = 150 unique sayfa, her biri ayrı indexlenir
 
 ### QR Rapor
+
 ```
 /rapor/[uuid]     → Public, auth gerektirmez, noindex
 ```
@@ -120,6 +122,7 @@ export async function kombinasyonKaydet(data: KombinasyonData) {
 ```
 
 **Neden bu strateji?**
+
 - Build anında statik üretim → Firestore'a ziyaretçi isteği yok
 - Admin değişiklik yapınca sadece o sayfa anında güncellenir
 - Firestore kotası neredeyse hiç tüketilmez
@@ -193,12 +196,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export const geminiModel = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
+  model: "gemini-3.5-flash",
 });
 
 export function buildCombinationPrompt(
   bolge: { ad: string; ozellikler: string },
-  hasere: { ad: string; ozellikler: string }
+  hasere: { ad: string; ozellikler: string },
 ): string {
   return `
 Sen bir SEO içerik yazarısın. Türkçe yaz.
@@ -225,9 +228,11 @@ Format: { "title", "h1", "metaDesc", "content", "faq": [{"question", "answer"}] 
 ```
 
 ### Neden token sorunu yok?
+
 Diğer 149 sayfayı context'e almıyoruz. Bölge + haşere `ozellikler` alanları farklı olduğu için prompt'tan çıkan içerik doğası gereği unique oluyor.
 
 ### Admin panelde akış
+
 ```
 1. Region seç
 2. Pest seç
@@ -247,6 +252,7 @@ Diğer 149 sayfayı context'e almıyoruz. Bölge + haşere `ozellikler` alanlar�
 **Whitelist:** `.env.local` → `ADMIN_EMAIL`
 
 ### Akış
+
 ```
 Google butonu
 → signInWithPopup (client)
@@ -258,6 +264,7 @@ Google butonu
 ```
 
 ### proxy.ts (Next.js 16)
+
 ```typescript
 // middleware.ts → proxy.ts oldu (Next.js 16)
 // export function middleware → export function proxy
@@ -270,12 +277,16 @@ Google butonu
 ## SEO Görevleri (Antigravity)
 
 ### generateMetadata — her kombinasyon sayfası
+
 ```typescript
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const data = await getKombinasyon(params["bolge-slug"], params["hasere-slug"]);
+  const data = await getKombinasyon(
+    params["bolge-slug"],
+    params["hasere-slug"],
+  );
   return {
-    title: data.title,                    // admin + AI'dan
-    description: data.metaDesc,           // admin + AI'dan
+    title: data.title, // admin + AI'dan
+    description: data.metaDesc, // admin + AI'dan
     openGraph: {
       title: data.title,
       description: data.metaDesc,
@@ -290,12 +301,14 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 ```
 
 ### noindex gereken sayfalar
+
 ```
 /rapor/[uuid]     → müşteri raporu, indexlenmesin
 /admin/*          → proxy.ts'de zaten korumalı
 ```
 
 ### sitemap.ts
+
 ```typescript
 // Aktif kombinasyon + bölge + haşere URL'lerini içerir
 // kombinasyonlar priority: 0.9 (en değerli sayfalar)
@@ -303,12 +316,21 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 ```
 
 ### Schema.org JSON-LD (her kombinasyon sayfası)
+
 ```json
 {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "LocalBusiness", "name": "DMR İlaçlama", "areaServed": "[bölge]" },
-    { "@type": "Service", "name": "[haşere] İlaçlama", "areaServed": "[bölge]" },
+    {
+      "@type": "LocalBusiness",
+      "name": "DMR İlaçlama",
+      "areaServed": "[bölge]"
+    },
+    {
+      "@type": "Service",
+      "name": "[haşere] İlaçlama",
+      "areaServed": "[bölge]"
+    },
     { "@type": "FAQPage", "mainEntity": "[faq array]" }
   ]
 }
@@ -322,13 +344,15 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 Token'lar `globals.css`'de CSS custom property olarak tanımlı, `@theme inline` ile Tailwind'e register ediliyor.
 
 ### Kullanım
+
 ```tsx
-className="bg-brand-surface text-text-primary border-brand-border"
-className="text-brand-primary hover:bg-brand-primary-light"
-className="bg-error-bg border-error-border text-error-text"
+className = "bg-brand-surface text-text-primary border-brand-border";
+className = "text-brand-primary hover:bg-brand-primary-light";
+className = "bg-error-bg border-error-border text-error-text";
 ```
 
 ### Dark mode
+
 `prefers-color-scheme: dark` ile otomatik — manuel toggle yok.
 
 ---
@@ -366,19 +390,19 @@ GEMINI_API_KEY                 # Google AI Studio — ücretsiz tier
 - [x] features/auth/actions.ts
 - [x] features/auth/components/LoginForm.tsx
 - [x] proxy.ts
-- [ ] lib/gemini.ts
-- [ ] features/regions/ (bölge CRUD)
-- [ ] features/pests/ (haşere CRUD)
-- [ ] features/combinations/ (AI içerik üretimi)
-- [ ] app/(main)/[bolge-slug]/[hasere-slug]/page.tsx
-- [ ] app/sitemap.ts
-- [ ] app/robots.ts
+- [x] lib/gemini.ts
+- [x] features/regions/ (bölge CRUD)
+- [x] features/pests/ (haşere CRUD)
+- [x] features/combinations/ (AI içerik üretimi)
+- [x] app/(main)/[bolge-slug]/[hasere-slug]/page.tsx
+- [x] app/sitemap.ts
+- [x] app/robots.ts
 - [ ] features/reports/ (QR rapor — müşteriyle görüşülecek)
 
 ---
 
-*Proje: DMR İlaçlama Web Sitesi*
-*Haziran 2026*
+_Proje: DMR İlaçlama Web Sitesi_
+_Haziran 2026_
 
 ---
 
@@ -393,6 +417,7 @@ GEMINI_API_KEY                 # Google AI Studio — ücretsiz tier
 - Sadece ana sayfada carousel olacak
 
 **Env değişkenleri (sonra eklenecek):**
+
 ```bash
 CLOUDINARY_CLOUD_NAME
 CLOUDINARY_API_KEY

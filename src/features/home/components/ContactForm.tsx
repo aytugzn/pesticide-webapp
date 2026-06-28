@@ -25,7 +25,7 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
   const [formKey, setFormKey] = useState(0);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nativeEvent = e.nativeEvent as any;
+    const nativeEvent = e.nativeEvent as InputEvent;
     let val = e.target.value;
 
     // Fix backspace trap: if user deletes a formatting symbol, manually remove the preceding digit

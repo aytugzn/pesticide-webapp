@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 type DrawerProps = {
   isOpen: boolean;
@@ -25,18 +25,7 @@ export const Drawer = ({
   overlayClassName = "bg-black/60 backdrop-blur-sm",
   closeAriaLabel = DICTIONARY.navbar.mobileMenu.closeAria 
 }: DrawerProps) => {
-  // Prevent body scrolling when drawer is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  useScrollLock(isOpen);
 
   return (
     <>

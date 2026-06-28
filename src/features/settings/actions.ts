@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
 import { DICTIONARY } from "@/constants/dictionary";

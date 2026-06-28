@@ -1,5 +1,7 @@
 "use server";
 
+import "server-only";
+
 import { getAdminDb } from "@/lib/firebase-admin";
 import { getGeminiModel, buildCombinationPrompt } from "@/lib/gemini";
 import { parseCombinationDoc, parseRegionDoc, parsePestDoc, extractAndParseJson } from "@/utils/parsers";
