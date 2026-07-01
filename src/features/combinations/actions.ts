@@ -191,7 +191,6 @@ export const saveCombination = async (
  * @param regionName - Display name for the region
  * @param pestName - Display name for the pest
  * @param content - The generated content fields
- * @param isActive - Whether the page should be publicly visible
  * @returns Success or error
  */
 export const saveCombinationSilently = async (
@@ -199,8 +198,7 @@ export const saveCombinationSilently = async (
   pestSlug: string,
   regionName: string,
   pestName: string,
-  content: GeneratedContent,
-  isActive: boolean
+  content: GeneratedContent
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
   const parsed = saveCombinationSchema.safeParse({
     regionSlug,
@@ -208,7 +206,7 @@ export const saveCombinationSilently = async (
     regionName,
     pestName,
     content,
-    isActive,
+    isActive: false,
   });
 
   if (!parsed.success) {
@@ -222,7 +220,6 @@ export const saveCombinationSilently = async (
       regionName: parsedRegionName,
       pestName: parsedPestName,
       content: parsedContent,
-      isActive: parsedIsActive,
     } = parsed.data;
     const docId = `${parsedRegionSlug}_${parsedPestSlug}`;
 
@@ -236,7 +233,7 @@ export const saveCombinationSilently = async (
       metaDesc: parsedContent.metaDesc,
       content: parsedContent.content,
       faq: parsedContent.faq,
-      isActive: parsedIsActive,
+      isActive: false,
     };
 
     // Intentionally no updateTag here since the combination is saved as a draft.
@@ -409,6 +406,7 @@ export const deleteCombination = async (
     await getAdminDb().collection("combinations").doc(docId).delete();
 
     updateTag(getCombinationCacheTag(regionSlug, pestSlug));
+    updateTag("all-combinations");
 
     return { success: true };
   } catch (error: unknown) {

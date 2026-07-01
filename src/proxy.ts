@@ -3,7 +3,8 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebase-admin";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
-import { AUTH_ERRORS } from "@/features/auth/types";
+
+
 
 const ADMIN_ROUTES = ROUTES.admin;
 
@@ -25,13 +26,16 @@ const proxy = async (request: NextRequest) => {
     
     const allowedEmail = process.env.ADMIN_EMAIL || "";
     if (decodedClaims.email !== allowedEmail) {
-      throw new Error(AUTH_ERRORS.UNAUTHORIZED_EMAIL);
+      console.warn("Unauthorized admin email access attempt rejected.");
+      const response = NextResponse.redirect(new URL(ROUTES.login, request.url));
+      response.cookies.delete(SESSION_COOKIE_NAME);
+      return response;
     }
 
     return NextResponse.next();
 
-  } catch (error) {
-    console.error("Failed to verify token", error);
+  } catch {
+    console.error("Failed to verify admin token. Redirecting to login.");
     const response = NextResponse.redirect(new URL(ROUTES.login, request.url));
 
     response.cookies.delete(SESSION_COOKIE_NAME);

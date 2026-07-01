@@ -61,7 +61,7 @@
 
 ## 7. Breaking Changes & Removals
 
-- **Minimum Requirements**: Node.js 20.9.0+ and TypeScript 5.1.0+.
+- **Minimum Requirements**: Node.js 22.0.0+ and TypeScript 5.1.0+.
 - **Linting**: `next build` no longer runs linting by default. Use ESLint or Biome directly.
 - **Removals**: AMP support and `experimental.ppr` have been completely removed.
 - **`next/image` Defaults**: 

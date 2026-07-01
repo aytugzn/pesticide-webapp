@@ -11,7 +11,7 @@
 **Müşteri:** DMR İlaçlama Dezenfeksiyon Çevre Sağlığı Hizmetleri (İzmir)  
 **Amaç:** Mevcut siteyi baştan, SEO odaklı ve dinamik olarak yeniden inşa etmek  
 **Stack:** Next.js 16 · TypeScript · Firebase Firestore/Auth · Tailwind CSS v4  
-**AI İçerik:** Gemini 2.0 Flash API (Google AI Studio — ücretsiz tier)  
+**AI İçerik:** Gemini 3.5 Flash API (Google AI Studio — ücretsiz tier)
 **SEO Katmanı:** Antigravity (bu dosyayı okuyan)
 
 ---

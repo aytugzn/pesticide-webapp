@@ -121,8 +121,7 @@ export const useBulkGenerate = ({
         item.pestSlug,
         item.regionName,
         item.pestName,
-        genResult.data,
-        false,
+        genResult.data
       );
 
       if (saveResult.success) {

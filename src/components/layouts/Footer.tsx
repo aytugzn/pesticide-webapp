@@ -221,17 +221,23 @@ const FooterLinksColumn = ({ title, links }: FooterLinksColumnProps) => (
   </div>
 );
 
-const FooterBottomBar = () => (
-  <div className="mt-8 pt-6 border-t border-brand-border flex flex-col md:flex-row items-center justify-between gap-3">
-    <p className="text-text-tertiary text-xs text-center md:text-left">
-      <CopyrightText text={DICTIONARY.global.copyright} />
-    </p>
-    <p className="text-text-tertiary text-xs flex items-center gap-1.5">
-      <span>{DICTIONARY.footer.developer.title}</span>
-      <span className="w-1 h-1 rounded-full bg-brand-primary" aria-hidden="true"></span>
-      <span className="font-medium text-text-secondary">
-        {DICTIONARY.footer.developer.name}
-      </span>
-    </p>
-  </div>
-);
+const FooterBottomBar = () => {
+  const developerName = process.env.NEXT_PUBLIC_DEVELOPER_NAME;
+
+  return (
+    <div className="mt-8 pt-6 border-t border-brand-border flex flex-col md:flex-row items-center justify-between gap-3">
+      <p className="text-text-tertiary text-xs text-center md:text-left">
+        <CopyrightText text={DICTIONARY.global.copyright} />
+      </p>
+      {developerName && (
+        <p className="text-text-tertiary text-xs flex items-center gap-1.5">
+          <span>{DICTIONARY.footer.developer.title}</span>
+          <span className="w-1 h-1 rounded-full bg-brand-primary" aria-hidden="true"></span>
+          <span className="font-medium text-text-secondary">
+            {developerName}
+          </span>
+        </p>
+      )}
+    </div>
+  );
+};

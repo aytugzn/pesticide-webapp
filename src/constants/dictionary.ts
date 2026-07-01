@@ -215,7 +215,6 @@ const footerDict = {
   },
   developer: {
     title: "Tarafından Geliştirildi",
-    name: "Aytuğ Uzun",
   },
 };
 
