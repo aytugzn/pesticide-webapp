@@ -12,7 +12,6 @@ type ErrorProps = {
 };
 
 export default function ErrorBoundary({
-  error: _error,
   reset,
   unstable_retry,
 }: ErrorProps) {

@@ -47,7 +47,7 @@ export const CombinationGenerator = ({
           name="region"
           label={d.selectRegion}
           placeholder={d.selectRegionEmpty}
-          defaultValue={selectedRegion}
+          value={selectedRegion}
           options={regions.map((r) => ({ value: r.slug, label: r.name }))}
           onChange={onRegionChange}
         />
@@ -57,7 +57,7 @@ export const CombinationGenerator = ({
           name="pest"
           label={d.selectPest}
           placeholder={d.selectPestEmpty}
-          defaultValue={selectedPest}
+          value={selectedPest}
           options={pests.map((p) => ({ value: p.slug, label: p.name }))}
           onChange={onPestChange}
         />

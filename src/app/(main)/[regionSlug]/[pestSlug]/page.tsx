@@ -34,7 +34,7 @@ export const generateStaticParams = async () => {
       pestSlug: c.pest,
     }));
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.generateStaticParams, error);
+    console.error("Failed to generate static params", error);
     return [];
   }
 };

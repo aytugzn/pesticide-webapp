@@ -29,21 +29,21 @@ const getLayoutSettings = async () => {
       .get();
     return parseSettingsDoc(settingsSnap.data());
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.layoutSettingsFetch, error);
+    console.error("Failed to fetch layout settings", error);
     return {};
   }
 };
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const settings = await getLayoutSettings();
-  let defaultOgImage =
+  const defaultOgImage =
     settings.defaultOgImage || DICTIONARY.meta.og.image.fallback;
   const title = DICTIONARY.meta.default.title;
   const description = DICTIONARY.meta.default.description;
 
   return {
     metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL || "https://dmrilaclama.com",
+      process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl,
     ),
     title,
     description,
@@ -94,7 +94,7 @@ const RootLayout = ({
     "@type": "LocalBusiness",
     name: DICTIONARY.meta.default.title,
     description: DICTIONARY.meta.default.description,
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://dmrilaclama.com",
+    url: process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl,
     areaServed: "İzmir, Turkey",
     address: {
       "@type": "PostalAddress",

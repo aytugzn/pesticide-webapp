@@ -3,7 +3,6 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebase-admin";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
-import { DICTIONARY } from "@/constants/dictionary";
 import { AUTH_ERRORS } from "@/features/auth/types";
 
 const ADMIN_ROUTES = ROUTES.admin;
@@ -32,7 +31,7 @@ const proxy = async (request: NextRequest) => {
     return NextResponse.next();
 
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.tokenVerification, error);
+    console.error("Failed to verify token", error);
     const response = NextResponse.redirect(new URL(ROUTES.login, request.url));
 
     response.cookies.delete(SESSION_COOKIE_NAME);

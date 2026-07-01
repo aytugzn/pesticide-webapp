@@ -167,9 +167,11 @@ firestore/
 │
 ├── messages/
 │   └── {id}/
-│       ├── name, email, phone, message
-│       ├── date: timestamp
-│       └── isRead: false
+│       ├── ip, name, phone, service, region
+│       ├── status: "pending" | "resolved"
+│       ├── createdAt: number
+│       ├── telegramMessageId?: number
+│       └── telegramChatId?: string
 │
 ├── reviews/
 │   └── {id}/
@@ -391,8 +393,8 @@ GEMINI_API_KEY                 # Google AI Studio — ücretsiz tier
 - [x] features/auth/components/LoginForm.tsx
 - [x] proxy.ts
 - [x] lib/gemini.ts
-- [x] features/regions/ (bölge CRUD)
-- [x] features/pests/ (haşere CRUD)
+- [ ] features/regions/ (bölge CRUD)
+- [ ] features/pests/ (haşere CRUD)
 - [x] features/combinations/ (AI içerik üretimi)
 - [x] app/(main)/[bolge-slug]/[hasere-slug]/page.tsx
 - [x] app/sitemap.ts

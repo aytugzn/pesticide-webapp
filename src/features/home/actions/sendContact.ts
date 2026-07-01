@@ -21,7 +21,6 @@ type SendContactResponse = {
 };
 
 const uiDict = DICTIONARY.home.contact;
-const sysDict = DICTIONARY.systemErrors;
 
 // Max pending (unresolved) contact requests per IP
 const PENDING_LIMIT = 3;
@@ -59,7 +58,7 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
 
   const db = getAdminDb();
   const pendingSnap = await db
-    .collection("contact_requests")
+    .collection("messages")
     .where("ip", "==", ip)
     .where("status", "==", "pending")
     .get();
@@ -71,35 +70,28 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
   const { name, phone, service, region } = parsed.data;
 
   // 1. Create an empty document reference (and ID) before saving to Firestore
-  const docRef = db.collection("contact_requests").doc();
+  const docRef = db.collection("messages").doc();
   const requestId = docRef.id;
+
+  // Helper to escape HTML characters for Telegram's parse_mode: "HTML"
+  const escapeHtml = (text: string) => {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  };
 
   // 2. Prepare the message
   const cleanPhone = normalizeTurkishPhone(phone);
   const message = formatTemplate(uiDict.telegram.template, {
-    name,
-    phone: cleanPhone,
+    name: escapeHtml(name),
+    phone: cleanPhone, // Clean phone only contains digits and +
     rawPhone: cleanPhone,
-    service: service || uiDict.telegram.notSpecified,
-    region: region || uiDict.telegram.notSpecified,
+    service: escapeHtml(service || uiDict.telegram.notSpecified),
+    region: escapeHtml(region || uiDict.telegram.notSpecified),
   });
 
-  // 3. Send to Telegram first
-  const result = await sendTelegramContactRequest(message, requestId);
-
-  // 4. If Telegram fails: return error, do NOT save anything to the database.
-  if (!result.success) {
-    if (result.missingConfig) {
-      if (process.env.NODE_ENV === "production") {
-        return { success: false, error: uiDict.form.error };
-      }
-      console.warn(sysDict.logs.telegramConfig);
-      return { success: true };
-    }
-    return { success: false, error: uiDict.form.error };
-  }
-
-  // 5. If Telegram is successful: save to the database using the previously generated ID
+  // 3. Save the request before notifying external services.
   const requestData: Omit<ContactRequestDoc, "id"> = {
     ip,
     name,
@@ -108,14 +100,45 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
     region: region || "",
     status: "pending",
     createdAt: Date.now(),
-    telegramMessageId: result.messageId,
-    telegramChatId: result.chatId,
+    notificationStatus: "pending",
   };
 
   try {
     await docRef.set(requestData);
   } catch (error) {
-    console.error(sysDict.logs.contactRequestSave, error);
+    console.error("Failed to save contact request", error);
+    return { success: false, error: uiDict.form.error };
+  }
+
+  // 4. Telegram is a notification channel; the lead is already safely stored.
+  const result = await sendTelegramContactRequest(message, requestId);
+
+  if (!result.success) {
+    if (result.missingConfig) {
+      console.warn("Telegram configuration is missing");
+    }
+
+    // Mark as failed but still return success to the user
+    try {
+      await docRef.set({ notificationStatus: "failed" }, { merge: true });
+    } catch (e) {
+      console.error("Failed to update notificationStatus to failed", e);
+    }
+
+    return { success: true };
+  }
+
+  try {
+    await docRef.set(
+      {
+        telegramMessageId: result.messageId,
+        telegramChatId: result.chatId,
+        notificationStatus: "sent",
+      },
+      { merge: true },
+    );
+  } catch (error) {
+    console.error("Failed to save contact request", error);
   }
 
   return { success: true };

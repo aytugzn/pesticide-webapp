@@ -18,25 +18,15 @@ export const ReviewCard = ({
       {/* Author Info */}
       <div className="flex items-center gap-4 mb-4">
         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-brand-surface-muted border border-brand-border flex-shrink-0">
-          {isClone ? (
-            <img
-              src={avatarUrl}
-              alt={review.authorName}
-              title={`${review.authorName} - ${DICTIONARY.home.googleReviews.avatarTitleSuffix}`}
-              className="w-full h-full object-cover object-center"
-              loading="lazy"
-            />
-          ) : (
-            <Image
-              src={avatarUrl}
-              alt={review.authorName}
-              title={`${review.authorName} - ${DICTIONARY.home.googleReviews.avatarTitleSuffix}`}
-              fill
-              sizes="48px"
-              className="object-cover"
-              unoptimized // Added temporarily to fix 404 image error
-            />
-          )}
+          <Image
+            src={avatarUrl}
+            alt={review.authorName}
+            title={`${review.authorName} - ${DICTIONARY.home.googleReviews.avatarTitleSuffix}`}
+            fill
+            sizes="48px"
+            className="object-cover"
+            unoptimized
+          />
         </div>
         <div>
           <h3 className="font-bold text-text-primary">{review.authorName}</h3>
@@ -60,7 +50,7 @@ export const ReviewCard = ({
 
       {/* Review Text */}
       <p className="text-text-secondary text-sm leading-relaxed flex-grow">
-        "{review.text}"
+        &quot;{review.text}&quot;
       </p>
     </>
   );

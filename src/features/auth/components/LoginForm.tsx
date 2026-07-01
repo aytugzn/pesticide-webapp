@@ -50,7 +50,7 @@ export const LoginForm = () => {
     } catch (err) {
       if (isPopupCancelled(err)) return;
       setError(DICTIONARY.auth.login.error);
-      console.error(DICTIONARY.systemErrors.logs.login, err);
+      console.error("Login failed", err);
     } finally {
       setLoading(false);
     }

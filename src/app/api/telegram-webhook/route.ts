@@ -6,8 +6,21 @@ import {
   answerTelegramCallback,
   sendTelegramAdminMessage,
 } from "@/lib/telegram";
+import { z } from "zod";
 
-const sysDict = DICTIONARY.systemErrors;
+const telegramCallbackQuerySchema = z.object({
+  callback_query: z.object({
+    id: z.string(),
+    data: z.string().optional(),
+    message: z.object({
+      message_id: z.number(),
+      chat: z.object({
+        id: z.number(),
+      }),
+    }).optional(),
+  }).optional(),
+});
+
 const telegramDict = DICTIONARY.home.contact.telegram;
 
 /**
@@ -19,33 +32,40 @@ const telegramDict = DICTIONARY.home.contact.telegram;
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // --- 1. Security: Verify the secret token ---
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (secret) {
-    const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
-    if (incomingSecret !== secret) {
-      console.warn(sysDict.logs.webhookSecret);
-      return NextResponse.json({ ok: false }, { status: 401 });
-    }
+
+  if (!secret) {
+    console.error("TELEGRAM_WEBHOOK_SECRET is missing");
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 
-  let body: Record<string, unknown>;
+  const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
+  if (incomingSecret !== secret) {
+    console.warn("Webhook secret mismatch or missing");
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  // --- 2. Only handle callback_query updates ---
-  const callbackQuery = body.callback_query as {
-    id: string;
-    data: string;
-    message: { message_id: number; chat: { id: number } };
-  } | undefined;
-
-  if (!callbackQuery) {
+  // --- 2. Only handle valid callback_query updates ---
+  const parsed = telegramCallbackQuerySchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json({ ok: true });
   }
 
-  const { id: callbackQueryId, data: callbackData, message } = callbackQuery;
+  const callbackQuery = parsed.data.callback_query;
+  const message = callbackQuery?.message;
+
+  if (!callbackQuery || !message) {
+    return NextResponse.json({ ok: true });
+  }
+
+  const callbackQueryId = callbackQuery.id;
+  const callbackData = callbackQuery.data;
   const chatId = String(message.chat.id);
   const messageId = message.message_id;
 
@@ -67,7 +87,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // 4A. Try updating Firestore first
     await getAdminDb()
-      .collection("contact_requests")
+      .collection("messages")
       .doc(requestId)
       .update({ status: "resolved" });
 
@@ -76,7 +96,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     await editTelegramMessageAsResolved(chatId, messageId);
 
   } catch (error) {
-    console.error(sysDict.logs.contactRequestResolve, error);
+    console.error("Failed to resolve contact request", error);
 
     // 4C. ERROR STATE: Failed to update database
     // Send an extra warning message to admin from dictionary

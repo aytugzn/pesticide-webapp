@@ -3,7 +3,7 @@ import { AlternatingSections } from "@/components/layout/AlternatingSections";
 import React from "react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getSectionIcons, type Section } from "../../utils";
-import DOMPurify from "isomorphic-dompurify";
+import { SanitizedHtml } from "@/components/ui/SanitizedHtml";
 
 type CombinationContentProps = {
   sections: Section[];
@@ -59,11 +59,9 @@ export const CombinationContent = ({ sections }: CombinationContentProps) => {
                         {section.title}
                       </h2>
                     )}
-                    <div
+                    <SanitizedHtml
+                      html={section.body}
                       className="prose prose-lg text-text-secondary leading-relaxed max-w-none prose-p:mb-4 prose-ul:mb-4 prose-li:mb-1 prose-strong:text-brand-primary"
-                      dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(section.body),
-                      }}
                     />
                   </div>
                 </div>

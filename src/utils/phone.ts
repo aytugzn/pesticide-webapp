@@ -91,7 +91,7 @@ export const formatTurkishPhoneInput = (value: string): string => {
  * Ideal for backend processing and APIs.
  */
 export const normalizeTurkishPhone = (value: string): string => {
-  let digits = sanitizePhoneToDigits(value);
+  const digits = sanitizePhoneToDigits(value);
   
   if (digits.startsWith("90")) {
     return "+" + digits;

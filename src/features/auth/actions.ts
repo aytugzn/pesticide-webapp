@@ -7,7 +7,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_ERRORS, type AuthErrorCode } from "./types";
 import type { ActionResponse } from "@/types";
-import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 
 const ALLOWED_EMAILS = [process.env.ADMIN_EMAIL || ""];
@@ -38,7 +37,7 @@ export const createSession = async (idToken: string): Promise<ActionResponse<voi
 
     return { success: true };
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.sessionCreation, error);
+    console.error("Failed to create session", error);
     return { success: false, error: AUTH_ERRORS.SESSION_CREATION_FAILED };
   }
 };

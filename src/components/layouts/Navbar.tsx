@@ -26,7 +26,7 @@ export const Navbar = async () => {
     regions = data.regions;
     settings = data.settings;
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.globalDataFetch, error);
+    console.error("Failed to fetch global data", error);
   }
 
   const rawPhone = settings.phone || DEFAULT_PHONE;

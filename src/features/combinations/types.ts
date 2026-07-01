@@ -28,3 +28,16 @@ export type CombinationRow = CombinationDoc & {
   regionName?: string;
   pestName?: string;
 };
+
+/** Status of a single combination in a bulk generation job */
+export type BulkJobStatus = "pending" | "generating" | "done" | "error";
+
+/** Tracks progress of one region-pest pair in a bulk generation run */
+export type BulkProgressItem = {
+  regionSlug: string;
+  regionName: string;
+  pestSlug: string;
+  pestName: string;
+  status: BulkJobStatus;
+  error?: string;
+};

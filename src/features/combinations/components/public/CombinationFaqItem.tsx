@@ -11,6 +11,8 @@ type FaqItemProps = {
 export const CombinationFaqItem = ({ item }: FaqItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const accordionStyle = { gridTemplateRows: isOpen ? "1fr" : "0fr" };
+
   return (
     <div
       className={cn(
@@ -34,7 +36,7 @@ export const CombinationFaqItem = ({ item }: FaqItemProps) => {
         </div>
       </button>
       <div
-        style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+        style={accordionStyle}
         className={cn(
           "grid transition-all duration-300 ease-in-out",
           isOpen ? "opacity-100" : "opacity-0"

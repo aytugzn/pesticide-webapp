@@ -40,5 +40,6 @@ export type ContactRequestDoc = {
   createdAt: number;
   telegramMessageId?: number;
   telegramChatId?: string;
+  notificationStatus?: "pending" | "sent" | "failed";
 };
 

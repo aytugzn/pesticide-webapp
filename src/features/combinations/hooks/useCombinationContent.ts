@@ -98,7 +98,7 @@ export const useCombinationContent = ({
           onFeedback({ type: "success", message: d.draftRestored });
           return;
         } catch (e) {
-          console.error(DICTIONARY.systemErrors.logs.draftParse, e);
+          console.error("Failed to parse draft content", e);
         }
       }
 

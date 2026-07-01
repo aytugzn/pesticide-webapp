@@ -47,7 +47,7 @@ const HomePage = async () => {
 
   if (!homeDataResponse.success) {
     console.error(
-      DICTIONARY.systemErrors.logs.homeDataFetch,
+      "Failed to fetch home page data",
       homeDataResponse.error,
     );
   } else if (homeDataResponse.data) {

@@ -1,25 +1,24 @@
 import type { MetadataRoute } from "next";
 import { getAdminDb } from "@/lib/firebase-admin";
-import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
+import { DICTIONARY } from "@/constants/dictionary";
+import type { CombinationDoc, PestDoc, RegionDoc } from "@/types";
 
-// Revalidation is handled on-demand via cache tags
-
-// sitemap.ts logic:
-// Static pages + active regions + active pests + active combinations
-// Combinations get highest priority (0.9) — most SEO-valuable pages
-
-import type { RegionDoc, PestDoc, CombinationDoc } from "@/types";
-
+// Revalidation is handled on-demand via cache tags.
+// Only routes that exist in the App Router should be emitted.
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dmrilaclama.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DICTIONARY.global.siteUrl;
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${baseUrl}${ROUTES.home}`, priority: 1.0, changeFrequency: "weekly" },
     { url: `${baseUrl}${ROUTES.services}`, priority: 0.9, changeFrequency: "monthly" },
     { url: `${baseUrl}${ROUTES.about}`, priority: 0.7, changeFrequency: "monthly" },
-    { url: `${baseUrl}${ROUTES.contact}`, priority: 0.7, changeFrequency: "monthly" },
-    { url: `${baseUrl}${ROUTES.certificates}`, priority: 0.6, changeFrequency: "yearly" },
+    { url: `${baseUrl}${ROUTES.contact}`, priority: 0.8, changeFrequency: "monthly" },
+    { url: `${baseUrl}${ROUTES.regions}`, priority: 0.8, changeFrequency: "monthly" },
+    { url: `${baseUrl}${ROUTES.certificates}`, priority: 0.5, changeFrequency: "yearly" },
+    { url: `${baseUrl}${ROUTES.privacy}`, priority: 0.2, changeFrequency: "yearly" },
+    { url: `${baseUrl}${ROUTES.terms}`, priority: 0.2, changeFrequency: "yearly" },
+    { url: `${baseUrl}${ROUTES.kvkk}`, priority: 0.2, changeFrequency: "yearly" },
   ];
 
   let regionPages: MetadataRoute.Sitemap = [];
@@ -43,13 +42,12 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
       return { url: `${baseUrl}${ROUTES.pestBase}/${slug}`, priority: 0.8, changeFrequency: "monthly" };
     });
 
-    // Most valuable pages: /[region-slug]/[pest-slug]
     combinationPages = combinationsSnap.docs.map((doc) => {
       const { region, pest } = doc.data() as CombinationDoc;
       return { url: `${baseUrl}/${region}/${pest}`, priority: 0.9, changeFrequency: "monthly" };
     });
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.sitemapGeneration, error);
+    console.error("Failed to generate sitemap", error);
   }
 
   return [...staticPages, ...regionPages, ...pestPages, ...combinationPages];

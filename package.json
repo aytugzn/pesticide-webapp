@@ -1,5 +1,5 @@
 {
-  "name": "my-project",
+  "name": "dmr-ilaclama",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -22,11 +22,11 @@
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.0.0",
-    "isomorphic-dompurify": "^3.18.0",
     "lucide-react": "^1.21.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sanitize-html": "^2.17.5",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
@@ -36,6 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.1",
     "babel-plugin-react-compiler": "1.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",

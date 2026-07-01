@@ -22,7 +22,7 @@ export const Drawer = ({
   title, 
   children, 
   side = "right",
-  overlayClassName = "bg-black/60 backdrop-blur-sm",
+  overlayClassName = "bg-overlay-strong backdrop-blur-sm",
   closeAriaLabel = DICTIONARY.navbar.mobileMenu.closeAria 
 }: DrawerProps) => {
   useScrollLock(isOpen);

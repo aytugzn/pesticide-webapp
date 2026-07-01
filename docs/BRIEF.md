@@ -235,9 +235,11 @@ firestore/
 │
 ├── messages/
 │   └── {id}/
-│       ├── customerName, email, phone, message
-│       ├── date: timestamp
-│       └── isRead: false
+│       ├── ip, name, phone, service, region
+│       ├── status: "pending" | "resolved"
+│       ├── createdAt: number
+│       ├── telegramMessageId?: number
+│       └── telegramChatId?: string
 │
 ├── reviews/
 │   └── {id}/

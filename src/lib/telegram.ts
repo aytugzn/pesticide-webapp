@@ -65,7 +65,7 @@ export const sendTelegramContactRequest = async (
       chatId: String(data.result.chat.id),
     };
   } catch (error) {
-    console.error(sysDict.logs.telegramSend, error);
+    console.error("Failed to send Telegram message", error);
     return { success: false, error: sysDict.telegramReturns.networkError };
   }
 };
@@ -108,7 +108,7 @@ export const editTelegramMessageAsResolved = async (
 
     return { success: true };
   } catch (error) {
-    console.error(sysDict.logs.telegramSend, error);
+    console.error("Failed to send Telegram message", error);
     return { success: false, error: sysDict.telegramReturns.networkError };
   }
 };

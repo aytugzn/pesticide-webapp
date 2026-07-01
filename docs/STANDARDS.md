@@ -23,11 +23,15 @@ We use a feature-sliced architecture. Code is not grouped by technical type (e.g
 We have a centralized, highly strict error handling architecture.
 - **No Native Errors**: Do NOT use `throw new Error("message")`. 
 - **`AppError` Class**: All thrown errors must be an instance of `AppError` (`src/lib/exceptions.ts`).
-- **`DICTIONARY` Pattern**: Every single hardcoded text, log message, or error message MUST be pulled from `src/constants/dictionary.ts`. No string literals are allowed.
+- **User-Facing Text**: Every single user-facing string MUST be pulled from `src/constants/dictionary.ts`. No user-facing string literals are allowed in components or actions.
 - **Check for Duplicates**: Before adding a new text to `DICTIONARY`, ALWAYS check if it already exists. Do not create duplicate texts. Move globally shared text (e.g. copyright) to a common object.
-- **English Logs, Comments & No Emojis**: ALL internal console logs (console.log, console.error, etc.) and ALL inline comments/JSDoc MUST be strictly in English. Emojis are STRICTLY PROHIBITED in logs and comments to maintain a professional and clean codebase.
-- **Structured Logging**: When logging errors with dynamic data, use objects: `console.error(DICTIONARY.systemErrors.apiFailed, { status })`.
-- **Global Boundary**: Unhandled errors are caught by `src/app/global-error.tsx` which uses Next.js 16's `unstable_retry()`.
+- **Developer-Facing Logging**: ALL internal console logs (`console.log`, `console.error`, etc.) MUST be short, clear, English hardcoded strings. Do NOT use `DICTIONARY` for developer logs. Emojis are STRICTLY PROHIBITED in logs and comments to maintain a professional and clean codebase.
+- **Structured Logging**: When logging errors with dynamic data, use objects alongside your hardcoded English message.
+  - *Correct:* `console.error("Failed to update combination status", { regionSlug, pestSlug, error });`
+  - *Wrong:* `console.error("hata oldu");`
+  - *Wrong:* `console.error(error);`
+  - *Wrong:* `console.error("Kombinasyon güncellenemedi");`
+- **Global Boundary**: Unhandled errors are caught by `src/app/global-error.tsx`, which exposes a retry action through the route error boundary reset flow.
 
 ## 4. Server Actions & Type Safety
 - **Return Types**: Every Server Action must return a unified, strongly-typed response using the generic `ActionResponse<T, E>` from `src/types/index.ts`.

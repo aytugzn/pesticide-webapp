@@ -21,7 +21,7 @@ export const Modal = ({
   onClose,
   title,
   children,
-  overlayClassName = "bg-black/60 backdrop-blur-sm",
+  overlayClassName = "bg-overlay-strong backdrop-blur-sm",
   className,
   closeAriaLabel = DICTIONARY.navbar.mobileMenu.closeAria,
 }: ModalProps) => {

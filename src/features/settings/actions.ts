@@ -28,7 +28,7 @@ export const getGlobalData = async (): Promise<GlobalData> => {
       settings: parseSettingsDoc(settingsSnap.data()),
     };
   } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.globalDataFetch, error);
+    console.error("Failed to fetch global data", error);
     return { pests: [], regions: [], settings: {} };
   }
 };

@@ -30,17 +30,17 @@
   --text-muted: #94a3b8;
 
   /* Status - Light */
-  --color-error-bg: #fef2f2;
-  --color-error-border: #fecaca;
-  --color-error-text: #ef4444;
+  --status-error-bg: #fef2f2;
+  --status-error-border: #fecaca;
+  --status-error-text: #ef4444;
 
-  --color-success-bg: #f0fdf4;
-  --color-success-border: #bbf7d0;
-  --color-success-text: #16a34a;
+  --status-success-bg: #f0fdf4;
+  --status-success-border: #bbf7d0;
+  --status-success-text: #16a34a;
 
-  --color-info-bg: #f0f9ff;
-  --color-info-border: #bae6fd;
-  --color-info-text: #0284c7;
+  --status-info-bg: #f0f9ff;
+  --status-info-border: #bae6fd;
+  --status-info-text: #0284c7;
 
   /* Radius */
   --radius-sm: 0.375rem;
@@ -83,17 +83,17 @@
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
 
-    --color-error-bg: #450a0a;
-    --color-error-border: #7f1d1d;
-    --color-error-text: #fca5a5;
+    --status-error-bg: #450a0a;
+    --status-error-border: #7f1d1d;
+    --status-error-text: #fca5a5;
 
-    --color-success-bg: #052e16;
-    --color-success-border: #14532d;
-    --color-success-text: #4ade80;
+    --status-success-bg: #052e16;
+    --status-success-border: #14532d;
+    --status-success-text: #4ade80;
 
-    --color-info-bg: #082f49;
-    --color-info-border: #0c4a6e;
-    --color-info-text: #38bdf8;
+    --status-info-bg: #082f49;
+    --status-info-border: #0c4a6e;
+    --status-info-text: #38bdf8;
   }
 }
 /* Tailwind v4 Theme Registration */
@@ -122,23 +122,27 @@
   --color-text-muted: var(--text-muted);
 
   /* Status */
-  --color-error-bg: var(--color-error-bg);
-  --color-error-border: var(--color-error-border);
-  --color-error-text: var(--color-error-text);
+  --color-error-bg: var(--status-error-bg);
+  --color-error-border: var(--status-error-border);
+  --color-error-text: var(--status-error-text);
 
-  --color-success-bg: var(--color-success-bg);
-  --color-success-border: var(--color-success-border);
-  --color-success-text: var(--color-success-text);
+  --color-success-bg: var(--status-success-bg);
+  --color-success-border: var(--status-success-border);
+  --color-success-text: var(--status-success-text);
 
-  --color-info-bg: var(--color-info-bg);
-  --color-info-border: var(--color-info-border);
-  --color-info-text: var(--color-info-text);
+  --color-info-bg: var(--status-info-bg);
+  --color-info-border: var(--status-info-border);
+  --color-info-text: var(--status-info-text);
 
   /* Border radius */
   --radius-brand-sm: var(--radius-sm);
   --radius-brand-md: var(--radius-md);
   --radius-brand-lg: var(--radius-lg);
   --radius-brand-xl: var(--radius-xl);
+
+  /* Overlays */
+  --color-overlay-strong: rgba(0, 0, 0, 0.6);
+  --color-overlay-muted: rgba(0, 0, 0, 0.5);
 
   /* Social & Brand */
   --color-whatsapp: var(--whatsapp);
@@ -185,6 +189,18 @@
     -webkit-mask-size: contain;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
+  }
+
+  .reviews-marquee-track:hover {
+    animation-play-state: paused;
+  }
+
+  .reviews-marquee-fade-left {
+    background-image: linear-gradient(to right, var(--section-bg), transparent);
+  }
+
+  .reviews-marquee-fade-right {
+    background-image: linear-gradient(to left, var(--section-bg), transparent);
   }
 }
 

@@ -131,7 +131,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       await fetch("/api/auth/logout", { method: "POST" });
       window.location.href = ROUTES.login;
     } catch (err) {
-      console.error(DICTIONARY.systemErrors.logs.logout, err);
+      console.error("Logout failed", err);
     }
   };
 
@@ -145,7 +145,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-overlay-muted backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />

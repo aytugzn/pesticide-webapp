@@ -36,6 +36,8 @@ export const MegaMenuColumn = ({
   const displayedItems = maxItems ? items.slice(0, maxItems) : items;
 
   const isDesktop = variant === "desktop";
+  const getItemHref = (slug: string) =>
+    baseRoute.includes("#") ? baseRoute : `${baseRoute}/${slug}`;
 
   const styles = {
     wrapper: cn(isDesktop && "w-64"),
@@ -87,7 +89,7 @@ export const MegaMenuColumn = ({
             {displayedItems.map((item) => (
               <li key={item.slug}>
                 <Link
-                  href={`${baseRoute}/${item.slug}`}
+                  href={getItemHref(item.slug)}
                   onClick={onItemClick}
                   className={styles.link}
                 >

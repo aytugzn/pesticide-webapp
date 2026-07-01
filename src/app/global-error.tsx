@@ -24,7 +24,7 @@ type GlobalErrorProps = {
   reset: () => void;
 };
 
-const GlobalError = ({ error: _error, reset }: GlobalErrorProps) => {
+const GlobalError = ({ reset }: GlobalErrorProps) => {
   return (
     <html
       lang="tr"

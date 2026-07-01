@@ -5,6 +5,7 @@ import { getGlobalData } from "@/features/settings/actions";
 import { getAdminCombinations } from "@/features/combinations/actions";
 import { CombinationForm } from "@/features/combinations/components/admin/CombinationForm";
 import { CombinationsTable } from "@/features/combinations/components/admin/CombinationsTable";
+import { BulkGeneratePanel } from "@/features/combinations/components/admin/BulkGeneratePanel";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.combinations.title} | ${DICTIONARY.global.brand} ${DICTIONARY.admin.dashboard.subtitle}`,
@@ -22,6 +23,9 @@ const AdminCombinationsPage = async () => {
   const pests = globalData.pests || [];
   const rows = combinationsResult.success && combinationsResult.data ? combinationsResult.data : [];
 
+  // Generate a deterministic key so the table remounts and resets local state when server data changes
+  const tableKey = rows.map((row) => `${row.id}:${row.region}:${row.pest}:${row.regionName ?? ""}:${row.pestName ?? ""}:${row.isActive ? "active" : "inactive"}`).join("|") || "empty";
+
   return (
     <div className="space-y-8">
       <header className="border-b border-brand-border pb-6">
@@ -38,7 +42,8 @@ const AdminCombinationsPage = async () => {
 
       <div className="space-y-10">
         <CombinationForm regions={regions} pests={pests} />
-        <CombinationsTable initialRows={rows} />
+        <BulkGeneratePanel regions={regions} pests={pests} existingRows={rows} />
+        <CombinationsTable key={tableKey} initialRows={rows} />
       </div>
     </div>
   );

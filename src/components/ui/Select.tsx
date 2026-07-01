@@ -17,6 +17,7 @@ type SelectProps = {
   options: SelectOption[];
   placeholder?: string;
   defaultValue?: string;
+  value?: string;
   onChange?: (value: string) => void;
   className?: string;
 };
@@ -29,11 +30,16 @@ export const Select = ({
   options,
   placeholder = "",
   defaultValue = "",
+  value,
   onChange,
   className,
 }: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(defaultValue);
+  const [internalValue, setInternalValue] = useState(defaultValue);
+
+  const isControlled = value !== undefined;
+  const currentValue = isControlled ? value : internalValue;
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   // Always holds the latest onChange without it being a dep in useCallback
   const onChangeRef = useRef(onChange);
@@ -41,7 +47,7 @@ export const Select = ({
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  const selectedLabel = options.find((o) => o.value === selectedValue)?.label;
+  const selectedLabel = options.find((o) => o.value === currentValue)?.label;
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -58,16 +64,13 @@ export const Select = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Sync when parent changes defaultValue (e.g. on reset)
-  useEffect(() => {
-    setSelectedValue(defaultValue);
-  }, [defaultValue]);
-
-  const handleSelect = useCallback((value: string) => {
-    setSelectedValue(value);
+  const handleSelect = useCallback((newValue: string) => {
+    if (!isControlled) {
+      setInternalValue(newValue);
+    }
     setIsOpen(false);
-    onChangeRef.current?.(value);
-  }, []); // stable: setters are stable, onChange accessed via ref
+    onChangeRef.current?.(newValue);
+  }, [isControlled]); // stable: setters are stable, onChange accessed via ref, isControlled typically static
 
   return (
     <div
@@ -87,7 +90,7 @@ export const Select = ({
       )}
 
       {/* Hidden input to natively support HTML FormData */}
-      <input type="hidden" name={name} value={selectedValue} />
+      <input type="hidden" name={name} value={currentValue} />
 
       {/* Trigger Button */}
       <button
@@ -95,12 +98,13 @@ export const Select = ({
         type="button"
         role="combobox"
         aria-haspopup="listbox"
+        aria-controls={`${name}-listbox`}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
           "w-full flex items-center justify-between bg-surface-neutral border rounded-xl px-4 py-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-brand-primary/50",
           isOpen ? "border-brand-primary" : "border-brand-border",
-          !selectedValue ? "text-text-muted" : "text-text-primary",
+          !currentValue ? "text-text-muted" : "text-text-primary",
         )}
       >
         <span className="truncate">{selectedLabel || placeholder}</span>
@@ -114,6 +118,7 @@ export const Select = ({
 
       {/* Dropdown Menu — always rendered, shown via CSS to prevent layout flicker */}
       <div
+        id={`${name}-listbox`}
         role="listbox"
         aria-hidden={!isOpen}
         className={cn(
@@ -129,11 +134,11 @@ export const Select = ({
             key={option.value}
             type="button"
             role="option"
-            aria-selected={selectedValue === option.value}
+            aria-selected={currentValue === option.value}
             onClick={() => handleSelect(option.value)}
             className={cn(
               "w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-surface-neutral focus:bg-surface-neutral focus:outline-none",
-              selectedValue === option.value
+              currentValue === option.value
                 ? "bg-brand-primary/10 text-brand-primary font-medium"
                 : "text-text-primary",
             )}

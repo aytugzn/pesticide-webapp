@@ -5,11 +5,11 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { getGeminiModel, buildCombinationPrompt } from "@/lib/gemini";
 import { parseCombinationDoc, parseRegionDoc, parsePestDoc, extractAndParseJson } from "@/utils/parsers";
-import { DICTIONARY } from "@/constants/dictionary";
 import { cacheTag, updateTag } from "next/cache";
 import type { ActionResponse, CombinationDoc } from "@/types";
 import { COMBINATION_ERRORS, type CombinationErrorCode, type GeneratedContent, type CombinationRow } from "./types";
 import { getCombinationCacheTag } from "./constants";
+import { combinationSlugParamsSchema, saveCombinationSchema, toggleCombinationSchema, generatedContentSchema } from "./schemas";
 
 
 /**
@@ -34,8 +34,9 @@ export const getCombination = async (regionSlug: string, pestSlug: string): Prom
     if (!data.isActive) return null;
 
     return data;
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.fetchCombinations, { regionSlug, pestSlug, error });
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to fetch combinations", { regionSlug, pestSlug, error: errorInfo });
     return null;
   }
 };
@@ -53,11 +54,17 @@ export const generateCombinationContent = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<GeneratedContent, CombinationErrorCode>> => {
+  const params = combinationSlugParamsSchema.safeParse({ regionSlug, pestSlug });
+
+  if (!params.success) {
+    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
     // 1. Fetch region and pest details from Firestore
     const [regionSnap, pestSnap] = await Promise.all([
-      getAdminDb().collection("regions").doc(regionSlug).get(),
-      getAdminDb().collection("pests").doc(pestSlug).get(),
+      getAdminDb().collection("regions").doc(params.data.regionSlug).get(),
+      getAdminDb().collection("pests").doc(params.data.pestSlug).get(),
     ]);
 
     if (!regionSnap.exists) {
@@ -85,11 +92,22 @@ export const generateCombinationContent = async (
     }
 
     // 3. Parse AI response using the safe JSON extractor
-    const generated = extractAndParseJson<GeneratedContent>(responseText);
+    const generatedRaw = extractAndParseJson<GeneratedContent>(responseText);
 
-    return { success: true, data: generated };
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.aiGeneration, { regionSlug, pestSlug, error });
+    const validated = generatedContentSchema.safeParse(generatedRaw);
+    if (!validated.success) {
+      console.error("AI generation failed", {
+        regionSlug,
+        pestSlug,
+        error: "Generated content validation failed: " + validated.error.message
+      });
+      return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
+    }
+
+    return { success: true, data: validated.data };
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("AI generation failed", { regionSlug, pestSlug, error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.AI_GENERATION_FAILED };
   }
 };
@@ -112,30 +130,193 @@ export const saveCombination = async (
   content: GeneratedContent,
   isActive: boolean
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  const parsed = saveCombinationSchema.safeParse({
+    regionSlug,
+    pestSlug,
+    regionName,
+    pestName,
+    content,
+    isActive,
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
-    const docId = `${regionSlug}_${pestSlug}`;
+    const {
+      regionSlug: parsedRegionSlug,
+      pestSlug: parsedPestSlug,
+      regionName: parsedRegionName,
+      pestName: parsedPestName,
+      content: parsedContent,
+      isActive: parsedIsActive,
+    } = parsed.data;
+    const docId = `${parsedRegionSlug}_${parsedPestSlug}`;
 
     const docData: CombinationDoc = {
-      region: regionSlug,
-      pest: pestSlug,
-      regionName,
-      pestName,
-      title: content.title,
-      h1: content.h1,
-      metaDesc: content.metaDesc,
-      content: content.content,
-      faq: content.faq,
-      isActive,
+      region: parsedRegionSlug,
+      pest: parsedPestSlug,
+      regionName: parsedRegionName,
+      pestName: parsedPestName,
+      title: parsedContent.title,
+      h1: parsedContent.h1,
+      metaDesc: parsedContent.metaDesc,
+      content: parsedContent.content,
+      faq: parsedContent.faq,
+      isActive: parsedIsActive,
     };
 
     await getAdminDb().collection("combinations").doc(docId).set(docData, { merge: true });
 
     // Invalidate cache with read-your-writes semantics
-    updateTag(getCombinationCacheTag(regionSlug, pestSlug));
+    updateTag(getCombinationCacheTag(parsedRegionSlug, parsedPestSlug));
+    updateTag("all-combinations");
 
     return { success: true };
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.createCombination, { regionSlug, pestSlug, error });
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to create combination", { regionSlug, pestSlug, error: errorInfo });
+    return { success: false, error: COMBINATION_ERRORS.SAVE_FAILED };
+  }
+};
+
+/**
+ * Saves a combination to Firestore WITHOUT invalidating any cache tags.
+ * Intended for bulk generation flows. Saves the combination as a draft
+ * without triggering public cache invalidation.
+ *
+ * @param regionSlug - The region slug
+ * @param pestSlug - The pest slug
+ * @param regionName - Display name for the region
+ * @param pestName - Display name for the pest
+ * @param content - The generated content fields
+ * @param isActive - Whether the page should be publicly visible
+ * @returns Success or error
+ */
+export const saveCombinationSilently = async (
+  regionSlug: string,
+  pestSlug: string,
+  regionName: string,
+  pestName: string,
+  content: GeneratedContent,
+  isActive: boolean
+): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  const parsed = saveCombinationSchema.safeParse({
+    regionSlug,
+    pestSlug,
+    regionName,
+    pestName,
+    content,
+    isActive,
+  });
+
+  if (!parsed.success) {
+    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const {
+      regionSlug: parsedRegionSlug,
+      pestSlug: parsedPestSlug,
+      regionName: parsedRegionName,
+      pestName: parsedPestName,
+      content: parsedContent,
+      isActive: parsedIsActive,
+    } = parsed.data;
+    const docId = `${parsedRegionSlug}_${parsedPestSlug}`;
+
+    const docData: CombinationDoc = {
+      region: parsedRegionSlug,
+      pest: parsedPestSlug,
+      regionName: parsedRegionName,
+      pestName: parsedPestName,
+      title: parsedContent.title,
+      h1: parsedContent.h1,
+      metaDesc: parsedContent.metaDesc,
+      content: parsedContent.content,
+      faq: parsedContent.faq,
+      isActive: parsedIsActive,
+    };
+
+    // Intentionally no updateTag here since the combination is saved as a draft.
+    await getAdminDb().collection("combinations").doc(docId).set(docData, { merge: true });
+
+    return { success: true };
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to create combination", { regionSlug, pestSlug, error: errorInfo });
+    return { success: false, error: COMBINATION_ERRORS.SAVE_FAILED };
+  }
+};
+
+const getErrorInfo = (
+  error: unknown,
+): { code?: string; message?: string } => {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as { code?: unknown; message?: unknown };
+
+    return {
+      code: typeof candidate.code === "string"
+        ? candidate.code
+        : typeof candidate.code === "number"
+          ? String(candidate.code)
+          : undefined,
+      message: typeof candidate.message === "string"
+        ? candidate.message
+        : error instanceof Error
+          ? error.message
+          : undefined,
+    };
+  }
+
+  return {};
+};
+
+/**
+ * Toggles the isActive status of a combination.
+ *
+ * @param regionSlug - The region slug
+ * @param pestSlug - The pest slug
+ * @param isActive - The new active status
+ * @returns Success or error
+ */
+export const toggleCombinationStatus = async (
+  regionSlug: string,
+  pestSlug: string,
+  isActive: boolean
+): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  const parsed = toggleCombinationSchema.safeParse({ regionSlug, pestSlug, isActive });
+
+  if (!parsed.success) {
+    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const { regionSlug: parsedRegion, pestSlug: parsedPest, isActive: parsedIsActive } = parsed.data;
+    const docId = `${parsedRegion}_${parsedPest}`;
+
+    // Using update instead of set with merge to avoid creating orphan docs.
+    // This will throw if the document doesn't exist.
+    await getAdminDb().collection("combinations").doc(docId).update({ isActive: parsedIsActive });
+
+    updateTag(getCombinationCacheTag(parsedRegion, parsedPest));
+    updateTag("all-combinations");
+
+    return { success: true };
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+
+    console.error("Failed to update combination status", {
+      regionSlug,
+      pestSlug,
+      error: errorInfo
+    });
+
+    if (errorInfo.code === "5" || errorInfo.message?.includes("NOT_FOUND")) {
+      return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
+    }
+
     return { success: false, error: COMBINATION_ERRORS.SAVE_FAILED };
   }
 };
@@ -175,11 +356,12 @@ export const getAdminCombinations = async (): Promise<ActionResponse<Combination
         regionName: data.regionName || regionMap.get(data.region) || data.region,
         pestName: data.pestName || pestMap.get(data.pest) || data.pest,
       };
-    });
+    }).sort((a, b) => a.id.localeCompare(b.id));
 
     return { success: true, data: rows };
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.fetchCombinations, error);
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to fetch combinations", { error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.FETCH_FAILED };
   }
 };
@@ -204,8 +386,9 @@ export const getAllActiveCombinations = async (): Promise<{ region: string; pest
         pest: String(data.pest || ""),
       };
     });
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.fetchCombinations, error);
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to fetch combinations", { error: errorInfo });
     return [];
   }
 };
@@ -228,8 +411,9 @@ export const deleteCombination = async (
     updateTag(getCombinationCacheTag(regionSlug, pestSlug));
 
     return { success: true };
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.deleteCombination, { regionSlug, pestSlug, error });
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to delete combination", { regionSlug, pestSlug, error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.DELETE_FAILED };
   }
 };
@@ -254,8 +438,9 @@ export const loadCombination = async (
     }
 
     return { success: true, data: parseCombinationDoc(snap.data()) };
-  } catch (error) {
-    console.error(DICTIONARY.systemErrors.logs.fetchCombinations, { regionSlug, pestSlug, error });
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to fetch combinations", { regionSlug, pestSlug, error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.FETCH_FAILED };
   }
 };

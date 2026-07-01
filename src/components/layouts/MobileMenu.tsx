@@ -39,6 +39,8 @@ export const MobileMenu = ({
     setIsServicesOpen(false);
   };
 
+  const servicesAccordionStyle = { gridTemplateRows: isServicesOpen ? "1fr" : "0fr" };
+
   return (
     <div className="lg:hidden flex items-center">
       <Button
@@ -79,7 +81,8 @@ export const MobileMenu = ({
 
             <div
               id="mobile-services-menu"
-              className={`grid transition-all duration-300 ease-in-out ${isServicesOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+              className={`grid transition-all duration-300 ease-in-out ${isServicesOpen ? "opacity-100" : "opacity-0"}`}
+              style={servicesAccordionStyle}
             >
               <div className="overflow-hidden">
                 <div className="flex flex-col pl-4 pt-2 space-y-6">

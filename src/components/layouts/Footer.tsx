@@ -57,14 +57,14 @@ export const Footer = async () => {
           {footerPests.length > 0 && (
             <FooterLinksColumn 
               title={DICTIONARY.footer.sections.services}
-              links={footerPests.map(p => ({ href: `${ROUTES.pestBase}/${p.slug}`, label: p.name }))}
+              links={footerPests.map((p) => ({ href: `${ROUTES.pestBase}/${p.slug}`, label: p.name }))}
             />
           )}
 
           {footerRegions.length > 0 && (
             <FooterLinksColumn 
               title={DICTIONARY.footer.sections.regions}
-              links={footerRegions.map(r => ({ href: `${ROUTES.regionBase}/${r.slug}`, label: r.name }))}
+              links={footerRegions.map((r) => ({ href: `${ROUTES.regionBase}/${r.slug}`, label: r.name }))}
             />
           )}
         </div>
