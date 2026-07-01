@@ -24,6 +24,7 @@ export const generateMetadata = async ({ params }: RegionPageProps): Promise<Met
   return {
     title: region ? `${region.name}${DICTIONARY.meta.regions.regionTitleSuffix} | ${DICTIONARY.global.brand}` : DICTIONARY.global.brand,
     description: region?.description || `${region?.name || DICTIONARY.global.city}${DICTIONARY.meta.regions.regionDescSuffix}`,
+    alternates: { canonical: `${ROUTES.regionBase}/${regionSlug}` },
   };
 };
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
+import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layouts/PublicPageHeader";
 import { ContactSection } from "@/features/home/components/sections/ContactSection";
 import { getGlobalData } from "@/features/settings/actions";
@@ -7,6 +8,7 @@ import { getGlobalData } from "@/features/settings/actions";
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.contact.title} | ${DICTIONARY.global.brand}`,
   description: DICTIONARY.home.contact.description,
+  alternates: { canonical: ROUTES.contact },
 };
 
 const ContactPage = async () => {

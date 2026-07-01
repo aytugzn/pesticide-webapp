@@ -48,7 +48,6 @@ export const generateMetadata = async ({
 }: CombinationPageProps): Promise<Metadata> => {
   const { regionSlug, pestSlug } = await params;
   const data = await getCombination(regionSlug, pestSlug);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DICTIONARY.global.siteUrl;
 
   if (!data) {
     return {
@@ -57,7 +56,7 @@ export const generateMetadata = async ({
     };
   }
 
-  const canonicalUrl = `${baseUrl}/${regionSlug}/${pestSlug}`;
+  const canonicalUrl = `/${regionSlug}/${pestSlug}`;
 
   return {
     title: data.title || DICTIONARY.meta.default.title,

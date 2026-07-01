@@ -68,10 +68,8 @@ const homeDict = {
     tagline: "Profesyonel İlaçlama ve Dezenfeksiyon Hizmetleri",
     titleLine1: "Bir Adım Önde,",
     titleLine2: "Güvenle Adım Atın",
-    description1:
-      "İşletmenizi veya evinizi zararlı böceklerden ve haşerelerden",
-    description2: "korumak için profesyonel ve garantili çözümler sunuyoruz.",
-    description3:
+    description: "İşletmenizi veya evinizi zararlı böceklerden ve haşerelerden korumak için profesyonel ve garantili çözümler sunuyoruz.",
+    descriptionCta:
       "Zararlıların kabusunuz olmasına izin vermeyin. Hemen bizimle iletişime geçin.",
   },
   googleStats: {
@@ -265,22 +263,24 @@ const metaDict = {
   privacy: {
     title: "Gizlilik Politikası",
     description: "DMR İlaçlama Gizlilik Politikası",
+    content: "İletişim formları ve dijital kanallar üzerinden paylaştığınız bilgiler, hizmet talebinizi yanıtlamak ve sizinle iletişime geçmek amacıyla işlenir.",
   },
   terms: {
     title: "Kullanım Koşulları",
     description: "DMR İlaçlama Kullanım Koşulları",
+    content: "Bu web sitesindeki bilgiler genel bilgilendirme amaçlıdır. Hizmet kapsamı, uygulama koşulları ve fiyatlandırma keşif sonrasında netleştirilir.",
   },
   kvkk: {
     title: "KVKK Aydınlatma Metni",
     description: "DMR İlaçlama KVKK Aydınlatma Metni",
+    content: "Talep formları aracılığıyla iletilen ad, telefon, hizmet ve bölge bilgileri; geri dönüş sağlamak, hizmet sürecini planlamak ve kayıt tutmak amacıyla işlenir.",
   },
   certificates: {
     title: "İzinler ve Sertifikalar",
     description: "DMR İlaçlama ruhsat, izin ve profesyonel hizmet standartları.",
     headerDesc: "Ruhsatlı, kontrollü ve profesyonel ilaçlama hizmet standartlarımız.",
-    feature1: "Yetkili ve kayıtlı hizmet",
-    feature2: "DMR İlaçlama; hizmetlerinde onaylı ürünler, kayıtlı uygulama süreçleri",
-    feature3: "Detaylı belge ve ruhsat bilgileri için bizimle iletişime geçebilirsiniz.",
+    certifiedProductsTitle: "Yetkili ve kayıtlı hizmet",
+    operationStandardsParagraph: "DMR İlaçlama; hizmetlerinde onaylı ürünler, kayıtlı uygulama süreçleri ve müşteri güvenliğini merkeze alan operasyon standartlarıyla çalışır. Detaylı belge ve ruhsat bilgileri için bizimle iletişime geçebilirsiniz.",
   },
   twitter: {
     card: "summary_large_image",
@@ -439,6 +439,7 @@ const adminDict = {
       running: "Üretiliyor... ({done}/{total})",
       doneAll: "Tüm kombinasyonlar başarıyla üretildi!",
       draftNote: "Taslak (pasif) olarak kaydedildi.",
+      partialDone: "{done}/{total} kombinasyon üretildi.",
       statusPending: "Bekliyor",
       statusGenerating: "Üretiliyor...",
       statusDone: "Tamamlandı",
@@ -477,6 +478,12 @@ const adminDict = {
     saving: "Kaydediliyor...",
     cancel: "İptal",
     empty: "Kayıtlı yorum bulunamadı.",
+    description: "Ana sayfada gösterilen müşteri yorumlarını takip edin.",
+    table: {
+      customer: "Müşteri",
+      rating: "Puan",
+      comment: "Yorum",
+    },
   },
   reports: {
     title: "Servis Raporları",
@@ -504,6 +511,16 @@ const adminDict = {
   settings: {
     title: "Ayarlar",
     description: "Site genelinde kullanılan temel iletişim ve marka ayarlarını kontrol edin.",
+    empty: "Ayar bulunamadı.",
+    table: {
+      field: "Alan",
+      value: "Değer",
+      phone: "Telefon",
+      email: "E-posta",
+      address: "Adres",
+      workingHours: "Çalışma saatleri",
+      licenseNumber: "Ruhsat no",
+    },
   },
 };
 

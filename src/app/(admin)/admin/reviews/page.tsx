@@ -26,12 +26,12 @@ const AdminReviewsPage = async () => {
     <AdminListPage
       eyebrow={DICTIONARY.admin.dashboard.subtitle}
       title={DICTIONARY.admin.reviews.title}
-      description="Ana sayfada gösterilen müşteri yorumlarını takip edin."
+      description={DICTIONARY.admin.reviews.description}
       icon={Star}
     >
       <AdminDataTable
         emptyText={DICTIONARY.admin.reviews.empty}
-        columns={["Müşteri", "Puan", "Yorum"]}
+        columns={[DICTIONARY.admin.reviews.table.customer, DICTIONARY.admin.reviews.table.rating, DICTIONARY.admin.reviews.table.comment]}
         rows={rows}
       />
     </AdminListPage>

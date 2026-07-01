@@ -40,11 +40,10 @@ export const Hero = ({
                 </span>
               </h1>
               <p className="text-text-secondary text-base md:text-lg max-w-lg mt-4 leading-relaxed font-medium">
-                {DICTIONARY.home.hero.description1}{" "}
-                <strong className="text-text-primary font-bold">
-                  {DICTIONARY.home.hero.description2}
-                </strong>{" "}
-                {DICTIONARY.home.hero.description3}
+                {DICTIONARY.home.hero.description}
+              </p>
+              <p className="text-text-secondary text-base md:text-lg max-w-lg leading-relaxed font-medium">
+                {DICTIONARY.home.hero.descriptionCta}
               </p>
             </div>
 

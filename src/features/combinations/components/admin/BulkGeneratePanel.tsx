@@ -139,7 +139,7 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
       {hasFinished && !allDone && (
         <Alert
           variant="info"
-          message={`${doneCount}/${progress.length} kombinasyon üretildi. ${d.draftNote}`}
+          message={`${d.partialDone.replace("{done}", String(doneCount)).replace("{total}", String(progress.length))} ${d.draftNote}`}
         />
       )}
 

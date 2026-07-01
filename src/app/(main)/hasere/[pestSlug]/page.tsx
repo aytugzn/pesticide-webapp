@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DICTIONARY } from "@/constants/dictionary";
+import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layouts/PublicPageHeader";
 import { ContactSection } from "@/features/home/components/sections/ContactSection";
 import { getGlobalData } from "@/features/settings/actions";
@@ -22,6 +23,7 @@ export const generateMetadata = async ({ params }: PestPageProps): Promise<Metad
   return {
     title: pest ? `${pest.name}${DICTIONARY.meta.regions.pestTitleSuffix} | ${DICTIONARY.global.brand}` : DICTIONARY.global.brand,
     description: pest?.description || DICTIONARY.home.services.defaultPestDesc,
+    alternates: { canonical: `${ROUTES.pestBase}/${pestSlug}` },
   };
 };
 

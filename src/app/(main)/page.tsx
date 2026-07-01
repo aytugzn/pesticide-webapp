@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
+import { ROUTES } from "@/constants/routes";
 import { Hero } from "@/features/home/components/sections/Hero";
 import { ServicesSection } from "@/features/home/components/sections/ServicesSection";
 import { WhyUsSection } from "@/features/home/components/sections/WhyUsSection";
@@ -22,6 +23,7 @@ import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 export const metadata: Metadata = {
   title: DICTIONARY.meta.default.title,
   description: DICTIONARY.meta.default.description,
+  alternates: { canonical: ROUTES.home },
 };
 
 const DEFAULT_SETTINGS: SettingsDoc = {

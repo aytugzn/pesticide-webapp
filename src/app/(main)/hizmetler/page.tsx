@@ -9,6 +9,7 @@ import { getGlobalData } from "@/features/settings/actions";
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.services.title} | ${DICTIONARY.global.brand}`,
   description: DICTIONARY.home.services.description,
+  alternates: { canonical: ROUTES.services },
 };
 
 const ServicesPage = async () => {

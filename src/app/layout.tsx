@@ -50,9 +50,6 @@ export const generateMetadata = async (): Promise<Metadata> => {
     keywords: DICTIONARY.meta.default.keywords,
     authors: [{ name: DICTIONARY.meta.default.author }],
     publisher: DICTIONARY.meta.default.publisher,
-    alternates: {
-      canonical: "/",
-    },
     robots: {
       index: true,
       follow: true,
@@ -95,10 +92,10 @@ const RootLayout = ({
     name: DICTIONARY.meta.default.title,
     description: DICTIONARY.meta.default.description,
     url: process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl,
-    areaServed: "İzmir, Turkey",
+    areaServed: `${DICTIONARY.global.city}, Turkey`,
     address: {
       "@type": "PostalAddress",
-      addressRegion: "İzmir",
+      addressRegion: DICTIONARY.global.city,
       addressCountry: "TR",
     },
   };

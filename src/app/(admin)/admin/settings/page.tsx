@@ -17,11 +17,11 @@ const AdminSettingsPage = async () => {
   const snap = await getAdminDb().collection("settings").doc("general").get();
   const settings = parseSettingsDoc(snap.data());
   const rows = [
-    ["Telefon", settings.phone || "-"],
-    ["E-posta", settings.email || "-"],
-    ["Adres", settings.address || "-"],
-    ["Calisma saatleri", settings.workingHours || "-"],
-    ["Ruhsat no", settings.licenseNumber || "-"],
+    [DICTIONARY.admin.settings.table.phone, settings.phone || "-"],
+    [DICTIONARY.admin.settings.table.email, settings.email || "-"],
+    [DICTIONARY.admin.settings.table.address, settings.address || "-"],
+    [DICTIONARY.admin.settings.table.workingHours, settings.workingHours || "-"],
+    [DICTIONARY.admin.settings.table.licenseNumber, settings.licenseNumber || "-"],
   ];
 
   return (
@@ -32,8 +32,8 @@ const AdminSettingsPage = async () => {
       icon={Settings}
     >
       <AdminDataTable
-        emptyText="Ayar bulunamadı."
-        columns={["Alan", "Değer"]}
+        emptyText={DICTIONARY.admin.settings.empty}
+        columns={[DICTIONARY.admin.settings.table.field, DICTIONARY.admin.settings.table.value]}
         rows={rows}
       />
     </AdminListPage>
