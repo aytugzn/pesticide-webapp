@@ -43,3 +43,7 @@ next-env.d.ts
 
 # Deployment Docs
 deployment_checklist.md
+
+# Commit msg drafts
+commit.txt
+commit_msg.txt
