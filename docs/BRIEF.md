@@ -1,7 +1,7 @@
 # DMR İlaçlama — Proje & SEO Brief
 
-> **Stack:** Next.js 14+ · TypeScript · Firebase Firestore / Auth  
-> **AI İçerik:** Gemini 2.0 Flash API (Google AI Studio — ücretsiz tier)  
+> **Stack:** Next.js 16.2+ · TypeScript · Firebase Firestore / Auth
+> **AI İçerik:** Gemini 3.5 Flash API (Google AI Studio — ücretsiz tier)
 > **SEO Katmanı:** Antigravity  
 > **Proje Tipi:** Müşteri projesi + portföy
 
@@ -319,6 +319,6 @@ export default async function sitemap() {
 
 ---
 
-*Stack: Next.js 14 · TypeScript · Firebase · Gemini API*
+*Stack: Next.js 16 · TypeScript · Firebase · Gemini API*
 *SEO: Antigravity*
 *Haziran 2026*

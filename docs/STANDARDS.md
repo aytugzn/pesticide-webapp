@@ -66,7 +66,7 @@ We have a centralized, highly strict error handling architecture.
 - **Middleware Boundary**: `proxy.ts` (Next.js 16 Node.js runtime middleware) intercepts all `/admin/*` routes to verify the `admin_session` cookie via `firebase-admin`.
 - **Whitelist**: Only the email defined in `ADMIN_EMAIL` environment variable can create a session.
 
-## 9. AI Integration (Gemini 2.0)
+## 9. AI Integration (Gemini 3.5 Flash)
 - **Prompt Isolation**: NEVER pass the entire database context to the AI. Pass only strictly necessary `description` strings to prevent token overflow.
 - **JSON Parsing**: NEVER parse Gemini responses directly. All AI responses MUST be passed through the `extractAndParseJson` utility (`src/utils/parsers.ts`) which guarantees markdown stripping and structural validation before JSON execution.
 

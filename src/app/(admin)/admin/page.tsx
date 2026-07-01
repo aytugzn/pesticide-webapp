@@ -27,7 +27,7 @@ const getDashboardStats = async () => {
   };
 };
 
-export default async function AdminPage() {
+const AdminPage = async () => {
   const stats = await getDashboardStats();
   const d = DICTIONARY.admin.dashboard;
 
@@ -86,4 +86,6 @@ export default async function AdminPage() {
       </div>
     </div>
   );
-}
+};
+
+export default AdminPage;

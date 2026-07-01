@@ -11,10 +11,10 @@ type ErrorProps = {
   unstable_retry?: () => void;
 };
 
-export default function ErrorBoundary({
+const ErrorBoundary = ({
   reset,
   unstable_retry,
-}: ErrorProps) {
+}: ErrorProps) => {
   return (
     <div className="flex-1 w-full flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-brand-surface border border-brand-border rounded-brand-xl p-8 shadow-sm flex flex-col items-center gap-6 text-center">
@@ -58,4 +58,6 @@ export default function ErrorBoundary({
       </div>
     </div>
   );
-}
+};
+
+export default ErrorBoundary;

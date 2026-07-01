@@ -3,7 +3,7 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
 import { DICTIONARY } from "@/constants/dictionary";
-import { cacheTag } from "next/cache";
+import { cacheTag, updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { SETTINGS_ERRORS, type SettingsErrorCode, type GlobalData } from "./types";
 
@@ -96,8 +96,9 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
       }
     }, { merge: true });
 
-    // 4. NOTE: Deliberately skipping updateTag("global-data") here.
-    // Revalidation will be handled by a global "Publish" button later.
+    // Invalidate global settings cache with read-your-writes semantics
+    updateTag("global-data");
+    updateTag("layout-settings");
 
     return { success: true };
 

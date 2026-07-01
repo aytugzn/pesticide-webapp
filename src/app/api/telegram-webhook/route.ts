@@ -29,7 +29,7 @@ const telegramDict = DICTIONARY.home.contact.telegram;
  * Listens only for the "resolve_" callback button.
  * The "Call" button directly triggers a tel: URL, bypassing the webhook.
  */
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export const POST = async (req: NextRequest): Promise<NextResponse> => {
   // --- 1. Security: Verify the secret token ---
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
 
