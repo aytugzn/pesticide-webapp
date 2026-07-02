@@ -50,7 +50,7 @@ export const ReviewsMarquee = ({
 
       {/* Scrolling Track */}
       <div
-        className="flex reviews-marquee-track w-max animate-marquee"
+        className="flex w-max animate-marquee group-hover:animate-paused"
         style={marqueeStyle}
       >
         {/* We use two exact copies of the blocks. 
@@ -74,7 +74,8 @@ export const ReviewsMarquee = ({
           ))}
         </div>
 
-        <div className="flex gap-6 pr-6" aria-hidden="true">
+        {/* Duplicate for infinite effect */}
+        <div className="flex gap-6 pr-6">
           {set2Reviews.map((review, idx) => (
             <ReviewCard
               key={`set2-${review.id}-${idx}`}

@@ -12,9 +12,12 @@ export const ContactSection = ({ pests, regions }: ContactSectionProps) => {
   const data = DICTIONARY.home.contact;
 
   return (
-    <section className="py-20 md:py-28 relative" id="contact" aria-labelledby="contact-heading">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+    <section
+      className="py-20 md:py-28"
+      id="contact"
+      aria-labelledby="contact-heading"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <SectionHeader
           id="contact-heading"
@@ -29,7 +32,6 @@ export const ContactSection = ({ pests, regions }: ContactSectionProps) => {
         <div className="mt-12">
           <ContactForm pests={pests} regions={regions} />
         </div>
-
       </div>
     </section>
   );

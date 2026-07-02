@@ -76,7 +76,8 @@ export const GoogleStats = ({
             <ScrollButton
               targetId="google-reviews"
               variant="unstyled"
-              className="text-xs md:text-sm font-medium text-text-muted hover:text-brand-primary hover:underline transition-all whitespace-nowrap px-0 h-auto min-h-0"
+              title={DICTIONARY.home.googleReviews.title}
+              className="text-xs md:text-sm font-medium text-text-secondary hover:text-brand-primary hover:underline transition-all whitespace-nowrap px-0 h-auto min-h-0"
             >
               ({displayReviewCount} {DICTIONARY.home.googleStats.reviewsText})
             </ScrollButton>
@@ -92,6 +93,7 @@ export const GoogleStats = ({
           rel="noopener noreferrer"
           className="p-2.5 sm:p-3 rounded-full bg-brand-surface border border-brand-border/50 text-instagram hover:bg-instagram/5 hover:scale-110 transition-all duration-300 shadow-sm"
           aria-label={DICTIONARY.social.instagram.aria}
+          title={DICTIONARY.social.instagram.aria}
         >
           <InstagramIcon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
         </a>
@@ -101,6 +103,7 @@ export const GoogleStats = ({
           rel="noopener noreferrer"
           className="p-2.5 sm:p-3 rounded-full bg-brand-surface border border-brand-border/50 text-facebook hover:bg-facebook/5 hover:scale-110 transition-all duration-300 shadow-sm"
           aria-label={DICTIONARY.social.facebook.aria}
+          title={DICTIONARY.social.facebook.aria}
         >
           <FacebookIcon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />
         </a>

@@ -108,6 +108,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           target="_blank"
           rel="noopener noreferrer"
           aria-label={DICTIONARY.social.instagram.aria}
+          title={DICTIONARY.social.instagram.aria}
           className="w-9 h-9 rounded-full bg-brand-surface-hover flex items-center justify-center text-text-secondary hover:text-instagram hover:bg-instagram/10 transition-colors"
         >
           <InstagramIcon className="w-4 h-4" />
@@ -119,6 +120,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           target="_blank"
           rel="noopener noreferrer"
           aria-label={DICTIONARY.social.facebook.aria}
+          title={DICTIONARY.social.facebook.aria}
           className="w-9 h-9 rounded-full bg-brand-surface-hover flex items-center justify-center text-text-secondary hover:text-facebook hover:bg-facebook/10 transition-colors"
         >
           <FacebookIcon className="w-4 h-4" />
@@ -130,6 +132,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           target="_blank"
           rel="noopener noreferrer"
           aria-label={DICTIONARY.social.whatsapp.aria}
+          title={DICTIONARY.social.whatsapp.aria}
           className="w-9 h-9 rounded-full bg-brand-surface-hover flex items-center justify-center text-text-secondary hover:text-whatsapp hover:bg-whatsapp/10 transition-colors"
         >
           <MessageCircle className="w-4 h-4" />

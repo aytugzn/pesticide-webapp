@@ -56,6 +56,7 @@ export const Hero = ({
                 href={telUrl}
                 variant="outline"
                 size="none"
+                title={DICTIONARY.social.phone.callNow}
                 className="rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 inline-flex items-center justify-center gap-2 transition-all duration-200 bg-brand-surface"
               >
                 <Phone
@@ -71,6 +72,7 @@ export const Hero = ({
                 href={whatsappUrl}
                 variant="success"
                 size="none"
+                title={DICTIONARY.social.whatsapp.aria}
                 className="rounded-full px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-sm lg:flex-1 inline-flex items-center justify-center gap-2 transition-all duration-200 border border-whatsapp/50 dark:border-whatsapp/30"
                 external
               >
@@ -87,6 +89,7 @@ export const Hero = ({
                 targetId="contact"
                 variant="primary"
                 size="none"
+                title={DICTIONARY.social.phone.callMeBack}
                 className="rounded-full col-span-2 lg:col-span-1 px-3 py-4 text-xs sm:text-sm xl:text-base font-bold shadow-md hover:shadow-xl shadow-brand-primary/20 lg:flex-1 inline-flex items-center justify-center gap-2 transition-all duration-200"
               >
                 <PhoneCall
