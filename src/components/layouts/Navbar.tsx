@@ -48,15 +48,14 @@ export const Navbar = async () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link href={ROUTES.home} className="flex items-center gap-2">
+              <Link href={ROUTES.home} className="relative block h-10 lg:h-12 aspect-[4/1]">
                 <Image
                   src={logoImg}
                   alt={DICTIONARY.navbar.logo.alt}
                   title={DICTIONARY.navbar.logo.title}
-                  width={160}
-                  height={40}
+                  fill
                   priority
-                  className="h-10 lg:h-12 w-auto dark:invert dark:brightness-0"
+                  className="object-contain object-left dark:invert dark:brightness-0"
                 />
               </Link>
             </div>

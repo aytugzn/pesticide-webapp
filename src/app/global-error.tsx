@@ -1,23 +1,14 @@
 "use client";
 
-import { Inter, Montserrat } from "next/font/google";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AlertTriangle, Home, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  display: "swap",
-});
+// Fonts are deliberately removed from global-error.tsx because 
+// next/font/google crashes when used inside 'use client' components 
+// alongside the React Compiler. System fonts will be used as a safe fallback.
 
 type GlobalErrorProps = {
   error: Error & { digest?: string };
@@ -28,7 +19,7 @@ const GlobalError = ({ reset }: GlobalErrorProps) => {
   return (
     <html
       lang="tr"
-      className={`${inter.variable} ${montserrat.variable} h-full`}
+      className="h-full"
     >
       <body className="min-h-full flex flex-col items-center justify-center bg-surface-neutral p-4 font-sans text-center">
         <div className="max-w-md w-full bg-brand-surface border border-brand-border rounded-brand-xl p-8 shadow-sm flex flex-col items-center gap-6">

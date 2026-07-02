@@ -58,29 +58,14 @@ export const ReviewCard = ({
   const containerClasses =
     "w-72 md:w-96 flex-shrink-0 bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-md hover:shadow-lg transition-all flex flex-col";
 
-  if (review.reviewUrl) {
-    if (isClone) {
-      // Clones use onClick instead of <a> to hide from SEO tools looking for duplicate links
-      return (
-        <div
-          onClick={() =>
-            window.open(review.reviewUrl, "_blank", "noopener,noreferrer")
-          }
-          className={`block cursor-pointer ${containerClasses}`}
-          aria-hidden="true"
-          tabIndex={-1}
-        >
-          {content}
-        </div>
-      );
-    }
-
+  if (review.reviewUrl && !isClone) {
     return (
       <a
         href={review.reviewUrl}
         target="_blank"
         rel="noopener noreferrer"
         className={`block cursor-pointer ${containerClasses}`}
+        title={`${review.authorName} - ${DICTIONARY.home.googleReviews.avatarTitleSuffix}`}
       >
         {content}
       </a>
@@ -88,11 +73,12 @@ export const ReviewCard = ({
   }
 
   return (
-    <article
-      className={containerClasses}
+    <div
+      onClick={() => window.open(review.reviewUrl, "_blank", "noopener,noreferrer")}
+      className={`cursor-pointer ${containerClasses}`}
       aria-hidden={isClone ? "true" : undefined}
     >
       {content}
-    </article>
+    </div>
   );
 };

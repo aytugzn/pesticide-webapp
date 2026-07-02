@@ -121,6 +121,7 @@ export const Select = ({
         id={`${name}-listbox`}
         role="listbox"
         aria-hidden={!isOpen}
+        {...(!isOpen ? { inert: true } : {})}
         className={cn(
           "absolute top-full left-0 z-50 w-full mt-1 bg-brand-surface border border-brand-border rounded-xl shadow-2xl py-2 max-h-60 overflow-y-auto custom-scrollbar",
           "transition-all duration-150 ease-out origin-top",
