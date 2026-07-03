@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { useCombinationJob } from "./CombinationJobProvider";
 import type { RegionDoc, PestDoc } from "@/types";
-import type { CombinationRow, BulkProgressItem, BulkJobStatus } from "../../types";
+import type { CombinationLightRow, BulkProgressItem, BulkJobStatus } from "../../types";
 
 const ICON_SIZE = 14;
 
 type BulkGeneratePanelProps = {
   regions: RegionDoc[];
   pests: PestDoc[];
-  existingRows: CombinationRow[];
+  existingRows: CombinationLightRow[];
 };
 
 /** Icon and label for each bulk job status. */

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { deleteCombination, toggleCombinationStatus } from "../../actions";
+import { archiveCombination, toggleCombinationStatus, getAdminCombination } from "../../actions";
 import { DICTIONARY } from "@/constants/dictionary";
-import type { CombinationRow } from "../../types";
+import type { CombinationRow, CombinationLightRow } from "../../types";
 import { AdminEntityTable, type AdminEntityColumn } from "@/components/ui/AdminEntityTable";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +13,7 @@ import { cn } from "@/utils/cn";
 import { CombinationEditModal } from "./CombinationEditModal";
 
 type CombinationsTableProps = {
-  initialRows: CombinationRow[];
+  initialRows: CombinationLightRow[];
 };
 
 const ICON_SIZE = 18;
@@ -22,37 +22,62 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
   const d = DICTIONARY.admin.combinations;
   const [rows, setRows] = useState(initialRows);
 
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [rowToDelete, setRowToDelete] = useState<CombinationRow | null>(null);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [rowToArchive, setRowToArchive] = useState<CombinationLightRow | null>(null);
   const [rowToEdit, setRowToEdit] = useState<CombinationRow | null>(null);
+  const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [pendingToggleIds, setPendingToggleIds] = useState<Set<string>>(new Set());
 
-  const confirmDelete = useCallback(async () => {
-    if (!rowToDelete) return;
+  const confirmArchive = useCallback(async () => {
+    if (!rowToArchive) return;
 
-    setDeletingId(rowToDelete.id);
-    const result = await deleteCombination(rowToDelete.region, rowToDelete.pest);
+    setArchivingId(rowToArchive.id);
+    const result = await archiveCombination(rowToArchive.region, rowToArchive.pest);
 
     if (result.success) {
-      setRows((prev) => prev.filter((r) => r.id !== rowToDelete.id));
+      setRows((prev) => prev.filter((r) => r.id !== rowToArchive.id));
     }
-    setDeletingId(null);
-    setRowToDelete(null);
-  }, [rowToDelete]);
+    setArchivingId(null);
+    setRowToArchive(null);
+  }, [rowToArchive]);
 
-  const handleDeleteClick = useCallback((row: CombinationRow) => {
-    setRowToDelete(row);
+  const handleArchiveClick = useCallback((row: CombinationLightRow) => {
+    setRowToArchive(row);
   }, []);
 
-  const handleEditClick = useCallback((row: CombinationRow) => {
-    setRowToEdit(row);
-  }, []);
+  const handleEditClick = useCallback(async (row: CombinationLightRow) => {
+    if (loadingEditId) return;
+    setLoadingEditId(row.id);
+
+    try {
+      const res = await getAdminCombination(row.region, row.pest);
+      if (res.success && res.data) {
+        setRowToEdit(res.data);
+      } else {
+        alert(d.errorDefault);
+      }
+    } catch {
+      alert(d.errorDefault);
+    } finally {
+      setLoadingEditId(null);
+    }
+  }, [loadingEditId, d.errorDefault]);
 
   const handleEditSuccess = useCallback((updatedRow: CombinationRow) => {
-    setRows((prev) => prev.map((r) => (r.id === updatedRow.id ? updatedRow : r)));
+    setRows((prev) => prev.map((r) => {
+      if (r.id === updatedRow.id) {
+        return {
+          ...r,
+          isActive: updatedRow.isActive ?? false,
+          regionName: updatedRow.regionName,
+          pestName: updatedRow.pestName
+        };
+      }
+      return r;
+    }));
   }, []);
 
-  const handleToggleActive = useCallback(async (row: CombinationRow, isActive: boolean) => {
+  const handleToggleActive = useCallback(async (row: CombinationLightRow, isActive: boolean) => {
     if (pendingToggleIds.has(row.id)) return;
 
     setPendingToggleIds((prev) => {
@@ -78,7 +103,7 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
     }
   }, [pendingToggleIds]);
 
-  const columns: AdminEntityColumn<CombinationRow>[] = [
+  const columns: AdminEntityColumn<CombinationLightRow>[] = [
     {
       key: "region",
       header: d.table.region,
@@ -122,11 +147,16 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
             variant="unstyled"
             size="none"
             onClick={() => handleEditClick(row)}
-            className="p-2 text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-brand-sm transition-colors"
+            disabled={loadingEditId === row.id}
+            className="p-2 text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-brand-sm transition-colors disabled:opacity-50"
             aria-label={`${d.edit} ${row.regionName} ${row.pestName}`}
             title={d.edit}
           >
-            <Edit2 size={ICON_SIZE} aria-hidden="true" />
+            {loadingEditId === row.id ? (
+              <div className="w-[18px] h-[18px] border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Edit2 size={ICON_SIZE} aria-hidden="true" />
+            )}
           </Button>
           {row.isActive && (
             <a
@@ -143,11 +173,11 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
           <Button
             variant="unstyled"
             size="none"
-            onClick={() => handleDeleteClick(row)}
-            disabled={deletingId === row.id}
+            onClick={() => handleArchiveClick(row)}
+            disabled={archivingId === row.id}
             className="p-2 text-text-secondary hover:text-error-text hover:bg-error-bg rounded-brand-sm transition-colors disabled:opacity-50"
-            aria-label={`${d.delete} ${row.regionName} ${row.pestName}`}
-            title={d.delete}
+            aria-label={`${d.archive} ${row.regionName} ${row.pestName}`}
+            title={d.archive}
           >
             <Trash2 size={ICON_SIZE} aria-hidden="true" />
           </Button>
@@ -167,25 +197,25 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
       />
 
       <Modal
-        isOpen={!!rowToDelete}
-        onClose={() => setRowToDelete(null)}
-        title={d.delete}
+        isOpen={!!rowToArchive}
+        onClose={() => setRowToArchive(null)}
+        title={d.archive}
       >
-        <p className="text-text-secondary mb-6">{d.deleteConfirm}</p>
+        <p className="text-text-secondary mb-6">{d.archiveConfirm}</p>
         <div className="flex items-center justify-end gap-3 mt-2">
           <Button
             variant="outline"
-            onClick={() => setRowToDelete(null)}
-            disabled={!!deletingId}
+            onClick={() => setRowToArchive(null)}
+            disabled={!!archivingId}
           >
             {DICTIONARY.global.ui.cancel}
           </Button>
           <Button
             variant="danger"
-            onClick={confirmDelete}
-            disabled={!!deletingId}
+            onClick={confirmArchive}
+            disabled={!!archivingId}
           >
-            {deletingId ? DICTIONARY.global.loading : d.delete}
+            {archivingId ? DICTIONARY.global.loading : d.archive}
           </Button>
         </div>
       </Modal>

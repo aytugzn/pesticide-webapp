@@ -34,13 +34,20 @@ export type SeoEntityDictionary = {
   errorAiBusy: string;
   errorAiGen: string;
   errorAiVal: string;
+  errorQuotaExceeded: string;
   errorDefault: string;
   successGen: string;
   successSave: string;
+  errorSave: string;
+  updateSuccess: string;
+  updateError: string;
   saving: string;
   save: string;
   generateBtn: string;
   generatingBtn: string;
+  regenerateBtn: string;
+  regeneratingBtn: string;
+  regenerateSuccess: string;
   titleLabel: string;
   h1Label: string;
   metaLabel: string;
@@ -49,9 +56,10 @@ export type SeoEntityDictionary = {
 
 export type SeoEntityFormConfig<TError extends string> = {
   entity: "pest" | "region";
+  mode?: "create" | "edit";
   dictionary: SeoEntityDictionary;
   initialData?: SeoEntityInitialData;
-  checkExists: (slug: string) => Promise<boolean>;
+  checkExists: (slug: string) => Promise<ActionResponse<boolean, TError>>;
   generateContent: (
     name: string,
     description: string,
@@ -63,4 +71,9 @@ export type SeoEntityFormConfig<TError extends string> = {
     content: SeoGeneratedContent,
     isActive: boolean,
   ) => Promise<ActionResponse<void, TError>>;
+  update?: (
+    slug: string,
+    payload: Record<string, unknown>,
+  ) => Promise<ActionResponse<void, TError>>;
+  onSuccess?: () => void;
 };

@@ -34,7 +34,7 @@ export const CombinationHero = ({
                 href={ROUTES.home}
                 className="hover:text-brand-primary transition-colors"
               >
-                {DICTIONARY.pages.services.eyebrow}
+                {DICTIONARY.global.home}
               </Link>
             </li>
             <li aria-hidden="true" className="text-text-muted/60">

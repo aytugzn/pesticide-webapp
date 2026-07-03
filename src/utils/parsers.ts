@@ -182,6 +182,8 @@ export const parseCombinationDoc = (data: unknown): CombinationDoc => {
     faq,
     ogImage: d.ogImage ? String(d.ogImage) : undefined,
     isActive: Boolean(d.isActive ?? false),
+    isArchived: typeof d.isArchived === "boolean" ? d.isArchived : undefined,
+    archivedAt: typeof d.archivedAt === "number" ? d.archivedAt : undefined,
   };
 };
 

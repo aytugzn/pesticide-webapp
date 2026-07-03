@@ -48,12 +48,13 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
 
     combinationPages = combinationsSnap.docs
       .map((doc) => doc.data() as CombinationDoc)
-      .filter((data) => activeRegions.has(data.region) && activePests.has(data.pest))
+      .filter((data) => !data.isArchived && activeRegions.has(data.region) && activePests.has(data.pest))
       .map((data) => {
         return { url: `${baseUrl}/${data.region}/${data.pest}`, priority: 0.9, changeFrequency: "monthly" };
       });
   } catch (error) {
     console.error("Failed to generate sitemap", error);
+    throw error;
   }
 
   return [...staticPages, ...regionPages, ...pestPages, ...combinationPages];

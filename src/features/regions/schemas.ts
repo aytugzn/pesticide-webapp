@@ -31,3 +31,21 @@ export const saveRegionSchema = z.object({
   content: generatedContentSchema,
   isActive: z.boolean(),
 });
+
+export const updateRegionSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  description: z.string().optional(),
+  title: z.string().trim().min(1).max(60),
+  h1: z.string().trim().min(1).max(70),
+  metaDesc: z.string().trim().min(1).max(160),
+  content: z.string().trim().min(1),
+  faq: z
+    .array(
+      z.object({
+        question: z.string().trim().min(1).max(200),
+        answer: z.string().trim().min(1).max(800),
+      }),
+    )
+    .min(1)
+    .max(10),
+});

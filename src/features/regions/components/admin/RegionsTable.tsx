@@ -7,6 +7,9 @@ import { Switch } from "@/components/ui/Switch";
 import { cn } from "@/utils/cn";
 import { toggleRegionStatus } from "../../actions";
 import type { RegionDoc } from "@/types";
+import { Edit2 } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
+import { RegionForm } from "./RegionForm";
 
 type RegionsTableProps = {
   initialRows: RegionDoc[];
@@ -16,6 +19,13 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
   const d = DICTIONARY.admin.regions;
   const [rows, setRows] = useState(initialRows);
   const [pendingToggleIds, setPendingToggleIds] = useState<Set<string>>(new Set());
+  const [editingRow, setEditingRow] = useState<RegionDoc | null>(null);
+  const [prevInitialRows, setPrevInitialRows] = useState(initialRows);
+
+  if (initialRows !== prevInitialRows) {
+    setPrevInitialRows(initialRows);
+    setRows(initialRows);
+  }
 
   const handleToggleActive = useCallback(async (row: RegionDoc, isActive: boolean) => {
     if (pendingToggleIds.has(row.slug)) return;
@@ -78,14 +88,52 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
         </div>
       ),
     },
+    {
+      key: "actions",
+      header: d.table.actions,
+      render: (row) => (
+        <button
+          onClick={() => setEditingRow(row)}
+          className="p-2 text-text-secondary hover:text-brand-primary transition-colors"
+          title={d.editRegion}
+        >
+          <Edit2 size={16} />
+        </button>
+      ),
+    },
   ];
 
   return (
-    <AdminEntityTable
-      emptyMessage={d.empty}
-      columns={columns}
-      rows={rows}
-      getRowKey={(row) => row.slug}
-    />
+    <>
+      <AdminEntityTable
+        emptyMessage={d.empty}
+        columns={columns}
+        rows={rows}
+        getRowKey={(row) => row.slug}
+      />
+
+      <Modal
+        isOpen={!!editingRow}
+        onClose={() => setEditingRow(null)}
+        title={d.editRegion}
+      >
+        {editingRow && (
+          <RegionForm
+            mode="edit"
+            initialData={{
+              ...editingRow,
+              description: editingRow.description || "",
+              title: editingRow.title || "",
+              h1: editingRow.h1 || "",
+              metaDesc: editingRow.metaDesc || "",
+              content: editingRow.content || "",
+              faq: editingRow.faq || [],
+              isActive: editingRow.isActive ?? true,
+            }}
+            onSuccess={() => setEditingRow(null)}
+          />
+        )}
+      </Modal>
+    </>
   );
 };

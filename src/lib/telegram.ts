@@ -1,7 +1,18 @@
 import { DICTIONARY } from "@/constants/dictionary";
 
-const sysDict = DICTIONARY.systemErrors;
 const telegramDict = DICTIONARY.telegram;
+
+const TELEGRAM_LOG_MESSAGES = {
+  missingConfig: "Missing Telegram bot token or chat ID",
+  apiFailed: "Telegram API request failed",
+  networkError: "Network error while sending Telegram message",
+};
+
+const TELEGRAM_ERRORS = {
+  missingConfig: "TELEGRAM_MISSING_CONFIG",
+  apiFailed: "TELEGRAM_API_FAILED",
+  networkError: "TELEGRAM_NETWORK_ERROR",
+};
 
 type TelegramResult =
   | { success: true; messageId: number; chatId: string }
@@ -29,8 +40,8 @@ export const sendTelegramContactRequest = async (
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
   if (!token || !chatId) {
-    console.error(sysDict.env.telegram);
-    return { success: false, error: sysDict.telegramReturns.missingConfig, missingConfig: true };
+    console.error(TELEGRAM_LOG_MESSAGES.missingConfig);
+    return { success: false, error: TELEGRAM_ERRORS.missingConfig, missingConfig: true };
   }
 
   try {
@@ -54,8 +65,8 @@ export const sendTelegramContactRequest = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      console.error(sysDict.api.telegramFailed, errorData);
-      return { success: false, error: sysDict.telegramReturns.apiFailed };
+      console.error(TELEGRAM_LOG_MESSAGES.apiFailed, errorData);
+      return { success: false, error: TELEGRAM_ERRORS.apiFailed };
     }
 
     const data = await response.json();
@@ -66,7 +77,7 @@ export const sendTelegramContactRequest = async (
     };
   } catch (error) {
     console.error("Failed to send Telegram message", error);
-    return { success: false, error: sysDict.telegramReturns.networkError };
+    return { success: false, error: TELEGRAM_ERRORS.networkError };
   }
 };
 
@@ -84,8 +95,8 @@ export const editTelegramMessageAsResolved = async (
   const token = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!token) {
-    console.error(sysDict.env.telegram);
-    return { success: false, error: sysDict.telegramReturns.missingConfig };
+    console.error(TELEGRAM_LOG_MESSAGES.missingConfig);
+    return { success: false, error: TELEGRAM_ERRORS.missingConfig };
   }
 
   try {
@@ -102,14 +113,14 @@ export const editTelegramMessageAsResolved = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      console.error(sysDict.api.telegramFailed, errorData);
-      return { success: false, error: sysDict.telegramReturns.apiFailed };
+      console.error(TELEGRAM_LOG_MESSAGES.apiFailed, errorData);
+      return { success: false, error: TELEGRAM_ERRORS.apiFailed };
     }
 
     return { success: true };
   } catch (error) {
-    console.error("Failed to send Telegram message", error);
-    return { success: false, error: sysDict.telegramReturns.networkError };
+    console.error("Failed to edit Telegram message", error);
+    return { success: false, error: TELEGRAM_ERRORS.networkError };
   }
 };
 

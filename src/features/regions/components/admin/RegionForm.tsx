@@ -7,21 +7,27 @@ import {
   checkRegionExists,
   generateRegionContent,
   saveRegion,
+  updateRegion,
 } from "../../actions";
 
 export type RegionFormProps = {
+  mode?: "create" | "edit";
   initialData?: SeoEntityInitialData;
+  onSuccess?: () => void;
 };
 
-export const RegionForm = ({ initialData }: RegionFormProps = {}) => {
+export const RegionForm = ({ mode = "create", initialData, onSuccess }: RegionFormProps = {}) => {
   return (
     <SeoEntityForm
       entity="region"
+      mode={mode}
       dictionary={DICTIONARY.admin.regions}
       initialData={initialData}
       checkExists={checkRegionExists}
       generateContent={generateRegionContent}
       save={saveRegion}
+      update={(slug, payload) => updateRegion(slug, payload as unknown as import("../../types").UpdateRegionInput)}
+      onSuccess={onSuccess}
     />
   );
 };

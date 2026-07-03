@@ -47,6 +47,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
   // Local state
   const abortRef = useRef(false);
   const runningRef = useRef(false);
+  const progressRef = useRef<BulkProgressItem[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isAbortRequested, setIsAbortRequested] = useState(false);
   const [progress, setProgress] = useState<BulkProgressItem[]>([]);
@@ -72,7 +73,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
 
       channel.onmessage = (event) => {
         const data = event.data;
-        if (data.type === "SYNC_STATE") {
+        if (data && typeof data === "object" && data.type === "SYNC_STATE" && data.payload) {
           if (!isOwner) { // Only spectators accept sync
             setJobId(data.payload.jobId);
             setProgress(data.payload.progress);
@@ -152,6 +153,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
   const updateItem = useCallback((index: number, patch: Partial<BulkProgressItem>) => {
     setProgress((prev) => {
       const newProgress = prev.map((item, i) => (i === index ? { ...item, ...patch } : item));
+      progressRef.current = newProgress;
       if (channelRef.current && runningRef.current) {
         channelRef.current.postMessage({
           type: "SYNC_STATE",
@@ -197,6 +199,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
     setIsAbortRequested(false);
 
     const initialProgress = startRes.data!.items;
+    progressRef.current = initialProgress;
     setProgress(initialProgress);
 
     if (channelRef.current) {
@@ -310,7 +313,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
           type: "SYNC_STATE",
           payload: {
             jobId: jobIdRef.current,
-            progress: progress, // Use latest progress
+            progress: progressRef.current,
             isRunning: false,
             dbJobStatus: abortRef.current ? (hasQuotaErrorLocal ? "failed" : "aborted") : "completed",
             isAbortRequested: false
@@ -320,7 +323,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
 
       router.refresh();
     }
-  }, [isRunning, updateItem, router, progress]);
+  }, [isRunning, updateItem, router]);
 
   const abortBulkGenerate = useCallback(async () => {
     setIsAbortRequested(true);

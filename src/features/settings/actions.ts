@@ -2,7 +2,6 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
-import { DICTIONARY } from "@/constants/dictionary";
 import { cacheTag, updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { SETTINGS_ERRORS, type SettingsErrorCode, type GlobalData } from "./types";
@@ -60,7 +59,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
-      console.error(DICTIONARY.systemErrors.env.googlePlaces);
+      console.error("Missing GOOGLE_PLACES_API_KEY environment variable");
       return { success: false, error: SETTINGS_ERRORS.INVALID_CONFIGURATION };
     }
 
@@ -78,14 +77,15 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error(DICTIONARY.systemErrors.api.googlePlacesFailed, { status: response.status, details: errText });
+      const details = errText.length > 500 ? errText.substring(0, 500) + "..." : errText;
+      console.error("Google Places API request failed", { status: response.status, details });
       return { success: false, error: SETTINGS_ERRORS.PLACES_API_FAILED };
     }
 
     const data = await response.json();
 
     if (!data.rating && !data.userRatingCount) {
-      console.warn(DICTIONARY.systemErrors.api.googlePlacesNoData);
+      console.warn("Google Places API returned no valid data");
       return { success: false, error: SETTINGS_ERRORS.NO_VALID_DATA };
     }
 
@@ -110,7 +110,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(DICTIONARY.systemErrors.api.googlePlacesFailed, { error: errorMessage });
+    console.error("Google Places API request failed", { error: errorMessage });
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
   }
 };

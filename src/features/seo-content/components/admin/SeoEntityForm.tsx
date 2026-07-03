@@ -23,11 +23,14 @@ type Feedback = { type: "success" | "error"; message: string } | null;
 
 export const SeoEntityForm = <TError extends string>({
   entity,
+  mode = "create",
   dictionary: d,
   initialData,
   checkExists,
   generateContent,
   save,
+  update,
+  onSuccess,
 }: SeoEntityFormConfig<TError>) => {
   const router = useRouter();
 
@@ -59,6 +62,7 @@ export const SeoEntityForm = <TError extends string>({
     if (error === "AI_SERVER_BUSY") return d.errorAiBusy;
     if (error === "AI_GENERATION_FAILED") return d.errorAiGen;
     if (error === "VALIDATION_FAILED") return d.errorAiVal;
+    if (error === "AI_QUOTA_EXCEEDED" as TError) return d.errorQuotaExceeded;
 
     return d.errorDefault;
   };
@@ -73,9 +77,17 @@ export const SeoEntityForm = <TError extends string>({
     setFeedback(null);
 
     try {
-      const exists = await checkExists(formData.slug);
+      const existsRes = await checkExists(formData.slug);
 
-      if (exists) {
+      if (!existsRes.success) {
+        setFeedback({
+          type: "error",
+          message: getErrorMessage(existsRes.error),
+        });
+        return;
+      }
+
+      if (existsRes.data) {
         setFeedback({ type: "error", message: d.errorDuplicate });
         return;
       }
@@ -111,6 +123,47 @@ export const SeoEntityForm = <TError extends string>({
     }
   };
 
+  const handleRegenerate = async () => {
+    if (!formData.name) {
+      setFeedback({ type: "error", message: d.errorRequired });
+      return;
+    }
+
+    setIsGenerating(true);
+    setFeedback(null);
+
+    try {
+      const res = await generateContent(formData.name, formData.description);
+
+      if (res.success && res.data) {
+        const generated = res.data;
+
+        setFormData((prev) => ({
+          ...prev,
+          description: generated.description,
+          title: generated.title,
+          h1: generated.h1,
+          metaDesc: generated.metaDesc,
+          content: generated.content,
+          faq: generated.faq,
+        }));
+        setFeedback({ type: "success", message: d.regenerateSuccess });
+        return;
+      }
+
+      if (!res.success) {
+        setFeedback({
+          type: "error",
+          message: getErrorMessage(res.error),
+        });
+      }
+    } catch {
+      setFeedback({ type: "error", message: d.errorDefault });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name || !formData.slug) {
       setFeedback({ type: "error", message: d.errorRequired });
@@ -121,10 +174,18 @@ export const SeoEntityForm = <TError extends string>({
     setFeedback(null);
 
     try {
-      if (!initialData || initialData.slug !== formData.slug) {
-        const exists = await checkExists(formData.slug);
+      if (mode === "create") {
+        const existsRes = await checkExists(formData.slug);
 
-        if (exists) {
+        if (!existsRes.success) {
+          setFeedback({
+            type: "error",
+            message: getErrorMessage(existsRes.error),
+          });
+          return;
+        }
+
+        if (existsRes.data) {
           setFeedback({ type: "error", message: d.errorDuplicate });
           return;
         }
@@ -138,6 +199,30 @@ export const SeoEntityForm = <TError extends string>({
         content: formData.content,
         faq: formData.faq,
       };
+
+      if (mode === "edit" && update) {
+        const res = await update(formData.slug, {
+          name: formData.name,
+          description: formData.description,
+          title: formData.title,
+          h1: formData.h1,
+          metaDesc: formData.metaDesc,
+          content: formData.content,
+          faq: formData.faq,
+        });
+
+        if (res.success) {
+          setFeedback({ type: "success", message: d.updateSuccess });
+          onSuccess?.();
+          return;
+        }
+
+        setFeedback({
+          type: "error",
+          message: getErrorMessage(res.error),
+        });
+        return;
+      }
 
       const res = await save(
         formData.slug,
@@ -165,6 +250,7 @@ export const SeoEntityForm = <TError extends string>({
         }
 
         router.refresh();
+        onSuccess?.();
         return;
       }
 
@@ -253,25 +339,27 @@ export const SeoEntityForm = <TError extends string>({
       />
 
       <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleGenerate}
-          disabled={isGenerating || !formData.name || !formData.slug}
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              {d.generatingBtn}
-            </>
-          ) : (
-            <>
-              <Sparkles size={16} />
-              {d.generateBtn}
-            </>
-          )}
-        </Button>
+        {mode === "create" && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleGenerate}
+            disabled={isGenerating || !formData.name || !formData.slug}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                {d.generatingBtn}
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                {d.generateBtn}
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       {feedback && <Alert variant={feedback.type} message={feedback.message} />}
@@ -316,19 +404,44 @@ export const SeoEntityForm = <TError extends string>({
       </div>
 
       <div className="pt-4 border-t border-brand-border flex items-center justify-between">
-        <Switch
-          id={`${entity}-active`}
-          label={d.isActive}
-          checked={formData.isActive}
-          onChange={(val) => updateField("isActive", val)}
-        />
+        <div>
+          {mode === "create" && (
+            <Switch
+              id={`${entity}-active`}
+              label={d.isActive}
+              checked={formData.isActive}
+              onChange={(val) => updateField("isActive", val)}
+            />
+          )}
+          {mode === "edit" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRegenerate}
+              disabled={isGenerating || isSaving}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  {d.regeneratingBtn}
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} />
+                  {d.regenerateBtn}
+                </>
+              )}
+            </Button>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsPreviewOpen(true)}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isGenerating}
           >
             {DICTIONARY.admin.preview.button}
           </Button>
@@ -337,7 +450,7 @@ export const SeoEntityForm = <TError extends string>({
             type="button"
             variant="primary"
             onClick={handleSave}
-            disabled={isSaving || !isFormValid || !isDirty}
+            disabled={isSaving || isGenerating || !isFormValid || !isDirty}
           >
             {isSaving ? (
               <>

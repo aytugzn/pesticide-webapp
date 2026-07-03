@@ -8,7 +8,7 @@ export const COMBINATION_ERRORS = {
   ALREADY_EXISTS: "ALREADY_EXISTS",
   AI_GENERATION_FAILED: "AI_GENERATION_FAILED",
   SAVE_FAILED: "SAVE_FAILED",
-  DELETE_FAILED: "DELETE_FAILED",
+  ARCHIVE_FAILED: "ARCHIVE_FAILED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   UNAUTHORIZED: "UNAUTHORIZED",
   UPDATE_FAILED: "UPDATE_FAILED",
@@ -31,6 +31,18 @@ export type CombinationRow = CombinationDoc & {
   id: string;
   regionName?: string;
   pestName?: string;
+  isArchived?: boolean;
+  archivedAt?: number;
+};
+
+export type CombinationLightRow = {
+  id: string;
+  region: string;
+  pest: string;
+  isActive: boolean;
+  regionName?: string;
+  pestName?: string;
+  isArchived?: boolean;
 };
 
 export const COMBINATION_JOB_ERRORS = {

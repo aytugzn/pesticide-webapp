@@ -21,10 +21,11 @@ const AdminCombinationsPage = async () => {
 
   const regions = globalData.regions || [];
   const pests = globalData.pests || [];
-  const rows = combinationsResult.success && combinationsResult.data ? combinationsResult.data : [];
+  const allRows = combinationsResult.success && combinationsResult.data ? combinationsResult.data : [];
+  const visibleRows = allRows.filter((row) => !row.isArchived);
 
   // Generate a deterministic key so the table remounts and resets local state when server data changes
-  const tableKey = rows.map((row) => `${row.id}:${row.region}:${row.pest}:${row.regionName ?? ""}:${row.pestName ?? ""}:${row.isActive ? "active" : "inactive"}`).join("|") || "empty";
+  const tableKey = visibleRows.map((row) => `${row.id}:${row.region}:${row.pest}:${row.regionName ?? ""}:${row.pestName ?? ""}:${row.isActive ? "active" : "inactive"}`).join("|") || "empty";
 
   return (
     <div className="space-y-8">
@@ -42,8 +43,8 @@ const AdminCombinationsPage = async () => {
 
       <div className="space-y-10">
         <CombinationForm regions={regions} pests={pests} />
-        <BulkGeneratePanel regions={regions} pests={pests} existingRows={rows} />
-        <CombinationsTable key={tableKey} initialRows={rows} />
+        <BulkGeneratePanel regions={regions} pests={pests} existingRows={allRows} />
+        <CombinationsTable key={tableKey} initialRows={visibleRows} />
       </div>
     </div>
   );

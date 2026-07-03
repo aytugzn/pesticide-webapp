@@ -4,7 +4,7 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { updateTag } from "next/cache";
-import { getGeminiModel, buildPestPrompt } from "@/lib/gemini";
+import { getGeminiModel, getGeminiApiKeys, buildPestPrompt } from "@/lib/gemini";
 import { extractAndParseJson } from "@/utils/parsers";
 import type { ActionResponse } from "@/types";
 import {
@@ -12,13 +12,48 @@ import {
   type PestErrorCode,
   type GeneratedContent,
 } from "./types";
-import { generatedContentSchema, savePestSchema } from "./schemas";
+import { savePestSchema, updatePestSchema, generatedContentSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getCombinationCacheTag } from "@/features/combinations/constants";
+import type { UpdatePestInput } from "./types";
 
-export const checkPestExists = async (slug: string): Promise<boolean> => {
-  const doc = await getAdminDb().collection("pests").doc(slug).get();
-  return doc.exists;
+const getErrorInfo = (
+  error: unknown,
+): { code?: string; message?: string } => {
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as { code?: unknown; message?: unknown };
+
+    return {
+      code: typeof candidate.code === "string"
+        ? candidate.code
+        : typeof candidate.code === "number"
+          ? String(candidate.code)
+          : undefined,
+      message: typeof candidate.message === "string"
+        ? candidate.message
+        : error instanceof Error
+          ? error.message
+          : undefined,
+    };
+  }
+
+  return {};
+};
+
+export const checkPestExists = async (
+  slug: string,
+): Promise<ActionResponse<boolean, PestErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  }
+
+  try {
+    const doc = await getAdminDb().collection("pests").doc(slug).get();
+    return { success: true, data: doc.exists };
+  } catch (error) {
+    console.error("Failed to check pest existence", error);
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
 };
 
 export const generatePestContent = async (
@@ -31,34 +66,73 @@ export const generatePestContent = async (
 
   try {
     const prompt = buildPestPrompt({ name, description });
-    const model = getGeminiModel();
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const keys = getGeminiApiKeys();
 
-    if (!responseText) {
+    if (keys.length === 0) {
+      console.error("No Gemini API keys found");
       return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
     }
 
-    const generatedRaw = extractAndParseJson<GeneratedContent>(responseText);
-    const validated = generatedContentSchema.safeParse(generatedRaw);
+    let isQuotaError = false;
 
-    if (!validated.success) {
-      console.error(
-        "Pest AI generation failed validation",
-        validated.error.message,
-      );
-      return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+    for (let i = 0; i < keys.length; i++) {
+      const apiKey = keys[i];
+      try {
+        const model = getGeminiModel(apiKey);
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+
+        if (!responseText) {
+          return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
+        }
+
+        const generatedRaw = extractAndParseJson<GeneratedContent>(responseText);
+        const validated = generatedContentSchema.safeParse(generatedRaw);
+
+        if (!validated.success) {
+          console.error(
+            "Pest AI generation failed validation",
+            validated.error.message,
+          );
+          return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+        }
+
+        return { success: true, data: validated.data };
+      } catch (error: unknown) {
+        const errorInfo = getErrorInfo(error);
+        const msg = errorInfo.message?.toLowerCase() || "";
+
+        if (
+          msg.includes("429") ||
+          msg.includes("quota exceeded") ||
+          msg.includes("too many requests") ||
+          msg.includes("generate_content_free_tier_requests") ||
+          msg.includes("limit:")
+        ) {
+          console.warn(`Gemini generation failed with key index ${i} due to quota/rate limit`);
+          isQuotaError = true;
+          continue; // Try next key
+        } else if (msg.includes("invalid api key") || msg.includes("unauthorized") || msg.includes("api_key_invalid") || msg.includes("key invalid")) {
+          console.warn(`Gemini generation failed with key index ${i} due to invalid key/auth`);
+          continue; // Try next key
+        } else if (msg.includes("503")) {
+          console.warn(`Gemini generation failed with key index ${i} due to 503`);
+          continue; // Try next key
+        } else {
+          console.error("Pest AI generation failed", { error: errorInfo });
+          return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
+        }
+      }
     }
 
-    return { success: true, data: validated.data };
+    if (isQuotaError) {
+      return { success: false, error: PEST_ERRORS.AI_QUOTA_EXCEEDED };
+    }
+
+    return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
   } catch (error: unknown) {
-    console.error("Pest AI generation failed", error);
-
-    const message = error instanceof Error ? error.message : "";
-
-    if (message.includes("503")) {
-      return { success: false, error: PEST_ERRORS.AI_SERVER_BUSY };
-    }
+    const errorInfo = getErrorInfo(error);
+    console.error("Pest AI generation failed in main try-catch", { error: errorInfo });
     return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
   }
 };
@@ -103,18 +177,52 @@ export const savePest = async (
       content: content.content,
       faq: content.faq,
       isActive,
+      createdAt: Date.now(),
     };
 
     await getAdminDb()
       .collection("pests")
       .doc(slug)
-      .set(docData, { merge: true });
+      .create(docData);
 
     updateTag("global-data");
     return { success: true };
   } catch (error: unknown) {
     console.error("Failed to save pest", { slug, error });
     return { success: false, error: PEST_ERRORS.SAVE_FAILED };
+  }
+};
+
+export const updatePest = async (
+  slug: string,
+  payload: UpdatePestInput,
+): Promise<ActionResponse<void, PestErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsed = updatePestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const db = getAdminDb();
+    const docRef = db.collection("pests").doc(slug);
+
+    await docRef.update({
+      ...parsed.data,
+      updatedAt: Date.now(),
+    });
+
+    updateTag("global-data");
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to update pest", { slug, error: error instanceof Error ? error.message : String(error) });
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code: number }).code === 5) {
+      return { success: false, error: PEST_ERRORS.NOT_FOUND };
+    }
+    return { success: false, error: PEST_ERRORS.UPDATE_FAILED };
   }
 };
 

@@ -8,7 +8,7 @@ import { getGeminiModel, getGeminiApiKeys, buildCombinationPrompt } from "@/lib/
 import { parseCombinationDoc, parseRegionDoc, parsePestDoc, extractAndParseJson } from "@/utils/parsers";
 import { cacheTag, updateTag } from "next/cache";
 import type { ActionResponse, CombinationDoc } from "@/types";
-import { COMBINATION_ERRORS, COMBINATION_JOB_ERRORS, type CombinationErrorCode, type CombinationJobErrorCode, type GeneratedContent, type CombinationRow, type CombinationBulkJobDoc, type BulkProgressItem } from "./types";
+import { COMBINATION_ERRORS, COMBINATION_JOB_ERRORS, type CombinationErrorCode, type CombinationJobErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type CombinationBulkJobDoc, type BulkProgressItem } from "./types";
 import { getCombinationCacheTag } from "./constants";
 import { combinationSlugParamsSchema, saveCombinationSchema, toggleCombinationSchema, generatedContentSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
@@ -43,13 +43,13 @@ export const getCombination = async (regionSlug: string, pestSlug: string): Prom
     if (!snap.exists) return null;
 
     const data = parseCombinationDoc(snap.data());
-    if (!data.isActive) return null;
+    if (!data.isActive || data.isArchived) return null;
 
     return data;
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
     console.error("Failed to fetch combinations", { regionSlug, pestSlug, error: errorInfo });
-    return null;
+    throw error;
   }
 };
 
@@ -458,50 +458,90 @@ export const toggleCombinationStatus = async (
 };
 
 /**
- * Fetches all combinations for the admin table view.
- * Enriches each row with region/pest display names.
+ * Fetches lightweight combination rows for the admin table view.
+ * Only fetches id, region, pest, isActive and enriches with region/pest display names.
  *
- * @returns Array of CombinationRow objects
+ * @returns Array of CombinationLightRow objects
  */
-export const getAdminCombinations = async (): Promise<ActionResponse<CombinationRow[], CombinationErrorCode>> => {
+export const getAdminCombinations = async (): Promise<ActionResponse<CombinationLightRow[], CombinationErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
   }
 
   try {
-    const [combSnap, regionsSnap, pestsSnap] = await Promise.all([
-      getAdminDb().collection("combinations").get(),
-      getAdminDb().collection("regions").get(),
-      getAdminDb().collection("pests").get(),
-    ]);
+    const globalData = await getGlobalData();
 
     // Build lookup maps for display names
     const regionMap = new Map<string, string>();
-    regionsSnap.docs.forEach((doc) => {
-      const d = parseRegionDoc(doc.data());
-      regionMap.set(d.slug, d.name);
-    });
+    globalData.regions.forEach((d) => regionMap.set(d.slug, d.name));
 
     const pestMap = new Map<string, string>();
-    pestsSnap.docs.forEach((doc) => {
-      const d = parsePestDoc(doc.data());
-      pestMap.set(d.slug, d.name);
-    });
+    globalData.pests.forEach((d) => pestMap.set(d.slug, d.name));
 
-    const rows: CombinationRow[] = combSnap.docs.map((doc) => {
-      const data = parseCombinationDoc(doc.data());
+    const combSnap = await getAdminDb().collection("combinations").select("region", "pest", "isActive", "regionName", "pestName", "isArchived").get();
+
+    const rows: CombinationLightRow[] = combSnap.docs.map((doc) => {
+      const data = doc.data();
       return {
         id: doc.id,
-        ...data,
-        regionName: data.regionName || regionMap.get(data.region) || data.region,
-        pestName: data.pestName || pestMap.get(data.pest) || data.pest,
+        region: data.region || "",
+        pest: data.pest || "",
+        isActive: data.isActive ?? false,
+        isArchived: typeof data.isArchived === "boolean" ? data.isArchived : false,
+        regionName: data.regionName || regionMap.get(data.region || "") || data.region,
+        pestName: data.pestName || pestMap.get(data.pest || "") || data.pest,
       };
     }).sort((a, b) => a.id.localeCompare(b.id));
 
     return { success: true, data: rows };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
-    console.error("Failed to fetch combinations", { error: errorInfo });
+    console.error("Failed to fetch lightweight combinations", { error: errorInfo });
+    return { success: false, error: COMBINATION_ERRORS.FETCH_FAILED };
+  }
+};
+
+/**
+ * Fetches a single combination with full details for admin edit modal.
+ *
+ * @param regionSlug - The region slug
+ * @param pestSlug - The pest slug
+ * @returns CombinationRow object
+ */
+export const getAdminCombination = async (
+  regionSlug: string,
+  pestSlug: string
+): Promise<ActionResponse<CombinationRow, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
+  try {
+    const docId = `${regionSlug}_${pestSlug}`;
+    const snap = await getAdminDb().collection("combinations").doc(docId).get();
+
+    if (!snap.exists) {
+      return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
+    }
+
+    const data = parseCombinationDoc(snap.data());
+
+    const globalData = await getGlobalData();
+    const regionName = globalData.regions.find(r => r.slug === regionSlug)?.name || data.regionName;
+    const pestName = globalData.pests.find(p => p.slug === pestSlug)?.name || data.pestName;
+
+    return {
+      success: true,
+      data: {
+        id: docId,
+        ...data,
+        regionName,
+        pestName
+      }
+    };
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to fetch full admin combination", { regionSlug, pestSlug, error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.FETCH_FAILED };
   }
 };
@@ -540,13 +580,13 @@ export const getAllActiveCombinations = async (): Promise<{ region: string; pest
 };
 
 /**
- * Deletes a combination from Firestore and invalidates the relevant cache tag.
+ * Archives a combination in Firestore and invalidates the relevant cache tag.
  *
  * @param regionSlug - The region slug
  * @param pestSlug - The pest slug
  * @returns Success or error
  */
-export const deleteCombination = async (
+export const archiveCombination = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
@@ -556,7 +596,19 @@ export const deleteCombination = async (
 
   try {
     const docId = `${regionSlug}_${pestSlug}`;
-    await getAdminDb().collection("combinations").doc(docId).delete();
+    const docRef = getAdminDb().collection("combinations").doc(docId);
+
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
+    }
+
+    await docRef.update({
+      isArchived: true,
+      isActive: false,
+      archivedAt: Date.now(),
+      updatedAt: Date.now()
+    });
 
     updateTag(getCombinationCacheTag(regionSlug, pestSlug));
     updateTag("all-combinations");
@@ -564,8 +616,8 @@ export const deleteCombination = async (
     return { success: true };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
-    console.error("Failed to delete combination", { regionSlug, pestSlug, error: errorInfo });
-    return { success: false, error: COMBINATION_ERRORS.DELETE_FAILED };
+    console.error("Failed to archive combination", { regionSlug, pestSlug, error: errorInfo });
+    return { success: false, error: COMBINATION_ERRORS.ARCHIVE_FAILED };
   }
 };
 
