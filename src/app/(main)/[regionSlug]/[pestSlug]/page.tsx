@@ -4,14 +4,16 @@ import {
   getCombination,
   getAllActiveCombinations,
 } from "@/features/combinations/actions";
-import { parseHtmlIntoSections } from "@/features/combinations/utils";
+import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { getGlobalData } from "@/features/settings/actions";
-import { CombinationContent } from "@/features/combinations/components/public/CombinationContent";
+import { SeoContent } from "@/components/layouts/SeoContent";
 import { DICTIONARY } from "@/constants/dictionary";
-import { CombinationJsonLd } from "./_components/CombinationJsonLd";
+import { ROUTES } from "@/constants/routes";
+import { ServiceJsonLd } from "@/components/layouts/ServiceJsonLd";
+import { BreadcrumbJsonLd } from "@/components/layouts/BreadcrumbJsonLd";
 import { CombinationHero } from "@/features/combinations/components/public/CombinationHero";
-import { CombinationFaq } from "@/features/combinations/components/public/CombinationFaq";
-import { CombinationCta } from "@/features/combinations/components/public/CombinationCta";
+import { SeoFaq } from "@/components/layouts/SeoFaq";
+import { CtaSection } from "@/components/layouts/CtaSection";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
@@ -95,13 +97,13 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
 
   if (!data) notFound();
 
-  const settings = globalData.settings || {};
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DICTIONARY.global.siteUrl;
-  const canonicalUrl = `${baseUrl}/${regionSlug}/${pestSlug}`;
-
   // Use the pest's image as priority
+  const region = globalData.regions?.find((r) => r.slug === regionSlug);
   const pest = globalData.pests?.find((p) => p.slug === pestSlug);
   const imageUrl = pest?.imageUrl;
+
+  const regionName = data.regionName || region?.name || "";
+  const pestName = data.pestName || pest?.name || "";
 
   const sliderImages = imageUrl
     ? [
@@ -117,24 +119,43 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
 
   return (
     <div className="flex-1 flex flex-col w-full">
-      <CombinationJsonLd
-        data={data}
-        settings={settings}
-        regionSlug={regionSlug}
-        baseUrl={baseUrl}
-        canonicalUrl={canonicalUrl}
+      <BreadcrumbJsonLd
+        items={[
+          { name: DICTIONARY.global.home, url: ROUTES.home },
+          { name: DICTIONARY.pages.regions.heading, url: ROUTES.regions },
+          { name: regionName, url: `${ROUTES.regionBase}/${regionSlug}` },
+          {
+            name:
+              data.h1 ||
+              `${regionName} ${pestName} ${DICTIONARY.pages.services.pestTitleSuffix}`,
+            url: `/${regionSlug}/${pestSlug}`,
+          },
+        ]}
+      />
+      <ServiceJsonLd
+        name={
+          data.h1 ||
+          `${regionName} ${pestName} ${DICTIONARY.pages.services.pestTitleSuffix}`
+        }
+        description={
+          data.metaDesc ||
+          DICTIONARY.meta.default.description
+        }
+        url={`/${regionSlug}/${pestSlug}`}
+        areaServed={regionName}
+        faq={data.faq || []}
       />
       <CombinationHero
         data={data}
         sliderImages={sliderImages}
         regionSlug={regionSlug}
         pestSlug={pestSlug}
-        regionName={data.regionName}
-        pestName={data.pestName}
+        regionName={regionName}
+        pestName={pestName}
       />
-      <CombinationContent sections={sections} />
-      <CombinationFaq faq={data.faq || []} />
-      <CombinationCta />
+      <SeoContent sections={sections} />
+      <SeoFaq faq={data.faq || []} />
+      <CtaSection />
     </div>
   );
 };

@@ -8,7 +8,7 @@ type FaqItemProps = {
   item: { question: string; answer: string };
 };
 
-export const CombinationFaqItem = ({ item }: FaqItemProps) => {
+export const SeoFaqItem = ({ item }: FaqItemProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const accordionStyle = { gridTemplateRows: isOpen ? "1fr" : "0fr" };

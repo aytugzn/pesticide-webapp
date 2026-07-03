@@ -1,5 +1,5 @@
-export type PestDoc = { name: string; slug: string; description?: string; imageUrl?: string; isActive?: boolean };
-export type RegionDoc = { name: string; slug: string; description?: string; isActive?: boolean };
+export type PestDoc = { name: string; slug: string; description?: string; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
+export type RegionDoc = { name: string; slug: string; description?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
 
 export type SettingsDoc = {
   phone?: string;
@@ -31,7 +31,9 @@ export type ContactRequestStatus = "pending" | "resolved";
 
 export type ContactRequestDoc = {
   id?: string;
-  ip: string;
+  ip?: string;
+  ipHash?: string;
+  phoneHash?: string;
   name: string;
   phone: string;
   service?: string;

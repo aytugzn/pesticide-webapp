@@ -10,6 +10,7 @@ import type { ActionResponse, CombinationDoc } from "@/types";
 import { COMBINATION_ERRORS, type CombinationErrorCode, type GeneratedContent, type CombinationRow } from "./types";
 import { getCombinationCacheTag } from "./constants";
 import { combinationSlugParamsSchema, saveCombinationSchema, toggleCombinationSchema, generatedContentSchema } from "./schemas";
+import { requireAdmin } from "@/features/auth/requireAdmin";
 
 
 /**
@@ -54,6 +55,10 @@ export const generateCombinationContent = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<GeneratedContent, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   const params = combinationSlugParamsSchema.safeParse({ regionSlug, pestSlug });
 
   if (!params.success) {
@@ -130,6 +135,10 @@ export const saveCombination = async (
   content: GeneratedContent,
   isActive: boolean
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   const parsed = saveCombinationSchema.safeParse({
     regionSlug,
     pestSlug,
@@ -200,6 +209,10 @@ export const saveCombinationSilently = async (
   pestName: string,
   content: GeneratedContent
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   const parsed = saveCombinationSchema.safeParse({
     regionSlug,
     pestSlug,
@@ -283,6 +296,10 @@ export const toggleCombinationStatus = async (
   pestSlug: string,
   isActive: boolean
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   const parsed = toggleCombinationSchema.safeParse({ regionSlug, pestSlug, isActive });
 
   if (!parsed.success) {
@@ -325,6 +342,10 @@ export const toggleCombinationStatus = async (
  * @returns Array of CombinationRow objects
  */
 export const getAdminCombinations = async (): Promise<ActionResponse<CombinationRow[], CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   try {
     const [combSnap, regionsSnap, pestsSnap] = await Promise.all([
       getAdminDb().collection("combinations").get(),
@@ -401,6 +422,10 @@ export const deleteCombination = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   try {
     const docId = `${regionSlug}_${pestSlug}`;
     await getAdminDb().collection("combinations").doc(docId).delete();
@@ -427,6 +452,10 @@ export const loadCombination = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<CombinationDoc, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
   try {
     const docId = `${regionSlug}_${pestSlug}`;
     const snap = await getAdminDb().collection("combinations").doc(docId).get();

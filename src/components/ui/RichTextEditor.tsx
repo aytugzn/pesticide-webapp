@@ -175,6 +175,7 @@ export const RichTextEditor = ({
   const editor = useEditor({
     extensions: [StarterKit],
     content: value,
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class:
@@ -188,8 +189,14 @@ export const RichTextEditor = ({
 
   // Re-sync value when it changes from outside (e.g. initial load or AI generation)
   useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
+    if (!editor || editor.isDestroyed) return;
+
+    try {
+      if (value !== editor.getHTML()) {
+        editor.commands.setContent(value);
+      }
+    } catch (error) {
+      console.warn("[RichTextEditor] Editor sync failed", error);
     }
   }, [value, editor]);
 

@@ -21,7 +21,7 @@ const telegramCallbackQuerySchema = z.object({
   }).optional(),
 });
 
-const telegramDict = DICTIONARY.home.contact.telegram;
+const telegramDict = DICTIONARY.telegram;
 
 /**
  * POST /api/telegram-webhook

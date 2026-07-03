@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
 import type { ActionResponse } from "@/types";
 import { cacheTag } from "next/cache";
+import { parseHeroSlideDoc, parseGoogleReviewDoc } from "@/utils/parsers";
 
 export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorCode>> => {
   "use cache";
@@ -22,21 +23,18 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
     if (sliderSnap.exists) {
       const data = sliderSnap.data();
       if (data && Array.isArray(data.slides)) {
-        slides = data.slides.map((s: Record<string, unknown>) => ({
-          ...s,
-          imageUrl: String(s.imageUrl || ""),
-          order: Number(s.order) || 0
-        })) as HeroSlideDoc[];
+        slides = data.slides
+          .map((s, index) => parseHeroSlideDoc(s, index))
+          .filter((s): s is HeroSlideDoc => s !== null);
       }
     }
 
     if (reviewsSnap.exists) {
       const data = reviewsSnap.data();
       if (data && Array.isArray(data.items)) {
-        customReviews = data.items.map((r: Record<string, unknown>) => ({
-          ...r,
-          rating: Number(r.rating) || 5
-        })) as GoogleReviewDoc[];
+        customReviews = data.items
+          .map((r, index) => parseGoogleReviewDoc(r, index))
+          .filter((r): r is GoogleReviewDoc => r !== null);
       }
       if (data && data.viewAllUrl) {
         viewAllReviewsUrl = String(data.viewAllUrl);

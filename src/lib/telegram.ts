@@ -1,7 +1,7 @@
 import { DICTIONARY } from "@/constants/dictionary";
 
 const sysDict = DICTIONARY.systemErrors;
-const telegramDict = DICTIONARY.home.contact.telegram;
+const telegramDict = DICTIONARY.telegram;
 
 type TelegramResult =
   | { success: true; messageId: number; chatId: string }

@@ -6,16 +6,16 @@ import { WhyUsSection } from "@/features/home/components/sections/WhyUsSection";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.about.title} | ${DICTIONARY.global.brand}`,
-  description: DICTIONARY.home.whyUs.description,
+  description: DICTIONARY.meta.about.description,
   alternates: { canonical: ROUTES.about },
 };
 
 const AboutPage = () => (
   <>
     <PublicPageHeader
-      eyebrow={DICTIONARY.navbar.links.about}
-      title={DICTIONARY.meta.about.title}
-      description={DICTIONARY.home.whyUs.description}
+      eyebrow={DICTIONARY.pages.about.eyebrow}
+      title={DICTIONARY.pages.about.heading}
+      description={DICTIONARY.pages.about.headerDesc}
     />
     <WhyUsSection />
   </>

@@ -5,10 +5,11 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layouts/PublicPageHeader";
 import { getGlobalData } from "@/features/settings/actions";
+import { CtaSection } from "@/components/layouts/CtaSection";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.services.title} | ${DICTIONARY.global.brand}`,
-  description: DICTIONARY.home.services.description,
+  description: DICTIONARY.meta.services.description,
   alternates: { canonical: ROUTES.services },
 };
 
@@ -18,9 +19,9 @@ const ServicesPage = async () => {
   return (
     <>
       <PublicPageHeader
-        eyebrow={DICTIONARY.navbar.links.services}
-        title={DICTIONARY.footer.links.services}
-        description={DICTIONARY.home.services.description}
+        eyebrow={DICTIONARY.pages.services.eyebrow}
+        title={DICTIONARY.pages.services.heading}
+        description={DICTIONARY.pages.services.headerDesc}
       />
       <section className="bg-surface-neutral">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -32,15 +33,16 @@ const ServicesPage = async () => {
             >
               <Bug className="w-7 h-7 text-brand-primary mb-5" aria-hidden="true" />
               <h2 className="font-heading font-bold text-text-primary text-xl group-hover:text-brand-primary transition-colors">
-                {pest.name} {DICTIONARY.home.services.pestTitleSuffix}
+                {pest.name} {DICTIONARY.pages.services.pestTitleSuffix}
               </h2>
               <p className="text-text-secondary text-sm leading-relaxed mt-3">
-                {pest.description || DICTIONARY.home.services.defaultPestDesc}
+                {pest.description || DICTIONARY.pages.services.defaultPestDesc}
               </p>
             </Link>
           ))}
         </div>
       </section>
+      <CtaSection />
     </>
   );
 };

@@ -23,7 +23,7 @@ export const Modal = ({
   children,
   overlayClassName = "bg-overlay-strong backdrop-blur-sm",
   className,
-  closeAriaLabel = DICTIONARY.navbar.mobileMenu.closeAria,
+  closeAriaLabel = DICTIONARY.global.ui.closeAria,
 }: ModalProps) => {
   useScrollLock(isOpen);
 

@@ -7,6 +7,8 @@ import { parsePestDoc } from "@/utils/parsers";
 import { AdminListPage } from "@/components/layouts/AdminListPage";
 import { AdminDataTable } from "@/components/ui/AdminDataTable";
 
+import { PestForm } from "@/features/pests/components/admin/PestForm";
+
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.pests.title} | ${DICTIONARY.global.brand}`,
   robots: { index: false, follow: false },
@@ -31,15 +33,18 @@ const AdminPestsPage = async () => {
       description={DICTIONARY.admin.pests.description}
       icon={Bug}
     >
-      <AdminDataTable
-        emptyText={DICTIONARY.admin.pests.empty}
-        columns={[
-          DICTIONARY.admin.pests.table.name,
-          DICTIONARY.admin.pests.table.slug,
-          DICTIONARY.admin.pests.table.status,
-        ]}
-        rows={rows}
-      />
+      <div className="space-y-10">
+        <PestForm />
+        <AdminDataTable
+          emptyText={DICTIONARY.admin.pests.empty}
+          columns={[
+            DICTIONARY.admin.pests.table.name,
+            DICTIONARY.admin.pests.table.slug,
+            DICTIONARY.admin.pests.table.status,
+          ]}
+          rows={rows}
+        />
+      </div>
     </AdminListPage>
   );
 };

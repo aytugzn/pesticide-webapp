@@ -1,11 +1,11 @@
 import { DICTIONARY } from "@/constants/dictionary";
-import { CombinationFaqItem } from "./CombinationFaqItem";
+import { SeoFaqItem } from "./SeoFaqItem";
 
-type CombinationFaqProps = {
+type SeoFaqProps = {
   faq: { question: string; answer: string }[];
 };
 
-export const CombinationFaq = ({ faq }: CombinationFaqProps) => {
+export const SeoFaq = ({ faq }: SeoFaqProps) => {
   if (!faq || faq.length === 0) return null;
 
   return (
@@ -17,7 +17,7 @@ export const CombinationFaq = ({ faq }: CombinationFaqProps) => {
 
         <div className="space-y-3 sm:space-y-4">
           {faq.map((item, index) => (
-            <CombinationFaqItem key={index} item={item} />
+            <SeoFaqItem key={index} item={item} />
           ))}
         </div>
       </div>

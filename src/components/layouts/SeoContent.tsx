@@ -2,14 +2,14 @@ import { cn } from "@/utils/cn";
 import { AlternatingSections } from "@/components/layout/AlternatingSections";
 import React from "react";
 import { DICTIONARY } from "@/constants/dictionary";
-import { getSectionIcons, type Section } from "../../utils";
+import { getSectionIcons, type Section } from "@/utils/parseHtmlIntoSections";
 import { SanitizedHtml } from "@/components/ui/SanitizedHtml";
 
-type CombinationContentProps = {
+type SeoContentProps = {
   sections: Section[];
 };
 
-export const CombinationContent = ({ sections }: CombinationContentProps) => {
+export const SeoContent = ({ sections }: SeoContentProps) => {
   const sectionIcons = getSectionIcons(sections);
 
   return (

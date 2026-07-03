@@ -19,6 +19,7 @@ import { ROUTES } from "@/constants/routes";
 import { DICTIONARY } from "@/constants/dictionary";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
+import { GlobalRevalidateButton } from "@/features/settings/components/admin/GlobalRevalidateButton";
 import logoImg from "@/../public/dmr_logo.svg";
 
 type AdminSidebarProps = {
@@ -51,7 +52,7 @@ const SidebarNavItem = ({
   isActive,
   onClose,
 }: {
-  item: typeof navItems[0];
+  item: (typeof navItems)[0];
   isActive: boolean;
   onClose: () => void;
 }) => {
@@ -64,7 +65,7 @@ const SidebarNavItem = ({
         "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 overflow-hidden group",
         isActive
           ? "bg-brand-primary/10 text-brand-primary shadow-sm"
-          : "text-text-primary hover:bg-surface-neutral hover:text-brand-primary"
+          : "text-text-primary hover:bg-surface-neutral hover:text-brand-primary",
       )}
     >
       {isActive && (
@@ -77,7 +78,9 @@ const SidebarNavItem = ({
         size={MENU_ICON_SIZE}
         className={cn(
           "transition-transform duration-300",
-          isActive ? "opacity-100 scale-110" : "opacity-70 group-hover:scale-110"
+          isActive
+            ? "opacity-100 scale-110"
+            : "opacity-70 group-hover:scale-110",
         )}
       />
       {item.label}
@@ -90,7 +93,7 @@ const SidebarHeader = ({ onClose }: { onClose: () => void }) => (
     <Link href={ROUTES.admin} className="flex flex-col w-16 py-2">
       <Image
         src={logoImg}
-        alt={DICTIONARY.navbar.logo.alt}
+        alt={DICTIONARY.global.logo.alt}
         width={100}
         height={28}
         className="w-full h-auto object-contain"
@@ -102,7 +105,7 @@ const SidebarHeader = ({ onClose }: { onClose: () => void }) => (
       size="none"
       onClick={onClose}
       className="md:hidden text-text-muted hover:text-text-primary p-1 rounded-md"
-      aria-label={DICTIONARY.navbar.mobileMenu.closeAria}
+      aria-label={DICTIONARY.global.ui.closeAria}
     >
       <X size={CLOSE_ICON_SIZE} />
     </Button>
@@ -110,7 +113,8 @@ const SidebarHeader = ({ onClose }: { onClose: () => void }) => (
 );
 
 const SidebarFooter = ({ onLogout }: { onLogout: () => void }) => (
-  <div className="p-4 border-t border-brand-border">
+  <div className="p-4 border-t border-brand-border space-y-4">
+    <GlobalRevalidateButton />
     <Button
       variant="unstyled"
       size="none"
@@ -137,7 +141,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
 
   const sidebarClasses = cn(
     "fixed inset-y-0 left-0 z-50 w-64 bg-brand-surface border-r border-brand-border transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0",
-    isOpen ? "translate-x-0" : "-translate-x-full"
+    isOpen ? "translate-x-0" : "-translate-x-full",
   );
 
   return (
@@ -154,7 +158,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       <aside className={sidebarClasses}>
         <div className="flex flex-col h-full">
           <SidebarHeader onClose={onClose} />
-          
+
           <nav
             className="flex-1 overflow-y-auto py-4 px-3 space-y-1"
             aria-label={d.navAria}

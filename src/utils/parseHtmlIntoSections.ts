@@ -1,7 +1,6 @@
 import { DICTIONARY } from "@/constants/dictionary";
 import { BugOff } from "lucide-react";
-import { ICON_POOL } from "./components/public/IconPool";
-
+import { ICON_POOL } from "@/components/layouts/IconPool";
 
 /**
  * Parses a Gemini-generated HTML string into a structured array of sections.

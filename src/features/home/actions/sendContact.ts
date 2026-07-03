@@ -13,7 +13,22 @@ import {
 } from "@/utils/phone";
 import { sendTelegramContactRequest } from "@/lib/telegram";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { limitContactSubmission } from "@/lib/rateLimit";
+import { createHmac } from "crypto";
 import type { ContactRequestDoc } from "@/types";
+
+const createRateLimitHash = (value: string): string | null => {
+  const secret = process.env.RATE_LIMIT_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("RATE_LIMIT_SECRET is missing. Contact form hash-based rate limiting is disabled.");
+    }
+    return null;
+  }
+
+  return createHmac("sha256", secret).update(value).digest("hex");
+};
 
 type SendContactResponse = {
   success: boolean;
@@ -21,6 +36,7 @@ type SendContactResponse = {
 };
 
 const uiDict = DICTIONARY.home.contact;
+const telegramDict = DICTIONARY.telegram;
 
 // Max pending (unresolved) contact requests per IP
 const PENDING_LIMIT = 3;
@@ -44,30 +60,66 @@ const contactSchema = z.object({
 
   service: z.string().max(100).optional(),
   region: z.string().max(100).optional(),
+  website: z.string().optional(), // Honeypot field
 });
 
 export const sendContactForm = async (formData: FormData): Promise<SendContactResponse> => {
-  const parsed = contactSchema.safeParse(Object.fromEntries(formData));
+  const rawData = Object.fromEntries(formData);
+
+  // 1. Honeypot check: If the hidden 'website' field is filled, it's a bot.
+  // We return success: true to trick the bot without writing to the DB or notifying Telegram.
+  if (rawData.website) {
+    return { success: true };
+  }
+
+  const parsed = contactSchema.safeParse(rawData);
 
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message || uiDict.validation.invalidFormat };
   }
 
+  const { name, phone, service, region } = parsed.data;
+  const cleanPhone = normalizeTurkishPhone(phone);
+
+  // 2. IP Handling & Hashing
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  const forwarded = headersList.get("x-forwarded-for");
+  const realIp = headersList.get("x-real-ip");
+
+  let ip = "unknown";
+  if (forwarded) {
+    ip = forwarded.split(",")[0].trim();
+  } else if (realIp) {
+    ip = realIp.trim();
+  }
+
+  // Create hashes (HMAC-SHA256) for data minimization
+  const ipHash = ip !== "unknown" ? createRateLimitHash(ip) : null;
+  const phoneHash = createRateLimitHash(cleanPhone);
+
+  // 3. Upstash Rate Limit (3 requests per 10 mins sliding window)
+  if (ipHash) {
+    const isAllowedIp = await limitContactSubmission(`contact:ip:${ipHash}`);
+    if (!isAllowedIp) return { success: false, error: uiDict.validation.rateLimit };
+  }
+
+  if (phoneHash) {
+    const isAllowedPhone = await limitContactSubmission(`contact:phone:${phoneHash}`);
+    if (!isAllowedPhone) return { success: false, error: uiDict.validation.rateLimit };
+  }
 
   const db = getAdminDb();
-  const pendingSnap = await db
-    .collection("messages")
-    .where("ip", "==", ip)
-    .where("status", "==", "pending")
-    .get();
+
+  // 4. Pending Form Limit
+  // If phoneHash is available, use it. Otherwise, fallback to cleanPhone (only if secret is missing).
+  const messagesRef = db.collection("messages");
+  const pendingSnap = phoneHash
+    ? await messagesRef.where("phoneHash", "==", phoneHash).where("status", "==", "pending").get()
+    : await messagesRef.where("phone", "==", cleanPhone).where("status", "==", "pending").get();
 
   if (pendingSnap.size >= PENDING_LIMIT) {
     return { success: false, error: uiDict.contactRequest.pendingLimitReached };
   }
-
-  const { name, phone, service, region } = parsed.data;
 
   // 1. Create an empty document reference (and ID) before saving to Firestore
   const docRef = db.collection("messages").doc();
@@ -82,26 +134,28 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
   };
 
   // 2. Prepare the message
-  const cleanPhone = normalizeTurkishPhone(phone);
-  const message = formatTemplate(uiDict.telegram.template, {
+  const message = formatTemplate(telegramDict.template, {
     name: escapeHtml(name),
     phone: cleanPhone, // Clean phone only contains digits and +
     rawPhone: cleanPhone,
-    service: escapeHtml(service || uiDict.telegram.notSpecified),
-    region: escapeHtml(region || uiDict.telegram.notSpecified),
+    service: escapeHtml(service || telegramDict.notSpecified),
+    region: escapeHtml(region || telegramDict.notSpecified),
   });
 
-  // 3. Save the request before notifying external services.
+  // 5. Save the request before notifying external services.
+  // Note: We intentionally avoid saving plain IP. We save hashes for debugging/analytics safely.
   const requestData: Omit<ContactRequestDoc, "id"> = {
-    ip,
     name,
-    phone,
+    phone: cleanPhone, // Save clean format to ensure fallback pending limit consistency
     service: service || "",
     region: region || "",
     status: "pending",
     createdAt: Date.now(),
     notificationStatus: "pending",
   };
+
+  if (ipHash) requestData.ipHash = ipHash;
+  if (phoneHash) requestData.phoneHash = phoneHash;
 
   try {
     await docRef.set(requestData);

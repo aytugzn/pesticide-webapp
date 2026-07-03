@@ -33,8 +33,8 @@ export const GoogleStats = ({
         <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-brand-surface flex items-center justify-center flex-shrink-0 shadow-sm border border-brand-border overflow-hidden">
           <Image
             src={logoImg}
-            alt={DICTIONARY.navbar.logo.alt}
-            title={DICTIONARY.navbar.logo.title}
+            alt={DICTIONARY.global.logo.alt}
+            title={DICTIONARY.global.logo.title}
             fill
             className="object-contain p-1.5 dark:invert dark:brightness-0"
           />

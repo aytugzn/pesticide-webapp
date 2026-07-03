@@ -3,11 +3,11 @@
 import { X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
-import { CombinationContent } from "../public/CombinationContent";
+import { SeoContent } from "@/components/layouts/SeoContent";
 import { CombinationHero } from "../public/CombinationHero";
-import { CombinationFaq } from "../public/CombinationFaq";
-import { CombinationCta } from "../public/CombinationCta";
-import { parseHtmlIntoSections } from "../../utils";
+import { SeoFaq } from "@/components/layouts/SeoFaq";
+import { CtaSection } from "@/components/layouts/CtaSection";
+import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 export type CombinationPreviewModalProps = {
@@ -49,10 +49,10 @@ export const CombinationPreviewModal = ({
       <div className="flex items-center justify-between px-6 py-4 border-b border-brand-border bg-brand-surface shrink-0 shadow-sm z-10">
         <div>
           <h2 className="text-lg font-bold text-text-primary">
-            {DICTIONARY.admin.regions.previewModalTitle}
+            {DICTIONARY.admin.combinations.previewModalTitle}
           </h2>
           <p className="text-xs text-text-muted">
-            {DICTIONARY.admin.regions.previewModalDesc}
+            {DICTIONARY.admin.combinations.previewModalDesc}
           </p>
         </div>
         <Button
@@ -60,8 +60,8 @@ export const CombinationPreviewModal = ({
           size="none"
           onClick={onClose}
           className="p-2 bg-surface-neutral text-text-secondary rounded-full hover:bg-brand-surface-muted hover:text-text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
-          aria-label={DICTIONARY.admin.regions.previewClose}
-          title={DICTIONARY.admin.regions.previewClose}
+          aria-label={DICTIONARY.admin.combinations.previewModalClose}
+          title={DICTIONARY.admin.combinations.previewModalClose}
         >
           <X size={ICON_SIZE} aria-hidden="true" />
         </Button>
@@ -82,9 +82,9 @@ export const CombinationPreviewModal = ({
             regionName={data.regionName}
             pestName={data.pestName}
           />
-          <CombinationContent sections={sections} />
-          <CombinationFaq faq={data.faq || []} />
-          <CombinationCta />
+          <SeoContent sections={sections} />
+          <SeoFaq faq={data.faq || []} />
+          <CtaSection />
         </div>
       </div>
     </div>

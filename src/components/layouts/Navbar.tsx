@@ -12,22 +12,10 @@ import { NavbarContactStrip } from "./NavbarContactStrip";
 import { MegaMenuColumns } from "./MegaMenuColumns";
 import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
 import logoImg from "@/../public/dmr.svg";
-import { type PestDoc, type RegionDoc, type SettingsDoc } from "@/types";
 import { getGlobalData } from "@/features/settings/actions";
 
 export const Navbar = async () => {
-  let pests: PestDoc[] = [];
-  let regions: RegionDoc[] = [];
-  let settings: SettingsDoc = {};
-
-  try {
-    const data = await getGlobalData();
-    pests = data.pests;
-    regions = data.regions;
-    settings = data.settings;
-  } catch (error) {
-    console.error("Failed to fetch global data", error);
-  }
+  const { pests, regions, settings } = await getGlobalData();
 
   const rawPhone = settings.phone || DEFAULT_PHONE;
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
@@ -48,11 +36,14 @@ export const Navbar = async () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link href={ROUTES.home} className="relative block h-10 lg:h-12 aspect-[4/1]">
+              <Link
+                href={ROUTES.home}
+                className="relative block h-10 lg:h-12 aspect-[4/1]"
+              >
                 <Image
                   src={logoImg}
-                  alt={DICTIONARY.navbar.logo.alt}
-                  title={DICTIONARY.navbar.logo.title}
+                  alt={DICTIONARY.global.logo.alt}
+                  title={DICTIONARY.global.logo.title}
                   fill
                   priority
                   className="object-contain object-left dark:invert dark:brightness-0"

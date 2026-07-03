@@ -12,10 +12,10 @@ export const ReviewCard = ({
   isClone?: boolean;
 }) => {
   const avatarUrl = getAvatarUrl(review.authorName, review.authorPhotoUrl);
+  const hasReviewUrl = Boolean(review.reviewUrl);
 
   const content = (
     <>
-      {/* Author Info */}
       <div className="flex items-center gap-4 mb-4">
         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-brand-surface-muted border border-brand-border flex-shrink-0">
           <Image
@@ -33,7 +33,6 @@ export const ReviewCard = ({
         </div>
       </div>
 
-      {/* Stars */}
       <div
         className="flex items-center gap-0.5 mb-3"
         aria-label={`${review.rating} ${DICTIONARY.home.googleReviews.ariaRating}`}
@@ -42,13 +41,16 @@ export const ReviewCard = ({
         {[...Array(5)].map((_, i) => (
           <Star
             key={i}
-            className={`w-4 h-4 ${i < review.rating ? "fill-google-yellow text-google-yellow" : "fill-brand-border text-brand-border"}`}
+            className={`w-4 h-4 ${
+              i < review.rating
+                ? "fill-google-yellow text-google-yellow"
+                : "fill-brand-border text-brand-border"
+            }`}
             aria-hidden="true"
           />
         ))}
       </div>
 
-      {/* Review Text */}
       <p className="text-text-secondary text-sm leading-relaxed flex-grow">
         &quot;{review.text}&quot;
       </p>
@@ -58,7 +60,7 @@ export const ReviewCard = ({
   const containerClasses =
     "w-72 md:w-96 flex-shrink-0 bg-brand-surface border border-brand-border rounded-2xl p-6 shadow-md hover:shadow-lg transition-all flex flex-col";
 
-  if (review.reviewUrl && !isClone) {
+  if (hasReviewUrl && !isClone) {
     return (
       <a
         href={review.reviewUrl}
@@ -72,13 +74,19 @@ export const ReviewCard = ({
     );
   }
 
-  return (
-    <div
-      onClick={() => window.open(review.reviewUrl, "_blank", "noopener,noreferrer")}
-      className={`cursor-pointer ${containerClasses}`}
-      aria-hidden={isClone ? "true" : undefined}
-    >
-      {content}
-    </div>
-  );
+  if (hasReviewUrl && isClone) {
+    return (
+      <div
+        onClick={() =>
+          window.open(review.reviewUrl, "_blank", "noopener,noreferrer")
+        }
+        className={`cursor-pointer ${containerClasses}`}
+        aria-hidden="true"
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return <div className={containerClasses}>{content}</div>;
 };

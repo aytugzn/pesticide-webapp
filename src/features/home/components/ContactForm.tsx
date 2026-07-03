@@ -80,6 +80,19 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
       >
         {/* Name & Phone Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-96 top-0 h-px w-px overflow-hidden opacity-0"
+          >
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+          </div>
+
           <Input
             id="name"
             name="name"

@@ -7,6 +7,7 @@ export const SETTINGS_ERRORS = {
   PLACES_API_FAILED: "PLACES_API_FAILED",
   NO_VALID_DATA: "NO_VALID_DATA",
   FETCH_FAILED: "FETCH_FAILED",
+  UNAUTHORIZED: "UNAUTHORIZED",
 } as const;
 
 export type SettingsErrorCode = keyof typeof SETTINGS_ERRORS;

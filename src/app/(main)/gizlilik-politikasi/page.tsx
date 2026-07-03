@@ -12,12 +12,12 @@ export const metadata: Metadata = {
 const PrivacyPage = () => (
   <>
     <PublicPageHeader
-      title={DICTIONARY.footer.links.privacy}
+      title={DICTIONARY.pages.privacy.heading}
       description={DICTIONARY.meta.privacy.description}
     />
     <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-text-secondary leading-relaxed">
       <p>
-        {DICTIONARY.meta.privacy.content}
+        {DICTIONARY.pages.privacy.content}
       </p>
     </section>
   </>

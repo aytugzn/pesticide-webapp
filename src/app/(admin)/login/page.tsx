@@ -34,7 +34,7 @@ const LoginPage = () => (
         <div className="w-48 h-auto mb-6 relative">
           <Image
             src={logoImg}
-            alt={DICTIONARY.navbar.logo.alt}
+            alt={DICTIONARY.global.logo.alt}
             width={300}
             height={100}
             className="w-full h-auto object-contain"

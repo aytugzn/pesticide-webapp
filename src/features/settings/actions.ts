@@ -6,6 +6,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { cacheTag, updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { SETTINGS_ERRORS, type SettingsErrorCode, type GlobalData } from "./types";
+import { requireAdmin } from "@/features/auth/requireAdmin";
 
 /**
  * Fetches globally shared data (pests, regions, settings).
@@ -38,10 +39,14 @@ export const getGlobalData = async (): Promise<GlobalData> => {
  * Can be triggered by an Admin manually, or via a Cron Job.
  */
 export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, SettingsErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
+  }
+
   try {
     // 1. Get current settings to find googlePlaceId
     const settingsDoc = await getAdminDb().collection("settings").doc("general").get();
-    
+
     if (!settingsDoc.exists) {
       return { success: false, error: SETTINGS_ERRORS.SETTINGS_NOT_FOUND };
     }
@@ -61,7 +66,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 
     // 2. Fetch from Google
     const url = `https://places.googleapis.com/v1/places/${placeId}?languageCode=tr`;
-    
+
     // We don't cache this fetch because this is an explicit on-demand sync
     const response = await fetch(url, {
       headers: {
@@ -99,6 +104,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
     // Invalidate global settings cache with read-your-writes semantics
     updateTag("global-data");
     updateTag("layout-settings");
+    updateTag("home-data");
 
     return { success: true };
 

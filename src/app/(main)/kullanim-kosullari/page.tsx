@@ -12,12 +12,12 @@ export const metadata: Metadata = {
 const TermsPage = () => (
   <>
     <PublicPageHeader
-      title={DICTIONARY.meta.terms.title}
+      title={DICTIONARY.pages.terms.heading}
       description={DICTIONARY.meta.terms.description}
     />
     <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-text-secondary leading-relaxed">
       <p>
-        {DICTIONARY.meta.terms.content}
+        {DICTIONARY.pages.terms.content}
       </p>
     </section>
   </>

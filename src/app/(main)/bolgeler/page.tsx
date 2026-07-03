@@ -5,6 +5,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layouts/PublicPageHeader";
 import { getGlobalData } from "@/features/settings/actions";
+import { CtaSection } from "@/components/layouts/CtaSection";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.regions.title} | ${DICTIONARY.global.brand}`,
@@ -18,9 +19,9 @@ const RegionsPage = async () => {
   return (
     <>
       <PublicPageHeader
-        eyebrow={DICTIONARY.footer.sections.regions}
-        title={DICTIONARY.meta.regions.title}
-        description={DICTIONARY.meta.regions.description}
+        eyebrow={DICTIONARY.pages.regions.eyebrow}
+        title={DICTIONARY.pages.regions.heading}
+        description={DICTIONARY.pages.regions.headerDesc}
       />
       <section className="bg-surface-neutral">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -35,12 +36,13 @@ const RegionsPage = async () => {
                 {region.name}
               </h2>
               <p className="text-text-secondary text-sm leading-relaxed mt-3">
-                {region.description || `${region.name}${DICTIONARY.meta.regions.regionDescSuffix}`}
+                {region.description || `${region.name}${DICTIONARY.pages.regions.regionDescSuffix}`}
               </p>
             </Link>
           ))}
         </div>
       </section>
+      <CtaSection />
     </>
   );
 };

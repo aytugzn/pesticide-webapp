@@ -90,8 +90,8 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
       <div className="relative w-48 h-12">
         <Image
           src={logoImg}
-          alt={DICTIONARY.navbar.logo.alt}
-          title={DICTIONARY.navbar.logo.title}
+          alt={DICTIONARY.global.logo.alt}
+          title={DICTIONARY.global.logo.title}
           draggable={false}
           fill
           className="object-contain object-left dark:invert dark:brightness-0"
@@ -159,7 +159,7 @@ const FooterContact = ({ address, phone, phoneHref, workingHours, email }: Foote
       <li className="flex items-center gap-2.5">
         <MapPin className="w-4 h-4 text-brand-primary shrink-0" aria-hidden="true" />
         <span className="text-text-secondary text-sm">
-          {address || DICTIONARY.footer.contact.address}
+          {address || DICTIONARY.global.contact.address}
         </span>
       </li>
       {phone && (

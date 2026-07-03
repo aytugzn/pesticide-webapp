@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { DICTIONARY } from "@/constants/dictionary";
 import { cacheTag } from "next/cache";
 import { parseSettingsDoc } from "@/utils/parsers";
+import { getAbsoluteUrl } from "@/utils/getAbsoluteUrl";
 import "./globals.css";
 
 const inter = Inter({
@@ -89,13 +90,21 @@ const RootLayout = ({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: DICTIONARY.meta.default.title,
+    "@id": `${getAbsoluteUrl("/")}#localbusiness`,
+    name: DICTIONARY.global.brand,
     description: DICTIONARY.meta.default.description,
-    url: process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl,
-    areaServed: `${DICTIONARY.global.city}, Turkey`,
+    url: getAbsoluteUrl("/"),
+    logo: getAbsoluteUrl(DICTIONARY.meta.og.image.fallback),
+    image: getAbsoluteUrl(DICTIONARY.meta.og.image.fallback),
+    sameAs: [
+      DICTIONARY.social.instagram.url,
+      DICTIONARY.social.facebook.url,
+    ],
+    areaServed: DICTIONARY.global.city,
     address: {
       "@type": "PostalAddress",
-      addressRegion: DICTIONARY.global.city,
+      streetAddress: DICTIONARY.global.contact.address,
+      addressLocality: DICTIONARY.global.city,
       addressCountry: "TR",
     },
   };
@@ -108,7 +117,9 @@ const RootLayout = ({
       <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+          }}
         />
         {children}
       </body>

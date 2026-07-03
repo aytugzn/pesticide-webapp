@@ -7,7 +7,7 @@ import { getGlobalData } from "@/features/settings/actions";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.contact.title} | ${DICTIONARY.global.brand}`,
-  description: DICTIONARY.home.contact.description,
+  description: DICTIONARY.meta.contact.description,
   alternates: { canonical: ROUTES.contact },
 };
 
@@ -17,9 +17,9 @@ const ContactPage = async () => {
   return (
     <>
       <PublicPageHeader
-        eyebrow={DICTIONARY.navbar.links.contact}
-        title={DICTIONARY.meta.contact.title}
-        description={DICTIONARY.home.contact.description}
+        eyebrow={DICTIONARY.pages.contact.eyebrow}
+        title={DICTIONARY.pages.contact.heading}
+        description={DICTIONARY.pages.contact.headerDesc}
       />
       <ContactSection pests={pests} regions={regions} />
     </>

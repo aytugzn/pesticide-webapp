@@ -7,6 +7,8 @@ import { parseRegionDoc } from "@/utils/parsers";
 import { AdminListPage } from "@/components/layouts/AdminListPage";
 import { AdminDataTable } from "@/components/ui/AdminDataTable";
 
+import { RegionForm } from "@/features/regions/components/admin/RegionForm";
+
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.regions.title} | ${DICTIONARY.global.brand}`,
   robots: { index: false, follow: false },
@@ -31,15 +33,18 @@ const AdminRegionsPage = async () => {
       description={DICTIONARY.admin.regions.description}
       icon={Map}
     >
-      <AdminDataTable
-        emptyText={DICTIONARY.admin.regions.empty}
-        columns={[
-          DICTIONARY.admin.regions.table.name,
-          DICTIONARY.admin.regions.table.slug,
-          DICTIONARY.admin.regions.table.status,
-        ]}
-        rows={rows}
-      />
+      <div className="space-y-10">
+        <RegionForm />
+        <AdminDataTable
+          emptyText={DICTIONARY.admin.regions.empty}
+          columns={[
+            DICTIONARY.admin.regions.table.name,
+            DICTIONARY.admin.regions.table.slug,
+            DICTIONARY.admin.regions.table.status,
+          ]}
+          rows={rows}
+        />
+      </div>
     </AdminListPage>
   );
 };

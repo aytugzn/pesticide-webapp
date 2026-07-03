@@ -12,12 +12,12 @@ export const metadata: Metadata = {
 const KvkkPage = () => (
   <>
     <PublicPageHeader
-      title={DICTIONARY.meta.kvkk.title}
+      title={DICTIONARY.pages.kvkk.heading}
       description={DICTIONARY.meta.kvkk.description}
     />
     <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-text-secondary leading-relaxed">
       <p>
-        {DICTIONARY.meta.kvkk.content}
+        {DICTIONARY.pages.kvkk.content}
       </p>
     </section>
   </>
