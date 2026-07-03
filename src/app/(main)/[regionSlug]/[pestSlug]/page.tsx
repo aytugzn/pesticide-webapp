@@ -24,21 +24,16 @@ type CombinationPageProps = {
  * Ensures each unique region-pest combination URL is pre-rendered.
  */
 export const generateStaticParams = async () => {
-  try {
-    const combinations = await getAllActiveCombinations();
+  const combinations = await getAllActiveCombinations();
 
-    if (!combinations || combinations.length === 0) {
-      return [];
-    }
-
-    return combinations.map((c) => ({
-      regionSlug: c.region,
-      pestSlug: c.pest,
-    }));
-  } catch (error) {
-    console.error("Failed to generate static params", error);
-    return [];
+  if (!combinations || combinations.length === 0) {
+    throw new Error("No active combinations found. At least one active combination is required to build this route. Ensure Firestore quota is not exceeded and active combinations exist.");
   }
+
+  return combinations.map((c) => ({
+    regionSlug: c.region,
+    pestSlug: c.pest,
+  }));
 };
 
 /**

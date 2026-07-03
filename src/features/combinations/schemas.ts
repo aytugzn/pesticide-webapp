@@ -39,3 +39,7 @@ export const saveCombinationSchema = combinationSlugParamsSchema.extend({
 export const toggleCombinationSchema = combinationSlugParamsSchema.extend({
   isActive: z.boolean(),
 });
+
+export const updateCombinationSchema = combinationSlugParamsSchema.extend({
+  content: generatedContentSchema,
+});

@@ -14,6 +14,7 @@ import {
 } from "./types";
 import { generatedContentSchema, savePestSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { getCombinationCacheTag } from "@/features/combinations/constants";
 
 export const checkPestExists = async (slug: string): Promise<boolean> => {
   const doc = await getAdminDb().collection("pests").doc(slug).get();
@@ -114,5 +115,55 @@ export const savePest = async (
   } catch (error: unknown) {
     console.error("Failed to save pest", { slug, error });
     return { success: false, error: PEST_ERRORS.SAVE_FAILED };
+  }
+};
+
+export const togglePestStatus = async (
+  slug: string,
+  isActive: boolean
+): Promise<ActionResponse<void, PestErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  }
+
+  try {
+    const db = getAdminDb();
+    const pestRef = db.collection("pests").doc(slug);
+
+    const pestDoc = await pestRef.get(); if (!pestDoc.exists) {
+      return { success: false, error: PEST_ERRORS.NOT_FOUND };
+    }
+
+    const batch = db.batch();
+    batch.update(pestRef, { isActive });
+
+    const updatedCombinationTags: string[] = [];
+
+    if (!isActive) {
+      const activeCombinationsQuery = await db
+        .collection("combinations")
+        .where("pest", "==", slug)
+        .where("isActive", "==", true)
+        .get();
+
+      activeCombinationsQuery.docs.forEach((doc) => {
+        batch.update(doc.ref, { isActive: false });
+        const data = doc.data();
+        updatedCombinationTags.push(getCombinationCacheTag(data.region, data.pest));
+      });
+    }
+
+    await batch.commit();
+
+    updateTag("global-data");
+    if (!isActive && updatedCombinationTags.length > 0) {
+      updateTag("all-combinations");
+      updatedCombinationTags.forEach((tag) => updateTag(tag));
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to toggle pest status", { slug, error });
+    return { success: false, error: PEST_ERRORS.TOGGLE_FAILED };
   }
 };

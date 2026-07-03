@@ -1,35 +1,37 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { deleteCombination } from "../../actions";
+import { deleteCombination, toggleCombinationStatus } from "../../actions";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { CombinationRow } from "../../types";
-import { CombinationTableRow } from "./CombinationTableRow";
+import { AdminEntityTable, type AdminEntityColumn } from "@/components/ui/AdminEntityTable";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { Switch } from "@/components/ui/Switch";
+import { ExternalLink, Trash2, Edit2 } from "lucide-react";
+import { cn } from "@/utils/cn";
+import { CombinationEditModal } from "./CombinationEditModal";
 
 type CombinationsTableProps = {
   initialRows: CombinationRow[];
 };
 
-/**
- * Admin table displaying all generated combinations with status and actions.
- */
+const ICON_SIZE = 18;
+
 export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
   const d = DICTIONARY.admin.combinations;
   const [rows, setRows] = useState(initialRows);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [rowToDelete, setRowToDelete] = useState<CombinationRow | null>(null);
+  const [rowToEdit, setRowToEdit] = useState<CombinationRow | null>(null);
+  const [pendingToggleIds, setPendingToggleIds] = useState<Set<string>>(new Set());
 
   const confirmDelete = useCallback(async () => {
     if (!rowToDelete) return;
 
     setDeletingId(rowToDelete.id);
-    const result = await deleteCombination(
-      rowToDelete.region,
-      rowToDelete.pest,
-    );
+    const result = await deleteCombination(rowToDelete.region, rowToDelete.pest);
 
     if (result.success) {
       setRows((prev) => prev.filter((r) => r.id !== rowToDelete.id));
@@ -42,52 +44,127 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
     setRowToDelete(row);
   }, []);
 
-  if (rows.length === 0) {
-    return (
-      <div className="bg-brand-surface border border-brand-border/60 rounded-xl p-12 text-center shadow-sm">
-        <p className="text-text-muted text-sm font-medium">{d.tableEmpty}</p>
-      </div>
-    );
-  }
+  const handleEditClick = useCallback((row: CombinationRow) => {
+    setRowToEdit(row);
+  }, []);
+
+  const handleEditSuccess = useCallback((updatedRow: CombinationRow) => {
+    setRows((prev) => prev.map((r) => (r.id === updatedRow.id ? updatedRow : r)));
+  }, []);
+
+  const handleToggleActive = useCallback(async (row: CombinationRow, isActive: boolean) => {
+    if (pendingToggleIds.has(row.id)) return;
+
+    setPendingToggleIds((prev) => {
+      const next = new Set(prev);
+      next.add(row.id);
+      return next;
+    });
+
+    setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, isActive } : r));
+        try {
+      const result = await toggleCombinationStatus(row.region, row.pest, isActive);
+      if (!result.success) {
+        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, isActive: !isActive } : r));
+      }
+    } catch {
+      setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, isActive: !isActive } : r));
+    } finally {
+      setPendingToggleIds((prev) => {
+        const next = new Set(prev);
+        next.delete(row.id);
+        return next;
+      });
+    }
+  }, [pendingToggleIds]);
+
+  const columns: AdminEntityColumn<CombinationRow>[] = [
+    {
+      key: "region",
+      header: d.table.region,
+      render: (row) => <span className="font-medium">{row.regionName}</span>,
+    },
+    {
+      key: "pest",
+      header: d.table.pest,
+      render: (row) => row.pestName,
+    },
+    {
+      key: "status",
+      header: d.table.status,
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <Switch
+            disabled={pendingToggleIds.has(row.id)}
+            checked={row.isActive ?? false}
+            onChange={(checked) => handleToggleActive(row, checked)}
+          />
+          <span
+            className={cn(
+              "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide",
+              row.isActive
+                ? "bg-success-bg/80 text-success-text border border-success-border/50"
+                : "bg-error-bg/80 text-error-text border border-error-border/50"
+            )}
+          >
+            {row.isActive ? d.table.active : d.table.passive}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: d.table.actions,
+      className: "text-right",
+      render: (row) => (
+        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="unstyled"
+            size="none"
+            onClick={() => handleEditClick(row)}
+            className="p-2 text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 rounded-brand-sm transition-colors"
+            aria-label={`${d.edit} ${row.regionName} ${row.pestName}`}
+            title={d.edit}
+          >
+            <Edit2 size={ICON_SIZE} aria-hidden="true" />
+          </Button>
+          {row.isActive && (
+            <a
+              href={`/${row.region}/${row.pest}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 transition-colors"
+              aria-label={`${row.regionName} ${row.pestName}`}
+              title={d.table.view}
+            >
+              <ExternalLink size={ICON_SIZE} aria-hidden="true" />
+            </a>
+          )}
+          <Button
+            variant="unstyled"
+            size="none"
+            onClick={() => handleDeleteClick(row)}
+            disabled={deletingId === row.id}
+            className="p-2 text-text-secondary hover:text-error-text hover:bg-error-bg rounded-brand-sm transition-colors disabled:opacity-50"
+            aria-label={`${d.delete} ${row.regionName} ${row.pestName}`}
+            title={d.delete}
+          >
+            <Trash2 size={ICON_SIZE} aria-hidden="true" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="bg-brand-surface border border-brand-border/60 rounded-xl overflow-hidden shadow-sm">
-      <div className="px-6 py-5 border-b border-brand-border/60 bg-surface-neutral/30">
-        <h2 className="font-heading font-bold text-text-primary text-lg tracking-tight">
-          {d.tableTitle}
-        </h2>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-brand-border/60 bg-surface-neutral/50">
-              <th className="text-left px-6 py-4 font-semibold text-text-secondary tracking-wide uppercase text-xs">
-                {d.table.region}
-              </th>
-              <th className="text-left px-6 py-4 font-semibold text-text-secondary tracking-wide uppercase text-xs">
-                {d.table.pest}
-              </th>
-              <th className="text-left px-6 py-4 font-semibold text-text-secondary tracking-wide uppercase text-xs">
-                {d.table.status}
-              </th>
-              <th className="text-right px-6 py-4 font-semibold text-text-secondary tracking-wide uppercase text-xs">
-                {d.table.actions}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <CombinationTableRow
-                key={row.id}
-                row={row}
-                isDeleting={deletingId === row.id}
-                onDelete={handleDeleteClick}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <>
+      <AdminEntityTable
+        title={d.tableTitle}
+        rows={rows}
+        columns={columns}
+        getRowKey={(row) => row.id}
+        emptyMessage={d.tableEmpty}
+      />
 
       <Modal
         isOpen={!!rowToDelete}
@@ -101,7 +178,7 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
             onClick={() => setRowToDelete(null)}
             disabled={!!deletingId}
           >
-            {DICTIONARY.admin.regions.cancel}
+            {DICTIONARY.global.ui.cancel}
           </Button>
           <Button
             variant="danger"
@@ -112,6 +189,13 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
           </Button>
         </div>
       </Modal>
-    </div>
+
+      <CombinationEditModal
+        isOpen={!!rowToEdit}
+        onClose={() => setRowToEdit(null)}
+        row={rowToEdit}
+        onSuccess={handleEditSuccess}
+      />
+    </>
   );
 };

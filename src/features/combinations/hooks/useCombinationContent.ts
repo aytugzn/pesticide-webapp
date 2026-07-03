@@ -31,6 +31,7 @@ export const useCombinationContent = ({
   const [content, setContent] = useState("");
   const [faq, setFaq] = useState<{ question: string; answer: string }[]>([]);
   const [isActive, setIsActive] = useState(true);
+  const [isExistingCombination, setIsExistingCombination] = useState(false);
 
   // Use a ref to track which combination the current content actually belongs to.
   // This prevents saving old content into a newly selected region's draft key during state transitions.
@@ -62,6 +63,7 @@ export const useCombinationContent = ({
     setContent("");
     setFaq([]);
     setIsActive(true);
+    setIsExistingCombination(false);
   }, []);
 
   /**
@@ -81,10 +83,25 @@ export const useCombinationContent = ({
 
       if (result.success && result.data) {
         loadedComboRef.current = { region: regionSlug, pest: pestSlug };
-        populateContent(result.data);
-        onFeedback({ type: "success", message: d.successLoad });
+
+        // Fix: Do not populate form if exists, just mark it and feedback
+        setIsExistingCombination(true);
+        setTitle("");
+        setH1("");
+        setMetaDesc("");
+        setContent("");
+        setFaq([]);
+        setIsActive(true);
+
+        // Clear any old stale drafts for this existing combination
+        const draftKey = `admin_combo_draft_${regionSlug}_${pestSlug}`;
+        localStorage.removeItem(draftKey);
+
+        onFeedback({ type: "error", message: d.errorAlreadyExists });
         return;
       }
+
+      setIsExistingCombination(false);
 
       // Check for unsaved draft in localStorage
       const draftKey = `admin_combo_draft_${regionSlug}_${pestSlug}`;
@@ -106,12 +123,12 @@ export const useCombinationContent = ({
       loadedComboRef.current = { region: regionSlug, pest: pestSlug };
       clearContent();
     },
-    [d.successLoad, d.draftRestored, onFeedback, populateContent, clearContent],
+    [d.errorAlreadyExists, d.draftRestored, onFeedback, populateContent, clearContent],
   );
 
   /** Auto-saves a draft to localStorage whenever content changes, and removes it when cleared. */
   useEffect(() => {
-    if (!loadedComboRef.current) return;
+    if (!loadedComboRef.current || isExistingCombination) return;
     const draftKey = `admin_combo_draft_${loadedComboRef.current.region}_${loadedComboRef.current.pest}`;
     
     if (!hasContent) {
@@ -120,7 +137,7 @@ export const useCombinationContent = ({
     }
     
     localStorage.setItem(draftKey, JSON.stringify({ title, h1, metaDesc, content, faq }));
-  }, [title, h1, metaDesc, content, faq, hasContent]);
+  }, [title, h1, metaDesc, content, faq, hasContent, isExistingCombination]);
 
   /** Updates a single FAQ item's question or answer field. */
   const handleFaqChange = useCallback(
@@ -139,6 +156,7 @@ export const useCombinationContent = ({
     content, setContent,
     faq, setFaq,
     isActive, setIsActive,
+    isExistingCombination,
     hasContent,
     loadContent,
     clearContent,

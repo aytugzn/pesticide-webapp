@@ -8,6 +8,7 @@ export const REGION_ERRORS = {
   SAVE_FAILED: "SAVE_FAILED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   UNAUTHORIZED: "UNAUTHORIZED",
+  TOGGLE_FAILED: "TOGGLE_FAILED",
 } as const;
 
 export type RegionErrorCode = keyof typeof REGION_ERRORS;

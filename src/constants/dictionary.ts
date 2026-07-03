@@ -466,6 +466,11 @@ const adminDict = {
     title: "Kombinasyonlar (Yapay Zeka)",
     description:
       "Bölge ve haşere eşleşmelerine özel SEO odaklı içerikleri Gemini AI ile üretip yönetin.",
+    edit: "Düzenle",
+    editTitle: "Kombinasyon Düzenle",
+    update: "Güncelle",
+    updateSuccess: "Kombinasyon başarıyla güncellendi.",
+    updateError: "Kombinasyon güncellenirken bir hata oluştu.",
     generatorTitle: "Yeni İçerik Üret veya Düzenle",
     selectRegion: "Bölge Seçin",
     selectRegionEmpty: "-- Bölge Seç --",
@@ -489,6 +494,7 @@ const adminDict = {
     savingBtn: "Kaydediliyor...",
     tableTitle: "Üretilmiş Kombinasyonlar",
     tableEmpty: "Henüz üretilmiş kombinasyon bulunamadı.",
+    errorAlreadyExists: "Bu kombinasyon zaten mevcut. Düzenlemek için tablodaki ilgili kaydı kullanın.",
     errorRequired: "Lütfen bir bölge ve bir haşere seçin.",
     successGen:
       "İçerik başarıyla üretildi! Aşağıdan düzenleyip kaydedebilirsiniz.",
@@ -507,6 +513,12 @@ const adminDict = {
     tooltipRegenerate: "İçeriği sıfırlayıp baştan yeni içerik üretir",
     tooltipPreview: "Sayfada nasıl görüneceğini test edin",
     tooltipSave: "Değişiklikleri veritabanına kaydeder ve yayına alır",
+    regenerateWithAi: "AI ile Yeniden Oluştur",
+    regeneratingWithAi: "Oluşturuluyor...",
+    regenerateSuccess: "AI içeriği başarıyla yenilendi, kaydetmeden önce kontrol edebilirsiniz.",
+    regenerateError: "AI ile içerik üretilirken bir hata oluştu.",
+    regenerateQuotaError: "AI kullanım limiti dolduğu için içerik üretilemedi.",
+    regenerateHelper: "AI çıktısı kaydedilmeden önce kontrol edilebilir.",
     bulkGenerate: {
       title: "Toplu İçerik Üretimi",
       description: "Eksik kombinasyonları Gemini AI ile otomatik üretir. Taslak (pasif) olarak kaydedilir. İçerikleri kontrol ettikten sonra tek tek aktif hale getirebilirsiniz.",
@@ -514,7 +526,9 @@ const adminDict = {
       noMissing: "Tüm kombinasyonlar mevcut. Yeni bölge veya haşere eklendiğinde burada görünür.",
       startBtn: "Tüm Eksikleri Üret",
       stopBtn: "Durdur",
+      stoppingBtn: "Durduruluyor...",
       running: "Üretiliyor... ({done}/{total})",
+      stoppingStatus: "Durduruluyor... ({done}/{total})",
       doneAll: "Tüm kombinasyonlar başarıyla üretildi!",
       draftNote: "Taslak (pasif) olarak kaydedildi.",
       partialDone: "{done}/{total} kombinasyon üretildi.",
@@ -522,6 +536,10 @@ const adminDict = {
       statusGenerating: "Üretiliyor...",
       statusDone: "Tamamlandı",
       statusError: "Hata",
+      statusStale: "Askıda Kaldı",
+      statusAborted: "Durduruldu",
+      errorAlreadyRunning: "İşlem zaten başka bir sekmede veya cihazda çalışıyor.",
+      errorQuotaExceeded: "AI kullanım limiti doldu. Daha sonra tekrar deneyin veya Gemini kota ayarlarınızı kontrol edin.",
     },
     table: {
       region: "Bölge",
@@ -671,6 +689,8 @@ const globalDict = {
   ui: {
     closeAria: "Kapat",
     drawerTitle: "Menü",
+    cancel: "İptal",
+    save: "Kaydet",
   },
   cta: {
     titlePrefix: "Ücretsiz",

@@ -14,6 +14,7 @@ import {
 } from "./types";
 import { generatedContentSchema, saveRegionSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { getCombinationCacheTag } from "@/features/combinations/constants";
 
 export const checkRegionExists = async (slug: string): Promise<boolean> => {
   const doc = await getAdminDb().collection("regions").doc(slug).get();
@@ -109,5 +110,55 @@ export const saveRegion = async (
   } catch (error: unknown) {
     console.error("Failed to save region", { slug, error });
     return { success: false, error: REGION_ERRORS.SAVE_FAILED };
+  }
+};
+
+export const toggleRegionStatus = async (
+  slug: string,
+  isActive: boolean
+): Promise<ActionResponse<void, RegionErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  }
+
+  try {
+    const db = getAdminDb();
+    const regionRef = db.collection("regions").doc(slug);
+
+    const regionDoc = await regionRef.get(); if (!regionDoc.exists) {
+      return { success: false, error: REGION_ERRORS.NOT_FOUND };
+    }
+
+    const batch = db.batch();
+    batch.update(regionRef, { isActive });
+
+    const updatedCombinationTags: string[] = [];
+
+    if (!isActive) {
+      const activeCombinationsQuery = await db
+        .collection("combinations")
+        .where("region", "==", slug)
+        .where("isActive", "==", true)
+        .get();
+
+      activeCombinationsQuery.docs.forEach((doc) => {
+        batch.update(doc.ref, { isActive: false });
+        const data = doc.data();
+        updatedCombinationTags.push(getCombinationCacheTag(data.region, data.pest));
+      });
+    }
+
+    await batch.commit();
+
+    updateTag("global-data");
+    if (!isActive && updatedCombinationTags.length > 0) {
+      updateTag("all-combinations");
+      updatedCombinationTags.forEach((tag) => updateTag(tag));
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to toggle region status", { slug, error });
+    return { success: false, error: REGION_ERRORS.TOGGLE_FAILED };
   }
 };

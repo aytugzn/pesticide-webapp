@@ -5,11 +5,14 @@ export const COMBINATION_ERRORS = {
   NOT_FOUND: "NOT_FOUND",
   REGION_NOT_FOUND: "REGION_NOT_FOUND",
   PEST_NOT_FOUND: "PEST_NOT_FOUND",
+  ALREADY_EXISTS: "ALREADY_EXISTS",
   AI_GENERATION_FAILED: "AI_GENERATION_FAILED",
   SAVE_FAILED: "SAVE_FAILED",
   DELETE_FAILED: "DELETE_FAILED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   UNAUTHORIZED: "UNAUTHORIZED",
+  UPDATE_FAILED: "UPDATE_FAILED",
+  AI_QUOTA_EXCEEDED: "AI_QUOTA_EXCEEDED",
 } as const;
 
 export type CombinationErrorCode = keyof typeof COMBINATION_ERRORS;
@@ -30,6 +33,17 @@ export type CombinationRow = CombinationDoc & {
   pestName?: string;
 };
 
+export const COMBINATION_JOB_ERRORS = {
+  ALREADY_RUNNING: "ALREADY_RUNNING",
+  NOT_FOUND: "NOT_FOUND",
+  STALE_JOB: "STALE_JOB",
+  INVALID_JOB_STATE: "INVALID_JOB_STATE",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR",
+} as const;
+
+export type CombinationJobErrorCode = keyof typeof COMBINATION_JOB_ERRORS;
+
 /** Status of a single combination in a bulk generation job */
 export type BulkJobStatus = "pending" | "generating" | "done" | "error";
 
@@ -41,4 +55,18 @@ export type BulkProgressItem = {
   pestName: string;
   status: BulkJobStatus;
   error?: string;
+};
+
+export type CombinationBulkJobDoc = {
+  id: string;
+  type: "bulkCombinationGeneration";
+  status: "running" | "completed" | "aborted" | "failed" | "stale";
+  createdAt: number;
+  updatedAt: number;
+  heartbeatAt: number;
+  total: number;
+  doneCount: number;
+  errorCount: number;
+  abortRequested: boolean;
+  items: BulkProgressItem[];
 };

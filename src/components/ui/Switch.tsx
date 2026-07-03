@@ -9,6 +9,7 @@ type SwitchProps = {
   checked: boolean;
   onChange: (checked: boolean) => void;
   className?: string;
+  disabled?: boolean;
 };
 
 export const Switch = ({
@@ -17,12 +18,14 @@ export const Switch = ({
   checked,
   onChange,
   className,
+  disabled,
 }: SwitchProps) => {
   const generatedId = useId();
   const switchId = id || generatedId;
   const labelId = label ? `${switchId}-label` : undefined;
 
   const handleToggle = () => {
+    if (disabled) return;
     onChange(!checked);
   };
 
@@ -35,7 +38,8 @@ export const Switch = ({
         aria-checked={checked}
         aria-labelledby={labelId}
         onClick={handleToggle}
-        className="group inline-flex items-center gap-3 focus-visible:outline-none"
+        disabled={disabled}
+        className="group inline-flex items-center gap-3 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span
           className={cn(
@@ -43,6 +47,7 @@ export const Switch = ({
             checked
               ? "bg-brand-primary"
               : "border border-brand-border bg-brand-surface-muted",
+            disabled && "cursor-not-allowed"
           )}
           aria-hidden="true"
         >

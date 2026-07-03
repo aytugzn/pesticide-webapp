@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { AdminLayoutClient } from "@/components/layouts/AdminLayoutClient";
 import { DICTIONARY } from "@/constants/dictionary";
+import { AdminProviders } from "./AdminProviders";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.dashboard.title} | ${DICTIONARY.admin.dashboard.subtitle}`,
@@ -11,7 +12,11 @@ export const metadata: Metadata = {
 };
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
-  return <AdminLayoutClient>{children}</AdminLayoutClient>;
+  return (
+    <AdminProviders>
+      <AdminLayoutClient>{children}</AdminLayoutClient>
+    </AdminProviders>
+  );
 };
 
 export default AdminLayout;

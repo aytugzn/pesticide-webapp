@@ -5,9 +5,9 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc } from "@/utils/parsers";
 import { AdminListPage } from "@/components/layouts/AdminListPage";
-import { AdminDataTable } from "@/components/ui/AdminDataTable";
 
 import { PestForm } from "@/features/pests/components/admin/PestForm";
+import { PestsTable } from "@/features/pests/components/admin/PestsTable";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.pests.title} | ${DICTIONARY.global.brand}`,
@@ -17,14 +17,9 @@ export const metadata: Metadata = {
 const AdminPestsPage = async () => {
   await connection();
   const snap = await getAdminDb().collection("pests").get();
-  const rows = snap.docs.map((doc) => {
-    const pest = parsePestDoc(doc.data());
-    return [
-      pest.name,
-      pest.slug || doc.id,
-      pest.isActive ? DICTIONARY.admin.pests.table.active : DICTIONARY.admin.pests.table.passive,
-    ];
-  });
+  const rows = snap.docs.map((doc) => parsePestDoc(doc.data()));
+
+  const tableKey = rows.map((r) => r.slug).join("|");
 
   return (
     <AdminListPage
@@ -35,15 +30,7 @@ const AdminPestsPage = async () => {
     >
       <div className="space-y-10">
         <PestForm />
-        <AdminDataTable
-          emptyText={DICTIONARY.admin.pests.empty}
-          columns={[
-            DICTIONARY.admin.pests.table.name,
-            DICTIONARY.admin.pests.table.slug,
-            DICTIONARY.admin.pests.table.status,
-          ]}
-          rows={rows}
-        />
+        <PestsTable key={tableKey} initialRows={rows} />
       </div>
     </AdminListPage>
   );

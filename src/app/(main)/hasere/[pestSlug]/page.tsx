@@ -19,6 +19,11 @@ type PestPageProps = {
 
 export const generateStaticParams = async () => {
   const { pests } = await getGlobalData();
+
+  if (!pests || pests.length === 0) {
+    throw new Error("No active pests found. At least one active pest is required to build this route. Ensure Firestore quota is not exceeded and active pests exist.");
+  }
+
   return pests.map((pest) => ({ pestSlug: pest.slug }));
 };
 

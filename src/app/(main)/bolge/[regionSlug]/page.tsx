@@ -19,6 +19,11 @@ type RegionPageProps = {
 
 export const generateStaticParams = async () => {
   const { regions } = await getGlobalData();
+
+  if (!regions || regions.length === 0) {
+    throw new Error("No active regions found. At least one active region is required to build this route. Ensure Firestore quota is not exceeded and active regions exist.");
+  }
+
   return regions.map((region) => ({ regionSlug: region.slug }));
 };
 

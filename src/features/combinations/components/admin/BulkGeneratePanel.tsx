@@ -1,14 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { Loader2, Sparkles, Square, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { useBulkGenerate } from "../../hooks/useBulkGenerate";
+import { useCombinationJob } from "./CombinationJobProvider";
 import type { RegionDoc, PestDoc } from "@/types";
-import type { CombinationRow, BulkJobStatus } from "../../types";
+import type { CombinationRow, BulkProgressItem, BulkJobStatus } from "../../types";
 
 const ICON_SIZE = 14;
 
@@ -49,37 +48,62 @@ const statusConfig: Record<BulkJobStatus, { icon: React.ReactNode; label: string
  */
 export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGeneratePanelProps) => {
   const d = DICTIONARY.admin.combinations.bulkGenerate;
-  const router = useRouter();
+  const {
+    progress,
+    isRunning,
+    doneCount,
+    total: jobTotal,
+    hasFinished,
+    allDone,
+    isAbortRequested,
+    startBulkGenerate,
+    abortBulkGenerate,
+  } = useCombinationJob();
 
-  const handleComplete = useCallback(() => {
-    router.refresh();
-  }, [router]);
+  const missingItems = useMemo<BulkProgressItem[]>(() => {
+    const existingIds = new Set(existingRows.map((r) => `${r.region}_${r.pest}`));
+    const missing: BulkProgressItem[] = [];
 
-  const { missingItems, progress, isRunning, doneCount, start, abort } = useBulkGenerate({
-    regions,
-    pests,
-    existingRows,
-    onComplete: handleComplete,
-  });
+    for (const region of regions) {
+      for (const pest of pests) {
+        const id = `${region.slug}_${pest.slug}`;
+        if (!existingIds.has(id)) {
+          missing.push({
+            regionSlug: region.slug,
+            regionName: region.name,
+            pestSlug: pest.slug,
+            pestName: pest.name,
+            status: "pending",
+          });
+        }
+      }
+    }
+    return missing;
+  }, [regions, pests, existingRows]);
 
-  const total = isRunning ? progress.length : missingItems.length;
-  const hasFinished = !isRunning && progress.length > 0;
-  const allDone = hasFinished && doneCount === progress.length;
+  const total = isRunning || hasFinished ? jobTotal : missingItems.length;
+
+  const hasQuotaError = hasFinished && progress.some((p) => p.error === "AI_QUOTA_EXCEEDED");
 
   const statusText = isRunning
-    ? d.running.replace("{done}", String(doneCount)).replace("{total}", String(total))
+    ? isAbortRequested
+      ? d.stoppingStatus.replace("{done}", String(doneCount)).replace("{total}", String(total))
+      : d.running.replace("{done}", String(doneCount)).replace("{total}", String(total))
     : null;
 
   const activeProgress = isRunning ? progress : [];
 
-  const progressStyle = { width: `${(doneCount / total) * 100}%` };
+  const progressStyle = { width: total > 0 ? `${(doneCount / total) * 100}%` : "0%" };
+
+  const handleStart = () => {
+    startBulkGenerate(missingItems);
+  };
 
   return (
     <section
       aria-labelledby="bulk-generate-heading"
       className="bg-brand-surface border border-brand-border rounded-brand-lg p-6 space-y-5"
     >
-      {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2
@@ -91,7 +115,6 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
           <p className="text-text-muted text-sm mt-1">{d.description}</p>
         </div>
 
-        {/* Count badge */}
         {!isRunning && !hasFinished && (
           <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-neutral border border-brand-border text-text-secondary">
             {missingItems.length === 0
@@ -100,7 +123,6 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
           </span>
         )}
 
-        {/* Running status text */}
         {isRunning && (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-neutral border border-brand-border text-brand-primary">
             <Loader2 size={12} className="animate-spin" aria-hidden="true" />
@@ -109,7 +131,6 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
         )}
       </div>
 
-      {/* Progress bar */}
       {isRunning && total > 0 && (
         <div
           role="progressbar"
@@ -125,25 +146,28 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
         </div>
       )}
 
-      {/* Empty state */}
       {missingItems.length === 0 && !isRunning && !hasFinished && (
         <Alert variant="info" message={d.noMissing} />
       )}
 
-      {/* All done state */}
       {allDone && (
         <Alert variant="success" message={`${d.doneAll} ${d.draftNote}`} />
       )}
 
-      {/* Partially done / aborted state */}
-      {hasFinished && !allDone && (
+      {hasFinished && !allDone && !hasQuotaError && (
         <Alert
           variant="info"
           message={`${d.partialDone.replace("{done}", String(doneCount)).replace("{total}", String(progress.length))} ${d.draftNote}`}
         />
       )}
 
-      {/* Per-item progress list (shown while running) */}
+      {hasQuotaError && (
+        <Alert
+          variant="error"
+          message={d.errorQuotaExceeded}
+        />
+      )}
+
       {activeProgress.length > 0 && (
         <ul className="divide-y divide-brand-border/40 rounded-xl border border-brand-border/60 overflow-hidden max-h-72 overflow-y-auto">
           {activeProgress.map((item) => {
@@ -158,7 +182,7 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
                 </span>
                 <span className={`inline-flex items-center gap-1.5 font-medium ${cfg.className}`}>
                   {cfg.icon}
-                  {item.error ? `${cfg.label}: ${item.error}` : cfg.label}
+                  {cfg.label}
                 </span>
               </li>
             );
@@ -166,7 +190,6 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
         </ul>
       )}
 
-      {/* Action buttons */}
       {missingItems.length > 0 && (
         <div className="flex items-center gap-3 flex-wrap">
           {!isRunning ? (
@@ -174,7 +197,7 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
               type="button"
               variant="primary"
               size="md"
-              onClick={start}
+              onClick={handleStart}
               disabled={missingItems.length === 0}
               id="bulk-generate-start-btn"
             >
@@ -189,11 +212,12 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
               type="button"
               variant="danger"
               size="md"
-              onClick={abort}
+              onClick={abortBulkGenerate}
+              disabled={isAbortRequested}
               id="bulk-generate-stop-btn"
             >
               <Square size={ICON_SIZE} aria-hidden="true" />
-              {d.stopBtn}
+              {isAbortRequested ? d.stoppingBtn : d.stopBtn}
             </Button>
           )}
         </div>

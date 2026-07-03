@@ -48,6 +48,11 @@ export const useCombinationWorkflow = ({
       return;
     }
 
+    if (content.isExistingCombination) {
+      onFeedback({ type: "error", message: d.errorAlreadyExists });
+      return;
+    }
+
     setIsGenerating(true);
     onFeedback(null);
 
@@ -61,12 +66,17 @@ export const useCombinationWorkflow = ({
     }
 
     setIsGenerating(false);
-  }, [selection, content, onFeedback, d.errorRequired, d.successGen, d.errorDefault]);
+  }, [selection, content, onFeedback, d.errorRequired, d.errorAlreadyExists, d.successGen, d.errorDefault]);
 
   /** Saves the current content to Firestore and resets the form on success. */
   const handleSave = useCallback(async () => {
     const { selectedRegion, selectedPest, clearSelection } = selection;
     if (!selectedRegion || !selectedPest) return;
+
+    if (content.isExistingCombination) {
+      onFeedback({ type: "error", message: d.errorAlreadyExists });
+      return;
+    }
 
     setIsSaving(true);
     onFeedback(null);
@@ -101,11 +111,15 @@ export const useCombinationWorkflow = ({
 
       setTimeout(() => onFeedback(null), 3000);
     } else {
-      onFeedback({ type: "error", message: d.errorSave });
+      if (result.error === "ALREADY_EXISTS") {
+        onFeedback({ type: "error", message: d.errorAlreadyExists });
+      } else {
+        onFeedback({ type: "error", message: d.errorSave });
+      }
     }
 
     setIsSaving(false);
-  }, [selection, content, regions, pests, onFeedback, d.successSave, d.errorSave, router]);
+  }, [selection, content, regions, pests, onFeedback, d.errorAlreadyExists, d.successSave, d.errorSave, router]);
 
   return {
     isGenerating,

@@ -5,9 +5,9 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parseRegionDoc } from "@/utils/parsers";
 import { AdminListPage } from "@/components/layouts/AdminListPage";
-import { AdminDataTable } from "@/components/ui/AdminDataTable";
 
 import { RegionForm } from "@/features/regions/components/admin/RegionForm";
+import { RegionsTable } from "@/features/regions/components/admin/RegionsTable";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.regions.title} | ${DICTIONARY.global.brand}`,
@@ -17,14 +17,9 @@ export const metadata: Metadata = {
 const AdminRegionsPage = async () => {
   await connection();
   const snap = await getAdminDb().collection("regions").get();
-  const rows = snap.docs.map((doc) => {
-    const region = parseRegionDoc(doc.data());
-    return [
-      region.name,
-      region.slug || doc.id,
-      region.isActive ? DICTIONARY.admin.regions.table.active : DICTIONARY.admin.regions.table.passive,
-    ];
-  });
+  const rows = snap.docs.map((doc) => parseRegionDoc(doc.data()));
+
+  const tableKey = rows.map((r) => r.slug).join("|");
 
   return (
     <AdminListPage
@@ -35,15 +30,7 @@ const AdminRegionsPage = async () => {
     >
       <div className="space-y-10">
         <RegionForm />
-        <AdminDataTable
-          emptyText={DICTIONARY.admin.regions.empty}
-          columns={[
-            DICTIONARY.admin.regions.table.name,
-            DICTIONARY.admin.regions.table.slug,
-            DICTIONARY.admin.regions.table.status,
-          ]}
-          rows={rows}
-        />
+        <RegionsTable key={tableKey} initialRows={rows} />
       </div>
     </AdminListPage>
   );

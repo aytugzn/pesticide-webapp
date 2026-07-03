@@ -32,20 +32,26 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
       getAdminDb().collection("combinations").where("isActive", "==", true).get(),
     ]);
 
+    const activeRegions = new Set<string>();
     regionPages = regionsSnap.docs.map((doc) => {
       const { slug } = doc.data() as RegionDoc;
+      activeRegions.add(slug);
       return { url: `${baseUrl}${ROUTES.regionBase}/${slug}`, priority: 0.8, changeFrequency: "monthly" };
     });
 
+    const activePests = new Set<string>();
     pestPages = pestsSnap.docs.map((doc) => {
       const { slug } = doc.data() as PestDoc;
+      activePests.add(slug);
       return { url: `${baseUrl}${ROUTES.pestBase}/${slug}`, priority: 0.8, changeFrequency: "monthly" };
     });
 
-    combinationPages = combinationsSnap.docs.map((doc) => {
-      const { region, pest } = doc.data() as CombinationDoc;
-      return { url: `${baseUrl}/${region}/${pest}`, priority: 0.9, changeFrequency: "monthly" };
-    });
+    combinationPages = combinationsSnap.docs
+      .map((doc) => doc.data() as CombinationDoc)
+      .filter((data) => activeRegions.has(data.region) && activePests.has(data.pest))
+      .map((data) => {
+        return { url: `${baseUrl}/${data.region}/${data.pest}`, priority: 0.9, changeFrequency: "monthly" };
+      });
   } catch (error) {
     console.error("Failed to generate sitemap", error);
   }

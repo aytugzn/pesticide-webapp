@@ -30,7 +30,7 @@ export const getGlobalData = async (): Promise<GlobalData> => {
     };
   } catch (error) {
     console.error("Failed to fetch global data", error);
-    return { pests: [], regions: [], settings: {} };
+    throw error;
   }
 };
 

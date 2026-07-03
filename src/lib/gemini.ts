@@ -9,17 +9,30 @@ const modelsCache = new Map<
   ReturnType<typeof GoogleGenerativeAI.prototype.getGenerativeModel>
 >();
 
-export const getGeminiModel = (modelName: string = DICTIONARY.gemini.model) => {
-  if (modelsCache.has(modelName)) {
-    return modelsCache.get(modelName)!;
-  }
+export const getGeminiApiKeys = (): string[] => {
+  const keysEnv = process.env.GEMINI_API_KEYS || "";
+  const keys = keysEnv.split(",").map(k => k.trim()).filter(Boolean);
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (keys.length > 0) return keys;
+
+  const singleKey = process.env.GEMINI_API_KEY?.trim();
+  if (singleKey) return [singleKey];
+
+  return [];
+};
+
+export const getGeminiModel = (apiKey?: string, modelName: string = DICTIONARY.gemini.model) => {
+  const resolvedKey = apiKey || getGeminiApiKeys()[0];
+  if (!resolvedKey) {
     throw new AppError(DICTIONARY.systemErrors.env.gemini, "ENV_MISSING");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const cacheKey = `${resolvedKey}_${modelName}`;
+  if (modelsCache.has(cacheKey)) {
+    return modelsCache.get(cacheKey)!;
+  }
+
+  const genAI = new GoogleGenerativeAI(resolvedKey);
   const model = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: {
@@ -27,7 +40,7 @@ export const getGeminiModel = (modelName: string = DICTIONARY.gemini.model) => {
     },
   });
 
-  modelsCache.set(modelName, model);
+  modelsCache.set(cacheKey, model);
   return model;
 };
 
