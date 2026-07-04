@@ -20,8 +20,6 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
     address: typeof d.address === "string" ? d.address : undefined,
     workingHours:
       typeof d.workingHours === "string" ? d.workingHours : undefined,
-    licenseNumber:
-      typeof d.licenseNumber === "string" ? d.licenseNumber : undefined,
     defaultOgImage:
       typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
     heroAutoplayDelay:

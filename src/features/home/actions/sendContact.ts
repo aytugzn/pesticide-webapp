@@ -17,14 +17,17 @@ import { limitContactSubmission } from "@/lib/rateLimit";
 import { createHmac } from "crypto";
 import type { ContactRequestDoc, ActionResponse } from "@/types";
 import { CONTACT_ERRORS, type ContactErrorCode } from "../types";
+import { AppError } from "@/lib/exceptions";
 
 const createRateLimitHash = (value: string): string | null => {
   const secret = process.env.RATE_LIMIT_SECRET;
 
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
-      console.error("RATE_LIMIT_SECRET is missing. Contact form hash-based rate limiting is disabled.");
+      console.error("CRITICAL ERROR: RATE_LIMIT_SECRET is missing in production. Failing closed.");
+      throw new AppError("Missing RATE_LIMIT_SECRET", "CONFIG_ERROR");
     }
+    console.warn("RATE_LIMIT_SECRET missing in development. Hash generation disabled.");
     return null;
   }
 
@@ -91,18 +94,26 @@ export const sendContactForm = async (formData: FormData): Promise<ActionRespons
   }
 
   // Create hashes (HMAC-SHA256) for data minimization
-  const ipHash = ip !== "unknown" ? createRateLimitHash(ip) : null;
-  const phoneHash = createRateLimitHash(cleanPhone);
+  let ipHash: string | null = null;
+  let phoneHash: string | null = null;
 
-  // 3. Upstash Rate Limit (3 requests per 10 mins sliding window)
-  if (ipHash) {
-    const isAllowedIp = await limitContactSubmission(`contact:ip:${ipHash}`);
-    if (!isAllowedIp) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
-  }
+  try {
+    ipHash = ip !== "unknown" ? createRateLimitHash(ip) : null;
+    phoneHash = createRateLimitHash(cleanPhone);
 
-  if (phoneHash) {
-    const isAllowedPhone = await limitContactSubmission(`contact:phone:${phoneHash}`);
-    if (!isAllowedPhone) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
+    // 3. Upstash Rate Limit (3 requests per 10 mins sliding window)
+    if (ipHash) {
+      const isAllowedIp = await limitContactSubmission(`contact:ip:${ipHash}`);
+      if (!isAllowedIp) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
+    }
+
+    if (phoneHash) {
+      const isAllowedPhone = await limitContactSubmission(`contact:phone:${phoneHash}`);
+      if (!isAllowedPhone) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
+    }
+  } catch {
+    // In production, missing config or Redis failure throws, so we safely fail closed
+    return { success: false, error: CONTACT_ERRORS.SAVE_FAILED };
   }
 
   const db = getAdminDb();

@@ -2,6 +2,7 @@ import "server-only";
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { AppError } from "./exceptions";
 
 // Check if Upstash Redis env vars are present
 const isUpstashConfigured =
@@ -27,10 +28,12 @@ export const limitContactSubmission = async (
   if (!ratelimit) {
     if (process.env.NODE_ENV === "production") {
       console.error(
-        "CRITICAL WARNING: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing. Contact form rate limiting is disabled."
+        "CRITICAL ERROR: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing. Contact form rate limiting is disabled. Failing closed."
       );
+      throw new AppError("Missing Upstash configuration", "CONFIG_ERROR");
     }
-    return true; // Fallback: allow submission if not configured
+    console.warn("UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN missing in development. Bypassing rate limit.");
+    return true; // Fallback: allow submission if not configured in dev
   }
 
   try {
@@ -40,6 +43,10 @@ export const limitContactSubmission = async (
     console.error("Rate limit check failed", {
       message: error instanceof Error ? error.message : "Unknown rate limit error",
     });
-    return true; // Fallback: allow submission on Redis failure
+    if (process.env.NODE_ENV === "production") {
+      throw new AppError("Redis failure during rate limit check", "INTERNAL_ERROR");
+    }
+    console.warn("Redis failure in development. Bypassing rate limit.");
+    return true; // Fallback: allow submission on Redis failure in dev
   }
 };

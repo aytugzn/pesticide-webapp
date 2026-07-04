@@ -62,26 +62,30 @@ Projenin yerel ortamda çalıştırılması için aşağıdaki komutları kullan
 2. Ortam değişkenlerini yapılandırın:
    Ana dizinde `.env.local` dosyası oluşturun ve aşağıdaki değişkenleri gerekli değerlerle doldurun:
    ```env
-   NEXT_PUBLIC_FIREBASE_API_KEY=
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-   NEXT_PUBLIC_FIREBASE_APP_ID=
+   NEXT_PUBLIC_FIRESTORE_API_KEY=
+   NEXT_PUBLIC_FIRESTORE_AUTH_DOMAIN=
+   NEXT_PUBLIC_FIRESTORE_PROJECT_ID=
+   NEXT_PUBLIC_FIRESTORE_STORAGE_BUCKET=
+   NEXT_PUBLIC_FIRESTORE_MESSAGING_SENDER_ID=
+   NEXT_PUBLIC_FIRESTORE_APP_ID=
+   NEXT_PUBLIC_FIRESTORE_MEASUREMENT_ID=
    FIREBASE_PROJECT_ID=
    FIREBASE_CLIENT_EMAIL=
    FIREBASE_PRIVATE_KEY=
    ADMIN_EMAIL=
-   SESSION_COOKIE_SECRET=
+   # SESSION_COOKIE_SECRET= (Kullanılmıyor)
    GEMINI_API_KEY=
    GEMINI_API_KEYS=
-   RATE_LIMIT_SECRET=
+   RATE_LIMIT_SECRET= # İletişim formu gibi endpoint'lerde CSRF/rate-limit check için kullanılır
    UPSTASH_REDIS_REST_URL=
    UPSTASH_REDIS_REST_TOKEN=
    TELEGRAM_BOT_TOKEN=
    TELEGRAM_CHAT_ID=
+   TELEGRAM_WEBHOOK_SECRET=
    GOOGLE_PLACES_API_KEY=
-   GOOGLE_PLACE_ID=
+   # GOOGLE_PLACE_ID= (Kullanılmıyor)
+   NEXT_PUBLIC_SITE_URL=
+   NEXT_PUBLIC_DEVELOPER_NAME=
    ```
 
 3. Geliştirme sunucusunu başlatın:
@@ -116,4 +120,5 @@ git diff --check
 - Çevresel değişkenler (Environment variables) deployment platformunda (örn. Vercel) eksiksiz olarak tanımlanmalıdır.
 - Firebase, Firestore ve Auth servisleri üretim ortamına göre doğru yapılandırılmalıdır.
 - Production ortamına çıkmadan önce `lint`, `typecheck` ve `build` komutları başarıyla çalıştırılmalıdır.
+- **Google Fonts:** Proje `next/font/google` kullandığı için build (derleme) sırasında dış ağa (Google sunucularına) erişim gerektirir. Kapalı CI/CD ortamlarında veya internet erişimi kısıtlı deployment platformlarında build hata verebilir. Deploy ortamının dış ağa açık olduğundan emin olun.
 - Firebase tarafındaki Firestore kotaları ve Google Cloud budget limitleri canlı sistemde sürekli takip edilmelidir.

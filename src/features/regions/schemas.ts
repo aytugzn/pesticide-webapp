@@ -1,11 +1,15 @@
 import { z } from "zod";
+import { RESERVED_SLUGS } from "@/constants/routes";
 
 const slugSchema = z
   .string()
   .trim()
   .min(1)
   .max(120)
-  .regex(/^[a-z0-9-]+$/);
+  .regex(/^[a-z0-9-]+$/)
+  .refine((val) => !(RESERVED_SLUGS as readonly string[]).includes(val), {
+    message: "Bu kelime sistem tarafından rezerve edilmiştir ve kullanılamaz.",
+  });
 
 export const generatedContentSchema = z.object({
   title: z.string().trim().min(1).max(60),

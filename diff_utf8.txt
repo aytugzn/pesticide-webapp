@@ -1,0 +1,448 @@
+﻿diff --git a/README.md b/README.md
+index cf9003f..064b320 100644
+--- a/README.md
++++ b/README.md
+@@ -62,26 +62,30 @@ Projenin yerel ortamda ├ğal─▒┼şt─▒r─▒lmas─▒ i├ğin a┼şa─ş─▒daki komutlar─▒ kullan
+ 2. Ortam de─şi┼şkenlerini yap─▒land─▒r─▒n:
+    Ana dizinde `.env.local` dosyas─▒ olu┼şturun ve a┼şa─ş─▒daki de─şi┼şkenleri gerekli de─şerlerle doldurun:
+    ```env
+-   NEXT_PUBLIC_FIREBASE_API_KEY=
+-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+-   NEXT_PUBLIC_FIREBASE_APP_ID=
++   NEXT_PUBLIC_FIRESTORE_API_KEY=
++   NEXT_PUBLIC_FIRESTORE_AUTH_DOMAIN=
++   NEXT_PUBLIC_FIRESTORE_PROJECT_ID=
++   NEXT_PUBLIC_FIRESTORE_STORAGE_BUCKET=
++   NEXT_PUBLIC_FIRESTORE_MESSAGING_SENDER_ID=
++   NEXT_PUBLIC_FIRESTORE_APP_ID=
++   NEXT_PUBLIC_FIRESTORE_MEASUREMENT_ID=
+    FIREBASE_PROJECT_ID=
+    FIREBASE_CLIENT_EMAIL=
+    FIREBASE_PRIVATE_KEY=
+    ADMIN_EMAIL=
+-   SESSION_COOKIE_SECRET=
++   # SESSION_COOKIE_SECRET= (Kullan─▒lm─▒yor)
+    GEMINI_API_KEY=
+    GEMINI_API_KEYS=
+-   RATE_LIMIT_SECRET=
++   RATE_LIMIT_SECRET= # ─░leti┼şim formu gibi endpoint'lerde CSRF/rate-limit check i├ğin kullan─▒l─▒r
+    UPSTASH_REDIS_REST_URL=
+    UPSTASH_REDIS_REST_TOKEN=
+    TELEGRAM_BOT_TOKEN=
+    TELEGRAM_CHAT_ID=
++   TELEGRAM_WEBHOOK_SECRET=
+    GOOGLE_PLACES_API_KEY=
+-   GOOGLE_PLACE_ID=
++   # GOOGLE_PLACE_ID= (Kullan─▒lm─▒yor)
++   NEXT_PUBLIC_SITE_URL=
++   NEXT_PUBLIC_DEVELOPER_NAME=
+    ```
+ 
+ 3. Geli┼ştirme sunucusunu ba┼şlat─▒n:
+@@ -116,4 +120,5 @@ git diff --check
+ - ├çevresel de─şi┼şkenler (Environment variables) deployment platformunda (├Ârn. Vercel) eksiksiz olarak tan─▒mlanmal─▒d─▒r.
+ - Firebase, Firestore ve Auth servisleri ├╝retim ortam─▒na g├Âre do─şru yap─▒land─▒r─▒lmal─▒d─▒r.
+ - Production ortam─▒na ├ğ─▒kmadan ├Ânce `lint`, `typecheck` ve `build` komutlar─▒ ba┼şar─▒yla ├ğal─▒┼şt─▒r─▒lmal─▒d─▒r.
++- **Google Fonts:** Proje `next/font/google` kulland─▒─ş─▒ i├ğin build (derleme) s─▒ras─▒nda d─▒┼ş a─şa (Google sunucular─▒na) eri┼şim gerektirir. Kapal─▒ CI/CD ortamlar─▒nda veya internet eri┼şimi k─▒s─▒tl─▒ deployment platformlar─▒nda build hata verebilir. Deploy ortam─▒n─▒n d─▒┼ş a─şa a├ğ─▒k oldu─şundan emin olun.
+ - Firebase taraf─▒ndaki Firestore kotalar─▒ ve Google Cloud budget limitleri canl─▒ sistemde s├╝rekli takip edilmelidir.
+diff --git a/docs/ANTIGRAVITY.md b/docs/ANTIGRAVITY.md
+index 76da9ef..fd52d56 100644
+--- a/docs/ANTIGRAVITY.md
++++ b/docs/ANTIGRAVITY.md
+@@ -182,7 +182,7 @@ firestore/
+ ÔööÔöÇÔöÇ settings/
+     ÔööÔöÇÔöÇ general/
+         Ôö£ÔöÇÔöÇ phone, address, workingHours
+-        Ôö£ÔöÇÔöÇ licenseNumber, defaultOgImage
++        Ôö£ÔöÇÔöÇ defaultOgImage
+         ÔööÔöÇÔöÇ googleAnalyticsId
+ ```
+ 
+diff --git a/docs/BRIEF.md b/docs/BRIEF.md
+index 0fe2b87..ac2317c 100644
+--- a/docs/BRIEF.md
++++ b/docs/BRIEF.md
+@@ -250,7 +250,7 @@ firestore/
+ ÔööÔöÇÔöÇ settings/
+     ÔööÔöÇÔöÇ general/
+         Ôö£ÔöÇÔöÇ phone, address, workingHours
+-        Ôö£ÔöÇÔöÇ licenseNumber, defaultOgImage
++        Ôö£ÔöÇÔöÇ defaultOgImage
+         ÔööÔöÇÔöÇ googleAnalyticsId
+ ```
+ 
+diff --git a/next.config.ts b/next.config.ts
+index 3302de1..2ea55ec 100644
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -24,6 +24,30 @@ const nextConfig: NextConfig = {
+       },
+     ],
+   },
++  async redirects() {
++    return [
++      {
++        source: "/fare",
++        destination: "/hasere/fare-kemirgen",
++        permanent: true,
++      },
++      {
++        source: "/orumcek",
++        destination: "/hasere/orumcek-ilaclama",
++        permanent: true,
++      },
++      {
++        source: "/pire",
++        destination: "/hasere/pire-ilaclama",
++        permanent: true,
++      },
++      {
++        source: "/bocek-ilaclama",
++        destination: "/hizmetler",
++        permanent: true,
++      },
++    ];
++  },
+ };
+ 
+ export default nextConfig;
+diff --git a/src/app/(admin)/admin/settings/page.tsx b/src/app/(admin)/admin/settings/page.tsx
+index 0c33b38..db393fe 100644
+--- a/src/app/(admin)/admin/settings/page.tsx
++++ b/src/app/(admin)/admin/settings/page.tsx
+@@ -21,7 +21,6 @@ const AdminSettingsPage = async () => {
+     [DICTIONARY.admin.settings.table.email, settings.email || "-"],
+     [DICTIONARY.admin.settings.table.address, settings.address || "-"],
+     [DICTIONARY.admin.settings.table.workingHours, settings.workingHours || "-"],
+-    [DICTIONARY.admin.settings.table.licenseNumber, settings.licenseNumber || "-"],
+   ];
+ 
+   return (
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 4fe006d..8f66521 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -31,7 +31,7 @@ const getLayoutSettings = async () => {
+     return parseSettingsDoc(settingsSnap.data());
+   } catch (error: unknown) {
+     console.error("Failed to fetch layout settings", { error: error instanceof Error ? error.message : "Unknown error" });
+-    return {};
++    throw error;
+   }
+ };
+ 
+diff --git a/src/components/layout/AdminSidebar.tsx b/src/components/layout/AdminSidebar.tsx
+index ca13f2b..4f2553f 100644
+--- a/src/components/layout/AdminSidebar.tsx
++++ b/src/components/layout/AdminSidebar.tsx
+@@ -135,7 +135,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
+       await fetch("/api/auth/logout", { method: "POST" });
+       window.location.href = ROUTES.login;
+     } catch (err) {
+-      console.error("Logout failed", err);
++      console.error("Logout failed", { error: err instanceof Error ? err.message : String(err) });
+     }
+   };
+ 
+diff --git a/src/constants/dictionary.ts b/src/constants/dictionary.ts
+index a0a7cd3..cf09f9a 100644
+--- a/src/constants/dictionary.ts
++++ b/src/constants/dictionary.ts
+@@ -633,7 +633,6 @@ const adminDict = {
+       email: "E-posta",
+       address: "Adres",
+       workingHours: "├çal─▒┼şma saatleri",
+-      licenseNumber: "Ruhsat no",
+     },
+   },
+ };
+diff --git a/src/constants/routes.ts b/src/constants/routes.ts
+index 453b78a..7c305f2 100644
+--- a/src/constants/routes.ts
++++ b/src/constants/routes.ts
+@@ -25,4 +25,25 @@ export const ROUTES = {
+   kvkk: "/kvkk-aydinlatma-metni",
+ } as const;
+ 
++export const RESERVED_SLUGS = [
++  "admin",
++  "api",
++  "login",
++  "bolge",
++  "bolgeler",
++  "hasere",
++  "hasereler",
++  "hizmet",
++  "hizmetler",
++  "iletisim",
++  "hakkimizda",
++  "rapor",
++  "robots.txt",
++  "sitemap.xml",
++  "gizlilik-politikasi",
++  "kullanim-kosullari",
++  "kvkk-aydinlatma-metni",
++  "izinler-sertifikalar",
++] as const;
++
+ export const SESSION_COOKIE_NAME = "admin_session" as const;
+diff --git a/src/features/combinations/actions.ts b/src/features/combinations/actions.ts
+index 62678db..e6e7efd 100644
+--- a/src/features/combinations/actions.ts
++++ b/src/features/combinations/actions.ts
+@@ -384,7 +384,7 @@ export const getAllActiveCombinations = async (): Promise<{ region: string; pest
+       })
+       .filter((combo) => activeRegions.has(combo.region) && activePests.has(combo.pest));
+   } catch (error: unknown) {
+-    console.error("Failed to fetch active combinations", { error });
++    console.error("Failed to fetch active combinations", { error: getErrorInfo(error) });
+     throw error;
+   }
+ };
+diff --git a/src/features/home/actions/sendContact.ts b/src/features/home/actions/sendContact.ts
+index a7af3bd..3617f7c 100644
+--- a/src/features/home/actions/sendContact.ts
++++ b/src/features/home/actions/sendContact.ts
+@@ -17,14 +17,17 @@ import { limitContactSubmission } from "@/lib/rateLimit";
+ import { createHmac } from "crypto";
+ import type { ContactRequestDoc, ActionResponse } from "@/types";
+ import { CONTACT_ERRORS, type ContactErrorCode } from "../types";
++import { AppError } from "@/lib/exceptions";
+ 
+ const createRateLimitHash = (value: string): string | null => {
+   const secret = process.env.RATE_LIMIT_SECRET;
+ 
+   if (!secret) {
+     if (process.env.NODE_ENV === "production") {
+-      console.error("RATE_LIMIT_SECRET is missing. Contact form hash-based rate limiting is disabled.");
++      console.error("CRITICAL ERROR: RATE_LIMIT_SECRET is missing in production. Failing closed.");
++      throw new AppError("Missing RATE_LIMIT_SECRET", "CONFIG_ERROR");
+     }
++    console.warn("RATE_LIMIT_SECRET missing in development. Hash generation disabled.");
+     return null;
+   }
+ 
+@@ -91,18 +94,26 @@ export const sendContactForm = async (formData: FormData): Promise<ActionRespons
+   }
+ 
+   // Create hashes (HMAC-SHA256) for data minimization
+-  const ipHash = ip !== "unknown" ? createRateLimitHash(ip) : null;
+-  const phoneHash = createRateLimitHash(cleanPhone);
++  let ipHash: string | null = null;
++  let phoneHash: string | null = null;
+ 
+-  // 3. Upstash Rate Limit (3 requests per 10 mins sliding window)
+-  if (ipHash) {
+-    const isAllowedIp = await limitContactSubmission(`contact:ip:${ipHash}`);
+-    if (!isAllowedIp) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
+-  }
++  try {
++    ipHash = ip !== "unknown" ? createRateLimitHash(ip) : null;
++    phoneHash = createRateLimitHash(cleanPhone);
++
++    // 3. Upstash Rate Limit (3 requests per 10 mins sliding window)
++    if (ipHash) {
++      const isAllowedIp = await limitContactSubmission(`contact:ip:${ipHash}`);
++      if (!isAllowedIp) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
++    }
+ 
+-  if (phoneHash) {
+-    const isAllowedPhone = await limitContactSubmission(`contact:phone:${phoneHash}`);
+-    if (!isAllowedPhone) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
++    if (phoneHash) {
++      const isAllowedPhone = await limitContactSubmission(`contact:phone:${phoneHash}`);
++      if (!isAllowedPhone) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
++    }
++  } catch {
++    // In production, missing config or Redis failure throws, so we safely fail closed
++    return { success: false, error: CONTACT_ERRORS.SAVE_FAILED };
+   }
+ 
+   const db = getAdminDb();
+diff --git a/src/features/pests/actions.ts b/src/features/pests/actions.ts
+index 2951e82..158fdc4 100644
+--- a/src/features/pests/actions.ts
++++ b/src/features/pests/actions.ts
+@@ -182,10 +182,14 @@ export const savePest = async (
+       createdAt: Date.now(),
+     };
+ 
++    const cleanDocData = Object.fromEntries(
++      Object.entries(docData).filter(([, v]) => v !== undefined)
++    );
++
+     await getAdminDb()
+       .collection("pests")
+       .doc(slug)
+-      .create(docData);
++      .create(cleanDocData);
+ 
+     updateTag("global-data");
+     return { success: true };
+@@ -215,10 +219,16 @@ export const updatePest = async (
+     const db = getAdminDb();
+     const docRef = db.collection("pests").doc(slug);
+ 
+-    await docRef.update({
++    const updateData = {
+       ...parsed.data,
+       updatedAt: Date.now(),
+-    });
++    };
++
++    const cleanUpdateData = Object.fromEntries(
++      Object.entries(updateData).filter(([, v]) => v !== undefined)
++    );
++
++    await docRef.update(cleanUpdateData);
+ 
+     updateTag("global-data");
+     return { success: true };
+diff --git a/src/features/pests/schemas.ts b/src/features/pests/schemas.ts
+index efc2340..37853e8 100644
+--- a/src/features/pests/schemas.ts
++++ b/src/features/pests/schemas.ts
+@@ -1,11 +1,15 @@
+ import { z } from "zod";
++import { RESERVED_SLUGS } from "@/constants/routes";
+ 
+ const slugSchema = z
+   .string()
+   .trim()
+   .min(1)
+   .max(120)
+-  .regex(/^[a-z0-9-]+$/);
++  .regex(/^[a-z0-9-]+$/)
++  .refine((val) => !(RESERVED_SLUGS as readonly string[]).includes(val), {
++    message: "Bu kelime sistem taraf─▒ndan rezerve edilmi┼ştir ve kullan─▒lamaz.",
++  });
+ 
+ export const generatedContentSchema = z.object({
+   title: z.string().trim().min(1).max(60),
+diff --git a/src/features/regions/actions.ts b/src/features/regions/actions.ts
+index 0aadc15..e992677 100644
+--- a/src/features/regions/actions.ts
++++ b/src/features/regions/actions.ts
+@@ -178,10 +178,14 @@ export const saveRegion = async (
+       createdAt: Date.now(),
+     };
+ 
++    const cleanDocData = Object.fromEntries(
++      Object.entries(docData).filter(([, v]) => v !== undefined)
++    );
++
+     await getAdminDb()
+       .collection("regions")
+       .doc(slug)
+-      .create(docData);
++      .create(cleanDocData);
+ 
+     updateTag("global-data");
+     return { success: true };
+@@ -211,10 +215,16 @@ export const updateRegion = async (
+     const db = getAdminDb();
+     const docRef = db.collection("regions").doc(slug);
+ 
+-    await docRef.update({
++    const updateData = {
+       ...parsed.data,
+       updatedAt: Date.now(),
+-    });
++    };
++
++    const cleanUpdateData = Object.fromEntries(
++      Object.entries(updateData).filter(([, v]) => v !== undefined)
++    );
++
++    await docRef.update(cleanUpdateData);
+ 
+     updateTag("global-data");
+     return { success: true };
+diff --git a/src/features/regions/schemas.ts b/src/features/regions/schemas.ts
+index f53fead..8c538cd 100644
+--- a/src/features/regions/schemas.ts
++++ b/src/features/regions/schemas.ts
+@@ -1,11 +1,15 @@
+ import { z } from "zod";
++import { RESERVED_SLUGS } from "@/constants/routes";
+ 
+ const slugSchema = z
+   .string()
+   .trim()
+   .min(1)
+   .max(120)
+-  .regex(/^[a-z0-9-]+$/);
++  .regex(/^[a-z0-9-]+$/)
++  .refine((val) => !(RESERVED_SLUGS as readonly string[]).includes(val), {
++    message: "Bu kelime sistem taraf─▒ndan rezerve edilmi┼ştir ve kullan─▒lamaz.",
++  });
+ 
+ export const generatedContentSchema = z.object({
+   title: z.string().trim().min(1).max(60),
+diff --git a/src/lib/rateLimit.ts b/src/lib/rateLimit.ts
+index f9828ac..5661988 100644
+--- a/src/lib/rateLimit.ts
++++ b/src/lib/rateLimit.ts
+@@ -2,6 +2,7 @@ import "server-only";
+ 
+ import { Ratelimit } from "@upstash/ratelimit";
+ import { Redis } from "@upstash/redis";
++import { AppError } from "./exceptions";
+ 
+ // Check if Upstash Redis env vars are present
+ const isUpstashConfigured =
+@@ -27,10 +28,12 @@ export const limitContactSubmission = async (
+   if (!ratelimit) {
+     if (process.env.NODE_ENV === "production") {
+       console.error(
+-        "CRITICAL WARNING: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing. Contact form rate limiting is disabled."
++        "CRITICAL ERROR: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing. Contact form rate limiting is disabled. Failing closed."
+       );
++      throw new AppError("Missing Upstash configuration", "CONFIG_ERROR");
+     }
+-    return true; // Fallback: allow submission if not configured
++    console.warn("UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN missing in development. Bypassing rate limit.");
++    return true; // Fallback: allow submission if not configured in dev
+   }
+ 
+   try {
+@@ -40,6 +43,10 @@ export const limitContactSubmission = async (
+     console.error("Rate limit check failed", {
+       message: error instanceof Error ? error.message : "Unknown rate limit error",
+     });
+-    return true; // Fallback: allow submission on Redis failure
++    if (process.env.NODE_ENV === "production") {
++      throw new AppError("Redis failure during rate limit check", "INTERNAL_ERROR");
++    }
++    console.warn("Redis failure in development. Bypassing rate limit.");
++    return true; // Fallback: allow submission on Redis failure in dev
+   }
+ };
+diff --git a/src/types/index.ts b/src/types/index.ts
+index 59da9e2..a18ce1c 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -6,7 +6,6 @@ export type SettingsDoc = {
+   email?: string;
+   address?: string;
+   workingHours?: string;
+-  licenseNumber?: string;
+   defaultOgImage?: string;
+   heroAutoplayDelay?: number;
+   servicesAutoplayDelay?: number;
+diff --git a/src/utils/parsers.ts b/src/utils/parsers.ts
+index cbadf48..f3c6745 100644
+--- a/src/utils/parsers.ts
++++ b/src/utils/parsers.ts
+@@ -20,8 +20,6 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
+     address: typeof d.address === "string" ? d.address : undefined,
+     workingHours:
+       typeof d.workingHours === "string" ? d.workingHours : undefined,
+-    licenseNumber:
+-      typeof d.licenseNumber === "string" ? d.licenseNumber : undefined,
+     defaultOgImage:
+       typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
+     heroAutoplayDelay:

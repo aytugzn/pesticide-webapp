@@ -250,7 +250,7 @@ firestore/
 └── settings/
     └── general/
         ├── phone, address, workingHours
-        ├── licenseNumber, defaultOgImage
+        ├── defaultOgImage
         └── googleAnalyticsId
 ```
 

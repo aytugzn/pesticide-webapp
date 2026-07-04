@@ -384,7 +384,7 @@ export const getAllActiveCombinations = async (): Promise<{ region: string; pest
       })
       .filter((combo) => activeRegions.has(combo.region) && activePests.has(combo.pest));
   } catch (error: unknown) {
-    console.error("Failed to fetch active combinations", { error });
+    console.error("Failed to fetch active combinations", { error: getErrorInfo(error) });
     throw error;
   }
 };

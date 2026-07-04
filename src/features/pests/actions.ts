@@ -182,10 +182,14 @@ export const savePest = async (
       createdAt: Date.now(),
     };
 
+    const cleanDocData = Object.fromEntries(
+      Object.entries(docData).filter(([, v]) => v !== undefined)
+    );
+
     await getAdminDb()
       .collection("pests")
       .doc(slug)
-      .create(docData);
+      .create(cleanDocData);
 
     updateTag("global-data");
     return { success: true };
@@ -215,10 +219,16 @@ export const updatePest = async (
     const db = getAdminDb();
     const docRef = db.collection("pests").doc(slug);
 
-    await docRef.update({
+    const updateData = {
       ...parsed.data,
       updatedAt: Date.now(),
-    });
+    };
+
+    const cleanUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(([, v]) => v !== undefined)
+    );
+
+    await docRef.update(cleanUpdateData);
 
     updateTag("global-data");
     return { success: true };

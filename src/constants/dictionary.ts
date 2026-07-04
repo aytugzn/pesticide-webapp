@@ -633,7 +633,6 @@ const adminDict = {
       email: "E-posta",
       address: "Adres",
       workingHours: "Çalışma saatleri",
-      licenseNumber: "Ruhsat no",
     },
   },
 };

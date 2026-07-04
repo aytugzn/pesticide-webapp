@@ -6,7 +6,6 @@ export type SettingsDoc = {
   email?: string;
   address?: string;
   workingHours?: string;
-  licenseNumber?: string;
   defaultOgImage?: string;
   heroAutoplayDelay?: number;
   servicesAutoplayDelay?: number;

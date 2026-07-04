@@ -24,6 +24,30 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/fare",
+        destination: "/hasere/fare-kemirgen",
+        permanent: true,
+      },
+      {
+        source: "/orumcek",
+        destination: "/hasere/orumcek-ilaclama",
+        permanent: true,
+      },
+      {
+        source: "/pire",
+        destination: "/hasere/pire-ilaclama",
+        permanent: true,
+      },
+      {
+        source: "/bocek-ilaclama",
+        destination: "/hizmetler",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

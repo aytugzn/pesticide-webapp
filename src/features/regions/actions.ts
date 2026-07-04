@@ -178,10 +178,14 @@ export const saveRegion = async (
       createdAt: Date.now(),
     };
 
+    const cleanDocData = Object.fromEntries(
+      Object.entries(docData).filter(([, v]) => v !== undefined)
+    );
+
     await getAdminDb()
       .collection("regions")
       .doc(slug)
-      .create(docData);
+      .create(cleanDocData);
 
     updateTag("global-data");
     return { success: true };
@@ -211,10 +215,16 @@ export const updateRegion = async (
     const db = getAdminDb();
     const docRef = db.collection("regions").doc(slug);
 
-    await docRef.update({
+    const updateData = {
       ...parsed.data,
       updatedAt: Date.now(),
-    });
+    };
+
+    const cleanUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(([, v]) => v !== undefined)
+    );
+
+    await docRef.update(cleanUpdateData);
 
     updateTag("global-data");
     return { success: true };

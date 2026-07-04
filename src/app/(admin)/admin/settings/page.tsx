@@ -21,7 +21,6 @@ const AdminSettingsPage = async () => {
     [DICTIONARY.admin.settings.table.email, settings.email || "-"],
     [DICTIONARY.admin.settings.table.address, settings.address || "-"],
     [DICTIONARY.admin.settings.table.workingHours, settings.workingHours || "-"],
-    [DICTIONARY.admin.settings.table.licenseNumber, settings.licenseNumber || "-"],
   ];
 
   return (
