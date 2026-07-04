@@ -506,6 +506,7 @@ const adminDict = {
     savingBtn: "Kaydediliyor...",
     tableTitle: "Üretilmiş Kombinasyonlar",
     tableEmpty: "Henüz üretilmiş kombinasyon bulunamadı.",
+    loadMore: "Daha Fazla Yükle",
     errorAlreadyExists: "Bu kombinasyon zaten mevcut. Düzenlemek için tablodaki ilgili kaydı kullanın.",
     errorRequired: "Lütfen bir bölge ve bir haşere seçin.",
     successGen:
@@ -535,6 +536,7 @@ const adminDict = {
       title: "Toplu İçerik Üretimi",
       description: "Eksik kombinasyonları Gemini AI ile otomatik üretir. Taslak (pasif) olarak kaydedilir. İçerikleri kontrol ettikten sonra tek tek aktif hale getirebilirsiniz.",
       missingCount: "{count} eksik kombinasyon bulundu.",
+      calculateRequired: "Eksikleri hesaplamak için başlatın.",
       noMissing: "Tüm kombinasyonlar mevcut. Yeni bölge veya haşere eklendiğinde burada görünür.",
       startBtn: "Tüm Eksikleri Üret",
       stopBtn: "Durdur",

@@ -3,10 +3,10 @@
 import { X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
-import { SeoContent } from "@/components/layouts/SeoContent";
+import { SeoContent } from "@/components/layout/SeoContent";
 import { CombinationHero } from "../public/CombinationHero";
-import { SeoFaq } from "@/components/layouts/SeoFaq";
-import { CtaSection } from "@/components/layouts/CtaSection";
+import { SeoFaq } from "@/components/layout/SeoFaq";
+import { CtaSection } from "@/components/layout/CtaSection";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { useScrollLock } from "@/hooks/useScrollLock";
 

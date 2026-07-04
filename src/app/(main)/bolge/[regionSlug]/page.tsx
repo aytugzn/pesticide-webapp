@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { ServiceHero } from "@/components/layouts/ServiceHero";
+import { ServiceHero } from "@/components/layout/ServiceHero";
 import { getGlobalData } from "@/features/settings/actions";
 import { getAllActiveCombinations } from "@/features/combinations/actions";
-import { CtaSection } from "@/components/layouts/CtaSection";
-import { SeoContent } from "@/components/layouts/SeoContent";
-import { SeoFaq } from "@/components/layouts/SeoFaq";
+import { CtaSection } from "@/components/layout/CtaSection";
+import { SeoContent } from "@/components/layout/SeoContent";
+import { SeoFaq } from "@/components/layout/SeoFaq";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
-import { ServiceJsonLd } from "@/components/layouts/ServiceJsonLd";
-import { BreadcrumbJsonLd } from "@/components/layouts/BreadcrumbJsonLd";
-import { RelatedLinksSection } from "@/components/layouts/RelatedLinksSection";
+import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
+import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
+import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 
 type RegionPageProps = {
   params: Promise<{ regionSlug: string }>;
@@ -21,7 +22,7 @@ export const generateStaticParams = async () => {
   const { regions } = await getGlobalData();
 
   if (!regions || regions.length === 0) {
-    throw new Error("No active regions found. At least one active region is required to build this route. Ensure Firestore quota is not exceeded and active regions exist.");
+    throw new AppError("No active regions found. At least one active region is required to build this route. Ensure Firestore quota is not exceeded and active regions exist.", "BUILD_ERROR");
   }
 
   return regions.map((region) => ({ regionSlug: region.slug }));

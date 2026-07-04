@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { ServiceHero } from "@/components/layouts/ServiceHero";
-import { SeoContent } from "@/components/layouts/SeoContent";
-import { SeoFaq } from "@/components/layouts/SeoFaq";
+import { ServiceHero } from "@/components/layout/ServiceHero";
+import { SeoContent } from "@/components/layout/SeoContent";
+import { SeoFaq } from "@/components/layout/SeoFaq";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
-import { CtaSection } from "@/components/layouts/CtaSection";
+import { CtaSection } from "@/components/layout/CtaSection";
 import { getGlobalData } from "@/features/settings/actions";
 import { getAllActiveCombinations } from "@/features/combinations/actions";
-import { ServiceJsonLd } from "@/components/layouts/ServiceJsonLd";
-import { BreadcrumbJsonLd } from "@/components/layouts/BreadcrumbJsonLd";
-import { RelatedLinksSection } from "@/components/layouts/RelatedLinksSection";
+import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
+import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
+import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 
 type PestPageProps = {
   params: Promise<{ pestSlug: string }>;
@@ -21,7 +22,7 @@ export const generateStaticParams = async () => {
   const { pests } = await getGlobalData();
 
   if (!pests || pests.length === 0) {
-    throw new Error("No active pests found. At least one active pest is required to build this route. Ensure Firestore quota is not exceeded and active pests exist.");
+    throw new AppError("No active pests found. At least one active pest is required to build this route. Ensure Firestore quota is not exceeded and active pests exist.", "BUILD_ERROR");
   }
 
   return pests.map((pest) => ({ pestSlug: pest.slug }));

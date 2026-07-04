@@ -2,15 +2,16 @@
 
 import { createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { AppError } from "@/lib/exceptions";
+import { generateCombinationContent } from "../../actions";
 import {
-  generateCombinationContent,
   saveCombinationSilently,
   getActiveCombinationJob,
   startCombinationJob,
   updateCombinationJobItem,
   requestAbortCombinationJob,
   finishCombinationJob
-} from "../../actions";
+} from "../../actions/bulk";
 import type { BulkProgressItem } from "../../types";
 
 const RATE_LIMIT_DELAY_MS = 1500;
@@ -34,10 +35,17 @@ const CombinationJobContext = createContext<CombinationJobContextType | null>(nu
 export const useCombinationJob = () => {
   const context = useContext(CombinationJobContext);
   if (!context) {
-    throw new Error("useCombinationJob must be used within a CombinationJobProvider");
+    throw new AppError(
+      "useCombinationJob must be used within a CombinationJobProvider",
+      "COMBINATION_JOB_PROVIDER_MISSING"
+    );
   }
   return context;
 };
+
+const getSafeErrorInfo = (error: unknown) => ({
+  message: error instanceof Error ? error.message : "Unknown error",
+});
 
 export const CombinationJobProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
@@ -279,8 +287,8 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
                abortRef.current = true;
             }
           }
-        } catch (itemError) {
-          console.error("Unexpected error during bulk generation item", itemError);
+        } catch (itemError: unknown) {
+          console.error("Unexpected error during bulk generation item", { error: getSafeErrorInfo(itemError) });
           updateItem(i, { status: "error", error: "UNEXPECTED_ERROR" });
           await updateCombinationJobItem(newJobId, i, { status: "error", error: "UNEXPECTED_ERROR" });
         }
@@ -298,8 +306,8 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
          await finishCombinationJob(newJobId, "completed");
          setDbJobStatus("completed");
       }
-    } catch (e) {
-      console.error("Top-level error in bulk generation loop", e);
+    } catch (error: unknown) {
+      console.error("Top-level error in bulk generation loop", { error: getSafeErrorInfo(error) });
       await finishCombinationJob(newJobId, "failed");
       setDbJobStatus("failed");
     } finally {

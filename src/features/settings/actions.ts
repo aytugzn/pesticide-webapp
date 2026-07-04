@@ -27,8 +27,10 @@ export const getGlobalData = async (): Promise<GlobalData> => {
       regions: regionsSnap.docs.map((doc) => parseRegionDoc(doc.data())),
       settings: parseSettingsDoc(settingsSnap.data()),
     };
-  } catch (error) {
-    console.error("Failed to fetch global data", error);
+  } catch (error: unknown) {
+    console.error("Failed to fetch global data", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     throw error;
   }
 };
@@ -108,7 +110,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 
     return { success: true };
 
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Google Places API request failed", { error: errorMessage });
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };

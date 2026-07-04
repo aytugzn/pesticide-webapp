@@ -50,8 +50,10 @@ export const checkRegionExists = async (
   try {
     const doc = await getAdminDb().collection("regions").doc(slug).get();
     return { success: true, data: doc.exists };
-  } catch (error) {
-    console.error("Failed to check region existence", error);
+  } catch (error: unknown) {
+    console.error("Failed to check region existence", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
   }
 };
@@ -184,7 +186,10 @@ export const saveRegion = async (
     updateTag("global-data");
     return { success: true };
   } catch (error: unknown) {
-    console.error("Failed to save region", { slug, error });
+    console.error("Failed to save region", {
+      slug,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
     return { success: false, error: REGION_ERRORS.SAVE_FAILED };
   }
 };
@@ -238,8 +243,22 @@ export const toggleRegionStatus = async (
       return { success: false, error: REGION_ERRORS.NOT_FOUND };
     }
 
-    const batch = db.batch();
-    batch.update(regionRef, { isActive });
+    const MAX_BATCH_SIZE = 450;
+    const batches: FirebaseFirestore.WriteBatch[] = [];
+    let currentBatch = db.batch();
+    let currentBatchSize = 0;
+
+    const addToBatch = (operation: (b: FirebaseFirestore.WriteBatch) => void) => {
+      if (currentBatchSize >= MAX_BATCH_SIZE) {
+        batches.push(currentBatch);
+        currentBatch = db.batch();
+        currentBatchSize = 0;
+      }
+      operation(currentBatch);
+      currentBatchSize++;
+    };
+
+    addToBatch((b) => b.update(regionRef, { isActive }));
 
     const updatedCombinationTags: string[] = [];
 
@@ -251,13 +270,19 @@ export const toggleRegionStatus = async (
         .get();
 
       activeCombinationsQuery.docs.forEach((doc) => {
-        batch.update(doc.ref, { isActive: false });
+        addToBatch((b) => b.update(doc.ref, { isActive: false }));
         const data = doc.data();
         updatedCombinationTags.push(getCombinationCacheTag(data.region, data.pest));
       });
     }
 
-    await batch.commit();
+    if (currentBatchSize > 0) {
+      batches.push(currentBatch);
+    }
+
+    for (const b of batches) {
+      await b.commit();
+    }
 
     updateTag("global-data");
     if (!isActive && updatedCombinationTags.length > 0) {
@@ -267,7 +292,10 @@ export const toggleRegionStatus = async (
 
     return { success: true };
   } catch (error: unknown) {
-    console.error("Failed to toggle region status", { slug, error });
+    console.error("Failed to toggle region status", {
+      slug,
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
     return { success: false, error: REGION_ERRORS.TOGGLE_FAILED };
   }
 };

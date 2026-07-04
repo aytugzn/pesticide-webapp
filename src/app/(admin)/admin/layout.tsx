@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { AdminLayoutClient } from "@/components/layouts/AdminLayoutClient";
+import { AdminLayoutClient } from "@/components/layout/AdminLayoutClient";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AdminProviders } from "./AdminProviders";
 

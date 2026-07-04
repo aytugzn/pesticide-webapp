@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { DICTIONARY } from "@/constants/dictionary";
 import { sendContactForm } from "../actions/sendContact";
+import { CONTACT_ERRORS } from "../types";
 import { Button } from "@/components/ui/Button";
 import { Send, Loader2 } from "lucide-react";
 import { formatTurkishPhoneInput } from "@/utils/phone";
@@ -58,7 +59,24 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
       setFormKey((prev) => prev + 1); // Reset entire form (including Select states)
     } else {
       setStatus("error");
-      setErrorMsg(result.error || dict.error);
+
+      let message = dict.error;
+      switch (result.error) {
+        case CONTACT_ERRORS.VALIDATION_FAILED:
+          message = DICTIONARY.home.contact.validation.invalidFormat;
+          break;
+        case CONTACT_ERRORS.RATE_LIMITED:
+          message = DICTIONARY.home.contact.validation.rateLimit;
+          break;
+        case CONTACT_ERRORS.PENDING_LIMIT_REACHED:
+          message = DICTIONARY.home.contact.contactRequest.pendingLimitReached;
+          break;
+        case CONTACT_ERRORS.SAVE_FAILED:
+        default:
+          message = dict.error;
+      }
+
+      setErrorMsg(message);
     }
   };
 

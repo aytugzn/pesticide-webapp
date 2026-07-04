@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AppError } from "@/lib/exceptions";
 import {
   getCombination,
   getAllActiveCombinations,
 } from "@/features/combinations/actions";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { getGlobalData } from "@/features/settings/actions";
-import { SeoContent } from "@/components/layouts/SeoContent";
+import { SeoContent } from "@/components/layout/SeoContent";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { ServiceJsonLd } from "@/components/layouts/ServiceJsonLd";
-import { BreadcrumbJsonLd } from "@/components/layouts/BreadcrumbJsonLd";
+import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
+import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { CombinationHero } from "@/features/combinations/components/public/CombinationHero";
-import { SeoFaq } from "@/components/layouts/SeoFaq";
-import { CtaSection } from "@/components/layouts/CtaSection";
+import { SeoFaq } from "@/components/layout/SeoFaq";
+import { CtaSection } from "@/components/layout/CtaSection";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
@@ -27,7 +28,10 @@ export const generateStaticParams = async () => {
   const combinations = await getAllActiveCombinations();
 
   if (!combinations || combinations.length === 0) {
-    throw new Error("No active combinations found. At least one active combination is required to build this route. Ensure Firestore quota is not exceeded and active combinations exist.");
+    throw new AppError(
+      "No active combinations found. At least one active combination is required to build this route. Ensure Firestore quota is not exceeded and active combinations exist.",
+      "BUILD_ERROR"
+    );
   }
 
   return combinations.map((c) => ({
@@ -132,10 +136,7 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
           data.h1 ||
           `${regionName} ${pestName} ${DICTIONARY.pages.services.pestTitleSuffix}`
         }
-        description={
-          data.metaDesc ||
-          DICTIONARY.meta.default.description
-        }
+        description={data.metaDesc || DICTIONARY.meta.default.description}
         url={`/${regionSlug}/${pestSlug}`}
         areaServed={regionName}
         faq={data.faq || []}

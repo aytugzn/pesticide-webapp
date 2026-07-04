@@ -33,3 +33,12 @@ export type HomeData = {
   customReviews: GoogleReviewDoc[];
   viewAllReviewsUrl: string;
 };
+
+export const CONTACT_ERRORS = {
+  VALIDATION_FAILED: "VALIDATION_FAILED",
+  RATE_LIMITED: "RATE_LIMITED",
+  PENDING_LIMIT_REACHED: "PENDING_LIMIT_REACHED",
+  SAVE_FAILED: "SAVE_FAILED",
+} as const;
+
+export type ContactErrorCode = (typeof CONTACT_ERRORS)[keyof typeof CONTACT_ERRORS];

@@ -15,7 +15,8 @@ import { sendTelegramContactRequest } from "@/lib/telegram";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { limitContactSubmission } from "@/lib/rateLimit";
 import { createHmac } from "crypto";
-import type { ContactRequestDoc } from "@/types";
+import type { ContactRequestDoc, ActionResponse } from "@/types";
+import { CONTACT_ERRORS, type ContactErrorCode } from "../types";
 
 const createRateLimitHash = (value: string): string | null => {
   const secret = process.env.RATE_LIMIT_SECRET;
@@ -30,10 +31,6 @@ const createRateLimitHash = (value: string): string | null => {
   return createHmac("sha256", secret).update(value).digest("hex");
 };
 
-type SendContactResponse = {
-  success: boolean;
-  error?: string;
-};
 
 const uiDict = DICTIONARY.home.contact;
 const telegramDict = DICTIONARY.telegram;
@@ -63,7 +60,7 @@ const contactSchema = z.object({
   website: z.string().optional(), // Honeypot field
 });
 
-export const sendContactForm = async (formData: FormData): Promise<SendContactResponse> => {
+export const sendContactForm = async (formData: FormData): Promise<ActionResponse<void, ContactErrorCode>> => {
   const rawData = Object.fromEntries(formData);
 
   // 1. Honeypot check: If the hidden 'website' field is filled, it's a bot.
@@ -75,7 +72,7 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
   const parsed = contactSchema.safeParse(rawData);
 
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message || uiDict.validation.invalidFormat };
+    return { success: false, error: CONTACT_ERRORS.VALIDATION_FAILED };
   }
 
   const { name, phone, service, region } = parsed.data;
@@ -100,12 +97,12 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
   // 3. Upstash Rate Limit (3 requests per 10 mins sliding window)
   if (ipHash) {
     const isAllowedIp = await limitContactSubmission(`contact:ip:${ipHash}`);
-    if (!isAllowedIp) return { success: false, error: uiDict.validation.rateLimit };
+    if (!isAllowedIp) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
   }
 
   if (phoneHash) {
     const isAllowedPhone = await limitContactSubmission(`contact:phone:${phoneHash}`);
-    if (!isAllowedPhone) return { success: false, error: uiDict.validation.rateLimit };
+    if (!isAllowedPhone) return { success: false, error: CONTACT_ERRORS.RATE_LIMITED };
   }
 
   const db = getAdminDb();
@@ -118,7 +115,7 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
     : await messagesRef.where("phone", "==", cleanPhone).where("status", "==", "pending").get();
 
   if (pendingSnap.size >= PENDING_LIMIT) {
-    return { success: false, error: uiDict.contactRequest.pendingLimitReached };
+    return { success: false, error: CONTACT_ERRORS.PENDING_LIMIT_REACHED };
   }
 
   // 1. Create an empty document reference (and ID) before saving to Firestore
@@ -159,9 +156,11 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
 
   try {
     await docRef.set(requestData);
-  } catch (error) {
-    console.error("Failed to save contact request", error);
-    return { success: false, error: uiDict.form.error };
+  } catch (error: unknown) {
+    console.error("Failed to save contact request", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return { success: false, error: CONTACT_ERRORS.SAVE_FAILED };
   }
 
   // 4. Telegram is a notification channel; the lead is already safely stored.
@@ -175,8 +174,10 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
     // Mark as failed but still return success to the user
     try {
       await docRef.set({ notificationStatus: "failed" }, { merge: true });
-    } catch (e) {
-      console.error("Failed to update notificationStatus to failed", e);
+    } catch (e: unknown) {
+      console.error("Failed to update notificationStatus to failed", {
+        message: e instanceof Error ? e.message : "Unknown error",
+      });
     }
 
     return { success: true };
@@ -191,8 +192,10 @@ export const sendContactForm = async (formData: FormData): Promise<SendContactRe
       },
       { merge: true },
     );
-  } catch (error) {
-    console.error("Failed to save contact request", error);
+  } catch (error: unknown) {
+    console.error("Failed to save contact request", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 
   return { success: true };

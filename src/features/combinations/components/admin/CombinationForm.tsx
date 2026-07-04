@@ -5,7 +5,7 @@ import type { PestDoc, RegionDoc } from "@/types";
 import { Alert } from "@/components/ui/Alert";
 import { CombinationGenerator } from "./CombinationGenerator";
 import { CombinationEditor } from "./CombinationEditor";
-import { CombinationFaqEditor } from "./CombinationFaqEditor";
+import { SeoFaqEditor } from "@/features/seo-content/components/admin/SeoFaqEditor";
 import { CombinationActions } from "./CombinationActions";
 import { CombinationPreviewModal } from "./CombinationPreviewModal";
 import { useCombinationSelection } from "../../hooks/useCombinationSelection";
@@ -102,7 +102,7 @@ export const CombinationForm = ({ regions, pests }: CombinationFormProps) => {
             setContent={content.setContent}
           />
 
-          <CombinationFaqEditor faq={content.faq} onFaqChange={content.handleFaqChange} />
+          <SeoFaqEditor faq={content.faq} onFaqChange={content.handleFaqChange} />
 
           <CombinationActions
             isActive={content.isActive}

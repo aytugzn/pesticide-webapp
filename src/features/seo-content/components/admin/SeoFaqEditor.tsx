@@ -4,7 +4,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 
-type CombinationFaqEditorProps = {
+type SeoFaqEditorProps = {
   faq: { question: string; answer: string }[];
   onFaqChange: (
     index: number,
@@ -16,10 +16,10 @@ type CombinationFaqEditorProps = {
 /**
  * Renders the editable FAQ (SSS) section with dynamic question/answer pairs.
  */
-export const CombinationFaqEditor = ({
+export const SeoFaqEditor = ({
   faq,
   onFaqChange,
-}: CombinationFaqEditorProps) => {
+}: SeoFaqEditorProps) => {
   const d = DICTIONARY.admin.combinations;
 
   if (faq.length === 0) return null;

@@ -36,8 +36,10 @@ export const limitContactSubmission = async (
   try {
     const { success } = await ratelimit.limit(identifier);
     return success;
-  } catch (error) {
-    console.error("Rate limit check failed", error);
+  } catch (error: unknown) {
+    console.error("Rate limit check failed", {
+      message: error instanceof Error ? error.message : "Unknown rate limit error",
+    });
     return true; // Fallback: allow submission on Redis failure
   }
 };

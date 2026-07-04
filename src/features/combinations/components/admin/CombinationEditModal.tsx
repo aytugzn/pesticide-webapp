@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Alert } from "@/components/ui/Alert";
-import { CombinationFaqEditor } from "./CombinationFaqEditor";
+import { SeoFaqEditor } from "@/features/seo-content/components/admin/SeoFaqEditor";
 import { updateCombination, generateCombinationContent } from "../../actions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { COMBINATION_ERRORS } from "../../types";
@@ -199,7 +199,7 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
               />
             </div>
 
-            <CombinationFaqEditor
+            <SeoFaqEditor
               faq={formData.faq}
               onFaqChange={handleFaqChange}
             />

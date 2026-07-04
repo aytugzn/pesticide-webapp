@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { PublicPageHeader } from "@/components/layouts/PublicPageHeader";
+import { PublicPageHeader } from "@/components/layout/PublicPageHeader";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.certificates.title} | ${DICTIONARY.global.brand}`,

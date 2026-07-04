@@ -4,7 +4,7 @@ import { Settings } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parseSettingsDoc } from "@/utils/parsers";
-import { AdminListPage } from "@/components/layouts/AdminListPage";
+import { AdminListPage } from "@/components/layout/AdminListPage";
 import { AdminDataTable } from "@/components/ui/AdminDataTable";
 
 export const metadata: Metadata = {

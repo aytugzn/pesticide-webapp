@@ -4,7 +4,7 @@ import { Bug } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc } from "@/utils/parsers";
-import { AdminListPage } from "@/components/layouts/AdminListPage";
+import { AdminListPage } from "@/components/layout/AdminListPage";
 
 import { PestForm } from "@/features/pests/components/admin/PestForm";
 import { PestsTable } from "@/features/pests/components/admin/PestsTable";

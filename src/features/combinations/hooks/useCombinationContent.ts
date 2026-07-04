@@ -114,8 +114,10 @@ export const useCombinationContent = ({
           populateContent(draft);
           onFeedback({ type: "success", message: d.draftRestored });
           return;
-        } catch (e) {
-          console.error("Failed to parse draft content", e);
+        } catch (e: unknown) {
+          console.error("Failed to parse draft content", {
+            message: e instanceof Error ? e.message : "Unknown error",
+          });
         }
       }
 

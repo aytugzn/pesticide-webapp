@@ -4,7 +4,7 @@ import { Map } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parseRegionDoc } from "@/utils/parsers";
-import { AdminListPage } from "@/components/layouts/AdminListPage";
+import { AdminListPage } from "@/components/layout/AdminListPage";
 
 import { RegionForm } from "@/features/regions/components/admin/RegionForm";
 import { RegionsTable } from "@/features/regions/components/admin/RegionsTable";

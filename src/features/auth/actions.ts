@@ -36,8 +36,10 @@ export const createSession = async (idToken: string): Promise<ActionResponse<voi
     });
 
     return { success: true };
-  } catch (error) {
-    console.error("Failed to create session", error);
+  } catch (error: unknown) {
+    console.error("Failed to create session", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     return { success: false, error: AUTH_ERRORS.SESSION_CREATION_FAILED };
   }
 };

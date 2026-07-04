@@ -21,6 +21,8 @@ const telegramCallbackQuerySchema = z.object({
   }).optional(),
 });
 
+const requestIdSchema = z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/);
+
 const telegramDict = DICTIONARY.telegram;
 
 /**
@@ -83,6 +85,14 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     return NextResponse.json({ ok: true });
   }
 
+  // --- 3.5. Validate requestId format ---
+  const reqIdValidation = requestIdSchema.safeParse(requestId);
+  if (!reqIdValidation.success) {
+    console.warn("Invalid Telegram callback request ID", { reason: "invalid_format" });
+    await answerTelegramCallback(callbackQueryId);
+    return NextResponse.json({ ok: true });
+  }
+
   // --- 4. Database Operations and Error Handling ---
   try {
     // 4A. Try updating Firestore first
@@ -95,8 +105,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     await answerTelegramCallback(callbackQueryId);
     await editTelegramMessageAsResolved(chatId, messageId);
 
-  } catch (error) {
-    console.error("Failed to resolve contact request", error);
+  } catch (error: unknown) {
+    console.error("Failed to resolve contact request", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
 
     // 4C. ERROR STATE: Failed to update database
     // Send an extra warning message to admin from dictionary

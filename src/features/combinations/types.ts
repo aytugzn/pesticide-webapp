@@ -45,6 +45,12 @@ export type CombinationLightRow = {
   isArchived?: boolean;
 };
 
+export type CombinationsPageResponse = {
+  items: CombinationLightRow[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
 export const COMBINATION_JOB_ERRORS = {
   ALREADY_RUNNING: "ALREADY_RUNNING",
   NOT_FOUND: "NOT_FOUND",

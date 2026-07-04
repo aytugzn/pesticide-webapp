@@ -1,20 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Loader2, Sparkles, Square, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { useCombinationJob } from "./CombinationJobProvider";
+import { getExistingCombinationKeys } from "../../actions/bulk";
 import type { RegionDoc, PestDoc } from "@/types";
-import type { CombinationLightRow, BulkProgressItem, BulkJobStatus } from "../../types";
+import type { BulkProgressItem, BulkJobStatus } from "../../types";
 
 const ICON_SIZE = 14;
 
 type BulkGeneratePanelProps = {
   regions: RegionDoc[];
   pests: PestDoc[];
-  existingRows: CombinationLightRow[];
 };
 
 /** Icon and label for each bulk job status. */
@@ -46,7 +46,7 @@ const statusConfig: Record<BulkJobStatus, { icon: React.ReactNode; label: string
  * Displays missing count, starts/stops the generation run, and shows per-item progress.
  * All generated combinations are saved as drafts (isActive: false).
  */
-export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGeneratePanelProps) => {
+export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) => {
   const d = DICTIONARY.admin.combinations.bulkGenerate;
   const {
     progress,
@@ -60,14 +60,18 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
     abortBulkGenerate,
   } = useCombinationJob();
 
+  const [existingKeys, setExistingKeys] = useState<Set<string> | null>(null);
+  const [keysLoading, setKeysLoading] = useState(false);
+  const [keysError, setKeysError] = useState(false);
+
   const missingItems = useMemo<BulkProgressItem[]>(() => {
-    const existingIds = new Set(existingRows.map((r) => `${r.region}_${r.pest}`));
+    if (!existingKeys) return [];
     const missing: BulkProgressItem[] = [];
 
     for (const region of regions) {
       for (const pest of pests) {
         const id = `${region.slug}_${pest.slug}`;
-        if (!existingIds.has(id)) {
+        if (!existingKeys.has(id)) {
           missing.push({
             regionSlug: region.slug,
             regionName: region.name,
@@ -79,7 +83,7 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
       }
     }
     return missing;
-  }, [regions, pests, existingRows]);
+  }, [regions, pests, existingKeys]);
 
   const total = isRunning || hasFinished ? jobTotal : missingItems.length;
 
@@ -95,8 +99,45 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
 
   const progressStyle = { width: total > 0 ? `${(doneCount / total) * 100}%` : "0%" };
 
-  const handleStart = () => {
-    startBulkGenerate(missingItems);
+  const handleStart = async () => {
+    let currentKeys = existingKeys;
+
+    if (!currentKeys) {
+      setKeysLoading(true);
+      setKeysError(false);
+      const res = await getExistingCombinationKeys();
+      setKeysLoading(false);
+
+      if (res.success && res.data) {
+        currentKeys = new Set(res.data);
+        setExistingKeys(currentKeys);
+      } else {
+        setKeysError(true);
+        return;
+      }
+    }
+
+    const missing: BulkProgressItem[] = [];
+    for (const region of regions) {
+      for (const pest of pests) {
+        const id = `${region.slug}_${pest.slug}`;
+        if (!currentKeys.has(id)) {
+          missing.push({
+            regionSlug: region.slug,
+            regionName: region.name,
+            pestSlug: pest.slug,
+            pestName: pest.name,
+            status: "pending",
+          });
+        }
+      }
+    }
+
+    if (missing.length === 0) {
+      return;
+    }
+
+    startBulkGenerate(missing);
   };
 
   return (
@@ -117,9 +158,15 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
 
         {!isRunning && !hasFinished && (
           <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-neutral border border-brand-border text-text-secondary">
-            {missingItems.length === 0
-              ? d.noMissing
-              : d.missingCount.replace("{count}", String(missingItems.length))}
+            {keysLoading
+              ? DICTIONARY.global.loading
+              : keysError
+                ? DICTIONARY.admin.combinations.errorDefault
+                : !existingKeys
+                  ? d.calculateRequired
+                  : missingItems.length === 0
+                    ? d.noMissing
+                    : d.missingCount.replace("{count}", String(missingItems.length))}
           </span>
         )}
 
@@ -146,8 +193,12 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
         </div>
       )}
 
-      {missingItems.length === 0 && !isRunning && !hasFinished && (
+      {existingKeys !== null && missingItems.length === 0 && !keysLoading && !keysError && !isRunning && !hasFinished && (
         <Alert variant="info" message={d.noMissing} />
+      )}
+
+      {keysError && (
+        <Alert variant="error" message={DICTIONARY.admin.combinations.errorDefault} />
       )}
 
       {allDone && (
@@ -190,7 +241,7 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
         </ul>
       )}
 
-      {missingItems.length > 0 && (
+      {(!existingKeys || missingItems.length > 0) && (
         <div className="flex items-center gap-3 flex-wrap">
           {!isRunning ? (
             <Button
@@ -198,12 +249,12 @@ export const BulkGeneratePanel = ({ regions, pests, existingRows }: BulkGenerate
               variant="primary"
               size="md"
               onClick={handleStart}
-              disabled={missingItems.length === 0}
+              disabled={keysLoading || keysError || (existingKeys !== null && missingItems.length === 0)}
               id="bulk-generate-start-btn"
             >
               <Sparkles size={ICON_SIZE} aria-hidden="true" />
-              {d.startBtn}
-              {missingItems.length > 0 && (
+              {keysLoading ? DICTIONARY.global.loading : d.startBtn}
+              {existingKeys && missingItems.length > 0 && !keysLoading && !keysError && (
                 <span className="ml-1 opacity-75">({missingItems.length})</span>
               )}
             </Button>

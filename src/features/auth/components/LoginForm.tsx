@@ -47,10 +47,12 @@ export const LoginForm = () => {
       }
 
       router.push(ROUTES.admin);
-    } catch (err) {
+    } catch (err: unknown) {
       if (isPopupCancelled(err)) return;
       setError(DICTIONARY.auth.login.error);
-      console.error("Login failed", err);
+      console.error("Login failed", {
+        message: err instanceof Error ? err.message : "Unknown error",
+      });
     } finally {
       setLoading(false);
     }

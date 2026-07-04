@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { connection } from "next/server";
 import { getGlobalData } from "@/features/settings/actions";
-import { getAdminCombinations } from "@/features/combinations/actions";
+import { getAdminCombinationsPage } from "@/features/combinations/actions";
 import { CombinationForm } from "@/features/combinations/components/admin/CombinationForm";
 import { CombinationsTable } from "@/features/combinations/components/admin/CombinationsTable";
 import { BulkGeneratePanel } from "@/features/combinations/components/admin/BulkGeneratePanel";
@@ -16,12 +16,15 @@ const AdminCombinationsPage = async () => {
   await connection();
   const [globalData, combinationsResult] = await Promise.all([
     getGlobalData(),
-    getAdminCombinations(),
+    getAdminCombinationsPage(50, null),
   ]);
 
   const regions = globalData.regions || [];
   const pests = globalData.pests || [];
-  const allRows = combinationsResult.success && combinationsResult.data ? combinationsResult.data : [];
+  const allRows = combinationsResult.success && combinationsResult.data ? combinationsResult.data.items : [];
+  const nextCursor = combinationsResult.success && combinationsResult.data ? combinationsResult.data.nextCursor : null;
+  const hasMore = combinationsResult.success && combinationsResult.data ? combinationsResult.data.hasMore : false;
+
   const visibleRows = allRows.filter((row) => !row.isArchived);
 
   // Generate a deterministic key so the table remounts and resets local state when server data changes
@@ -43,8 +46,13 @@ const AdminCombinationsPage = async () => {
 
       <div className="space-y-10">
         <CombinationForm regions={regions} pests={pests} />
-        <BulkGeneratePanel regions={regions} pests={pests} existingRows={allRows} />
-        <CombinationsTable key={tableKey} initialRows={visibleRows} />
+        <BulkGeneratePanel regions={regions} pests={pests} />
+        <CombinationsTable
+          key={tableKey}
+          initialRows={visibleRows}
+          initialNextCursor={nextCursor}
+          initialHasMore={hasMore}
+        />
       </div>
     </div>
   );

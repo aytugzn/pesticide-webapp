@@ -66,18 +66,22 @@ CRITICAL RULES FOR CONTENT & FAQ:
 1. Do NOT invent or guess specific operational details (e.g., exact prices, exact durations like "${DICTIONARY.gemini.promptExamples.duration}", or specific chemical names).
 2. If addressing questions about time or price, give general professional answers (e.g., "${DICTIONARY.gemini.promptExamples.generalAnswer}").
 3. Tone: Premium, trustworthy, and authoritative. Avoid keyword stuffing or sounding robotic. Write naturally to persuade the user to contact the company.
+4. UNIQUE & LOCAL INTENT: The content MUST be 100% unique for this specific region and pest combination. Do NOT use repetitive boilerplate templates. Paragprahs must specifically address the local context.
+5. NO FAKE CLAIMS: Do NOT make up fake guarantees, specific prices, official documents/certificates, or unproven health/medical promises.
+6. NATURAL LANGUAGE: Write in natural, fluent Turkish. Do NOT use excessive marketing language or keyword stuffing.
+7. HTML SAFETY: HTML output MUST be strictly semantic and simple. NEVER include <script>, <style>, inline styles, or any dangerous HTML attributes.
 
 Generate the following fields:
-- title: max 60 chars. Must be highly clickable and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
+- title: max 60 chars. Must be 100% unique, highly clickable, and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
 - description: max 150 chars. Comma separated list of specific environmental factors in this region that attract this specific pest. Do not write promotional text.
-- h1: max 70 chars. Natural and engaging.
-- metaDesc: max 160 chars. Must include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
-- content: 300-400 words. Naturally integrate region and pest details.
+- h1: max 70 chars. 100% unique, natural, and engaging. Do not copy the title exactly.
+- metaDesc: max 160 chars. Must be natural, match local search intent, and include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
+- content: 300-400 words. Naturally integrate region and pest details with unique paragraphs.
   - Format strictly as a flat list of semantic HTML tags (<p>, <h2>, <ul>).
   - DO NOT wrap the content in a single parent container like <div>, <main>, or <article>.
   - CRITICAL: You MUST start the content immediately with an <h2> tag. Do NOT write any introductory text or paragraph before the first <h2>. Do not use <h1> (the page already has an H1).
   - IMPORTANT: The very last <h2> section MUST be about the company itself (e.g., "${DICTIONARY.gemini.promptExamples.aboutCompanyHeading} ${DICTIONARY.global.brand}?").
-- faq: 3 highly relevant question-answer pairs specific to the pest and/or region.
+- faq: 3 highly relevant, distinct question-answer pairs specific to the pest and region combination. Do NOT repeat standard generic questions.
 
 Return RAW JSON only. Do not wrap the JSON in markdown code blocks (e.g. no \`\`\`json). Do not add any conversational text before or after the JSON.
 ${DICTIONARY.gemini.jsonFormat}
@@ -98,18 +102,22 @@ CRITICAL RULES FOR CONTENT & FAQ:
 1. Do NOT invent or guess specific operational details (e.g., exact prices, exact durations like "${DICTIONARY.gemini.promptExamples.duration}", or specific chemical names).
 2. If addressing questions about time or price, give general professional answers (e.g., "${DICTIONARY.gemini.promptExamples.generalAnswer}").
 3. Tone: Premium, trustworthy, and authoritative. Avoid keyword stuffing or sounding robotic. Write naturally to persuade the user to contact the company.
+4. UNIQUE & LOCAL INTENT: The content MUST be 100% unique for this specific region. Do NOT use repetitive boilerplate templates. Paragprahs must specifically address the local context.
+5. NO FAKE CLAIMS: Do NOT make up fake guarantees, specific prices, official documents/certificates, or unproven health/medical promises.
+6. NATURAL LANGUAGE: Write in natural, fluent Turkish. Do NOT use excessive marketing language or keyword stuffing.
+7. HTML SAFETY: HTML output MUST be strictly semantic and simple. NEVER include <script>, <style>, inline styles, or any dangerous HTML attributes.
 
 Generate the following fields for a regional pest control landing page:
-- title: max 60 chars. Must be highly clickable and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
+- title: max 60 chars. Must be 100% unique, highly clickable, and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
 - description: max 150 chars. Comma separated list of environmental, architectural, and geographical factors in this region that specifically increase PEST RISKS (e.g. "nemli sahil şeridi, eski altyapı, bahçeli müstakil evler, sıcak iklim, kanalizasyon sorunları"). Do not just describe the region's tourism or beauty. Focus strictly on factors relevant to pest control.
-- h1: max 70 chars. Natural and engaging.
-- metaDesc: max 160 chars. Must include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
-- content: 300-400 words. Describe pest control services in this specific region.
+- h1: max 70 chars. 100% unique, natural, and engaging. Do not copy the title exactly.
+- metaDesc: max 160 chars. Must be natural, match local search intent, and include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
+- content: 300-400 words. Describe pest control services in this specific region with unique paragraphs.
   - Format strictly as a flat list of semantic HTML tags (<p>, <h2>, <ul>).
   - DO NOT wrap the content in a single parent container like <div>, <main>, or <article>.
   - CRITICAL: You MUST start the content immediately with an <h2> tag. Do NOT write any introductory text or paragraph before the first <h2>. Do not use <h1> (the page already has an H1).
   - IMPORTANT: The very last <h2> section MUST be about the company itself (e.g., "${DICTIONARY.gemini.promptExamples.aboutCompanyHeading} ${DICTIONARY.global.brand}?").
-- faq: 3 highly relevant question-answer pairs specific to pest control in this region.
+- faq: 3 highly relevant, distinct question-answer pairs specific to pest control in this region. Do NOT repeat standard generic questions.
 
 Return RAW JSON only. Do not wrap the JSON in markdown code blocks (e.g. no \`\`\`json). Do not add any conversational text before or after the JSON.
 ${DICTIONARY.gemini.jsonFormat}
@@ -130,18 +138,22 @@ CRITICAL RULES FOR CONTENT & FAQ:
 1. Do NOT invent or guess specific operational details (e.g., exact prices, exact durations like "${DICTIONARY.gemini.promptExamples.duration}", or specific chemical names).
 2. If addressing questions about time or price, give general professional answers (e.g., "${DICTIONARY.gemini.promptExamples.generalAnswer}").
 3. Tone: Premium, trustworthy, and authoritative. Avoid keyword stuffing or sounding robotic. Write naturally to persuade the user to contact the company.
+4. UNIQUE & LOCAL INTENT: The content MUST be 100% unique for this specific pest. Do NOT use repetitive boilerplate templates. Paragprahs must specifically address the local context.
+5. NO FAKE CLAIMS: Do NOT make up fake guarantees, specific prices, official documents/certificates, or unproven health/medical promises.
+6. NATURAL LANGUAGE: Write in natural, fluent Turkish. Do NOT use excessive marketing language or keyword stuffing.
+7. HTML SAFETY: HTML output MUST be strictly semantic and simple. NEVER include <script>, <style>, inline styles, or any dangerous HTML attributes.
 
 Generate the following fields for a pest-specific informational and service landing page:
-- title: max 60 chars. Must be highly clickable and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
+- title: max 60 chars. Must be 100% unique, highly clickable, and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
 - description: max 150 chars. Comma separated list of physical characteristics and common nesting areas for this pest (e.g. "bodrum, çatı ve depolarda yuvalanır, kışın kapalı alanlara girer"). Do not write promotional text.
-- h1: max 70 chars. Natural and engaging.
-- metaDesc: max 160 chars. Must include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
-- content: 300-400 words. Describe this pest, its dangers, and professional solutions.
+- h1: max 70 chars. 100% unique, natural, and engaging. Do not copy the title exactly.
+- metaDesc: max 160 chars. Must be natural, match local search intent, and include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
+- content: 300-400 words. Describe this pest, its dangers, and professional solutions with unique paragraphs.
   - Format strictly as a flat list of semantic HTML tags (<p>, <h2>, <ul>).
   - DO NOT wrap the content in a single parent container like <div>, <main>, or <article>.
   - CRITICAL: You MUST start the content immediately with an <h2> tag. Do NOT write any introductory text or paragraph before the first <h2>. Do not use <h1> (the page already has an H1).
   - IMPORTANT: The very last <h2> section MUST be about the company itself (e.g., "${DICTIONARY.gemini.promptExamples.aboutCompanyHeading} ${DICTIONARY.global.brand}?").
-- faq: 3 highly relevant question-answer pairs specific to this pest.
+- faq: 3 highly relevant, distinct question-answer pairs specific to this pest. Do NOT repeat standard generic questions.
 
 Return RAW JSON only. Do not wrap the JSON in markdown code blocks (e.g. no \`\`\`json). Do not add any conversational text before or after the JSON.
 ${DICTIONARY.gemini.jsonFormat}

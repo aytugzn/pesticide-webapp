@@ -4,9 +4,15 @@ import { ROUTES } from "@/constants/routes";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { CombinationDoc, PestDoc, RegionDoc } from "@/types";
 
+import { cacheTag } from "next/cache";
+
 // Revalidation is handled on-demand via cache tags.
 // Only routes that exist in the App Router should be emitted.
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
+  "use cache";
+  cacheTag("global-data");
+  cacheTag("all-combinations");
+
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DICTIONARY.global.siteUrl;
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -52,8 +58,8 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
       .map((data) => {
         return { url: `${baseUrl}/${data.region}/${data.pest}`, priority: 0.9, changeFrequency: "monthly" };
       });
-  } catch (error) {
-    console.error("Failed to generate sitemap", error);
+  } catch (error: unknown) {
+    console.error("Failed to generate sitemap", { error: error instanceof Error ? error.message : "Unknown error" });
     throw error;
   }
 

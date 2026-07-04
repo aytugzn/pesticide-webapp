@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { archiveCombination, toggleCombinationStatus, getAdminCombination } from "../../actions";
+import { archiveCombination, toggleCombinationStatus, getAdminCombinationsPage, getAdminCombination } from "../../actions";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { CombinationRow, CombinationLightRow } from "../../types";
 import { AdminEntityTable, type AdminEntityColumn } from "@/components/ui/AdminEntityTable";
@@ -14,13 +14,18 @@ import { CombinationEditModal } from "./CombinationEditModal";
 
 type CombinationsTableProps = {
   initialRows: CombinationLightRow[];
+  initialNextCursor: string | null;
+  initialHasMore: boolean;
 };
 
 const ICON_SIZE = 18;
 
-export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
+export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMore }: CombinationsTableProps) => {
   const d = DICTIONARY.admin.combinations;
   const [rows, setRows] = useState(initialRows);
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [rowToArchive, setRowToArchive] = useState<CombinationLightRow | null>(null);
@@ -40,6 +45,29 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
     setArchivingId(null);
     setRowToArchive(null);
   }, [rowToArchive]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!hasMore || loadingMore || !nextCursor) return;
+
+    setLoadingMore(true);
+    try {
+      const res = await getAdminCombinationsPage(50, nextCursor);
+      if (res.success && res.data) {
+        setNextCursor(res.data.nextCursor);
+        setHasMore(res.data.hasMore);
+
+        // Filter out archived combinations just like initial load
+        const visibleRows = res.data.items.filter((row) => !row.isArchived);
+        setRows((prev) => [...prev, ...visibleRows]);
+      } else {
+        alert(d.errorDefault);
+      }
+    } catch {
+      alert(d.errorDefault);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loadingMore, nextCursor, d.errorDefault]);
 
   const handleArchiveClick = useCallback((row: CombinationLightRow) => {
     setRowToArchive(row);
@@ -195,6 +223,18 @@ export const CombinationsTable = ({ initialRows }: CombinationsTableProps) => {
         getRowKey={(row) => row.id}
         emptyMessage={d.tableEmpty}
       />
+
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="outline"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? DICTIONARY.global.loading : d.loadMore}
+          </Button>
+        </div>
+      )}
 
       <Modal
         isOpen={!!rowToArchive}

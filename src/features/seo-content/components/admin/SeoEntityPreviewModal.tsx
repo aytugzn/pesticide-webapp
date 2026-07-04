@@ -3,12 +3,12 @@
 import { X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
-import { SeoContent } from "@/components/layouts/SeoContent";
-import { SeoFaq } from "@/components/layouts/SeoFaq";
-import { CtaSection } from "@/components/layouts/CtaSection";
+import { SeoContent } from "@/components/layout/SeoContent";
+import { SeoFaq } from "@/components/layout/SeoFaq";
+import { CtaSection } from "@/components/layout/CtaSection";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import { ServiceHero } from "@/components/layouts/ServiceHero";
+import { ServiceHero } from "@/components/layout/ServiceHero";
 
 export type SeoEntityPreviewModalProps = {
   entity: "pest" | "region";

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Bug } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { PublicPageHeader } from "@/components/layouts/PublicPageHeader";
+import { PublicPageHeader } from "@/components/layout/PublicPageHeader";
 import { getGlobalData } from "@/features/settings/actions";
-import { CtaSection } from "@/components/layouts/CtaSection";
+import { CtaSection } from "@/components/layout/CtaSection";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.services.title} | ${DICTIONARY.global.brand}`,

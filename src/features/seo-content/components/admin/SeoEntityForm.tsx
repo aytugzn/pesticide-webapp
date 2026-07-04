@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Alert } from "@/components/ui/Alert";
 import { Sparkles, Loader2, Save } from "lucide-react";
-import { CombinationFaqEditor } from "@/features/combinations/components/admin/CombinationFaqEditor";
+import { SeoFaqEditor } from "./SeoFaqEditor";
 import { slugify } from "@/utils/slugify";
 import { Switch } from "@/components/ui/Switch";
 import { DICTIONARY } from "@/constants/dictionary";
@@ -397,7 +397,7 @@ export const SeoEntityForm = <TError extends string>({
           />
         </div>
 
-        <CombinationFaqEditor
+        <SeoFaqEditor
           faq={formData.faq}
           onFaqChange={handleFaqChange}
         />
