@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { generateCombinationContent, saveCombination } from "../actions";
+import { generateCombinationContent } from "../actions/ai";
+import { saveCombination } from "../actions";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { PestDoc, RegionDoc } from "@/types";
 import type { GeneratedContent } from "../types";

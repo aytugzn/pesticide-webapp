@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppError } from "@/lib/exceptions";
-import { generateCombinationContent } from "../../actions";
+import { generateCombinationContent } from "../../actions/ai";
 import {
   saveCombinationSilently,
   getActiveCombinationJob,
