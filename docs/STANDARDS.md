@@ -72,7 +72,7 @@ We have a centralized, highly strict error handling architecture.
 
 ## 10. SEO & Meta Standards (100% SEO Focus)
 > **CORE DIRECTIVE**: SEO is the absolute highest priority of this project. You MUST apply every possible modern SEO best practice, even if not explicitly listed here. This includes optimizing Core Web Vitals (LCP, CLS), ensuring flawless internal linking, using semantic URLs, and maximizing crawlability.
-- **Metadata**: Every public page MUST export `generateMetadata` fetching data directly from Firestore.
+- **Metadata**: Dynamic SEO pages (e.g., combinations, regions, pests) MUST export `generateMetadata` fetching data directly from Firestore. Fully static public pages (like Home, About, Legal) may safely export static `metadata` objects as long as canonical, robots, and core title/description are correct.
 - **Semantic HTML**: UI must be built with strict HTML5 semantics. Use `<article>`, `<section>`, `<nav>`, `<aside>`, `<main>`, and `<header>` instead of arbitrary `<div>` tags wherever logically appropriate. Heading hierarchy (`<h1>` to `<h4>`) MUST be strictly sequential.
 - **Accessibility (A11y)**: 
   - ALL interactive elements (buttons, links) without readable text MUST have an `aria-label`.

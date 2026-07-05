@@ -109,7 +109,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           rel="noopener noreferrer"
           aria-label={DICTIONARY.social.instagram.aria}
           title={DICTIONARY.social.instagram.aria}
-          className="w-9 h-9 rounded-full bg-brand-surface-hover flex items-center justify-center text-text-secondary hover:text-instagram hover:bg-instagram/10 transition-colors"
+          className="w-9 h-9 rounded-full bg-brand-surface-muted flex items-center justify-center text-text-secondary hover:text-instagram hover:bg-instagram/10 transition-colors"
         >
           <InstagramIcon className="w-4 h-4" />
         </a>
@@ -121,7 +121,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           rel="noopener noreferrer"
           aria-label={DICTIONARY.social.facebook.aria}
           title={DICTIONARY.social.facebook.aria}
-          className="w-9 h-9 rounded-full bg-brand-surface-hover flex items-center justify-center text-text-secondary hover:text-facebook hover:bg-facebook/10 transition-colors"
+          className="w-9 h-9 rounded-full bg-brand-surface-muted flex items-center justify-center text-text-secondary hover:text-facebook hover:bg-facebook/10 transition-colors"
         >
           <FacebookIcon className="w-4 h-4" />
         </a>
@@ -133,7 +133,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           rel="noopener noreferrer"
           aria-label={DICTIONARY.social.whatsapp.aria}
           title={DICTIONARY.social.whatsapp.aria}
-          className="w-9 h-9 rounded-full bg-brand-surface-hover flex items-center justify-center text-text-secondary hover:text-whatsapp hover:bg-whatsapp/10 transition-colors"
+          className="w-9 h-9 rounded-full bg-brand-surface-muted flex items-center justify-center text-text-secondary hover:text-whatsapp hover:bg-whatsapp/10 transition-colors"
         >
           <MessageCircle className="w-4 h-4" />
         </a>
@@ -229,11 +229,11 @@ const FooterBottomBar = () => {
 
   return (
     <div className="mt-8 pt-6 border-t border-brand-border flex flex-col md:flex-row items-center justify-between gap-3">
-      <p className="text-text-tertiary text-xs text-center md:text-left">
+      <p className="text-text-muted text-xs text-center md:text-left">
         <CopyrightText text={DICTIONARY.global.copyright} />
       </p>
       {developerName && (
-        <p className="text-text-tertiary text-xs flex items-center gap-1.5">
+        <p className="text-text-muted text-xs flex items-center gap-1.5">
           <span>{DICTIONARY.footer.developer.title}</span>
           <span className="w-1 h-1 rounded-full bg-brand-primary" aria-hidden="true"></span>
           <span className="font-medium text-text-secondary">

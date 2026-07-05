@@ -108,16 +108,16 @@ ISR yok. `use cache` + `updateTag` kullanılıyor.
 // Sayfa tarafı
 export default async function Page({ params }) {
   "use cache";
-  cacheTag(`kombinasyon-${params["bolge-slug"]}-${params["hasere-slug"]}`);
-  const data = await getKombinasyon(...);
+  cacheTag(`combinations-${params["regionSlug"]}-${params["pestSlug"]}`);
+  const data = await getCombination(...);
   return <></>;
 }
 
 // Action tarafı — admin kaydettiğinde
-export async function kombinasyonKaydet(data: KombinasyonData) {
+export async function saveCombination(data: CombinationData) {
   "use server";
-  await adminDb.collection("kombinasyon").doc(...).set(data);
-  updateTag(`kombinasyon-${data.bolge}-${data.hasere}`);
+  await adminDb.collection("combinations").doc(...).set(data);
+  updateTag(`combinations-${data.region}-${data.pest}`);
 }
 ```
 
@@ -282,9 +282,9 @@ Google butonu
 
 ```typescript
 export async function generateMetadata({ params }): Promise<Metadata> {
-  const data = await getKombinasyon(
-    params["bolge-slug"],
-    params["hasere-slug"],
+  const data = await getCombination(
+    params["regionSlug"],
+    params["pestSlug"],
   );
   return {
     title: data.title, // admin + AI'dan
@@ -296,7 +296,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
       locale: "tr_TR",
     },
     alternates: {
-      canonical: `https://dmrilaclama.com/${params["bolge-slug"]}/${params["hasere-slug"]}`,
+      canonical: `https://dmrilaclama.com/${params["regionSlug"]}/${params["pestSlug"]}`,
     },
   };
 }
@@ -312,8 +312,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 ### sitemap.ts
 
 ```typescript
-// Aktif kombinasyon + bölge + haşere URL'lerini içerir
-// kombinasyonlar priority: 0.9 (en değerli sayfalar)
+// Aktif combinations + regions + pests URL'lerini içerir
+// combinations priority: 0.9 (en değerli sayfalar)
 // /rapor/* hiç eklenmez
 ```
 
@@ -385,7 +385,7 @@ GEMINI_API_KEY                 # Google AI Studio — ücretsiz tier
 
 ---
 
-## Yapılacaklar (MVP Sırası)
+## Yapılacaklar (Historical Plan - MVP Sırası)
 
 - [x] lib/firebase.ts
 - [x] lib/firebase-admin.ts
@@ -393,10 +393,10 @@ GEMINI_API_KEY                 # Google AI Studio — ücretsiz tier
 - [x] features/auth/components/LoginForm.tsx
 - [x] proxy.ts
 - [x] lib/gemini.ts
-- [ ] features/regions/ (bölge CRUD)
-- [ ] features/pests/ (haşere CRUD)
+- [x] features/regions/ (bölge CRUD)
+- [x] features/pests/ (haşere CRUD)
 - [x] features/combinations/ (AI içerik üretimi)
-- [x] app/(main)/[bolge-slug]/[hasere-slug]/page.tsx
+- [x] app/(main)/[regionSlug]/[pestSlug]/page.tsx
 - [x] app/sitemap.ts
 - [x] app/robots.ts
 - [ ] features/reports/ (QR rapor — müşteriyle görüşülecek)

@@ -77,8 +77,8 @@ Projenin yerel ortamda çalıştırılması için aşağıdaki komutları kullan
    GEMINI_API_KEY=
    GEMINI_API_KEYS=
    RATE_LIMIT_SECRET= # İletişim formu gibi endpoint'lerde CSRF/rate-limit check için kullanılır
-   UPSTASH_REDIS_REST_URL=
-   UPSTASH_REDIS_REST_TOKEN=
+   UPSTASH_REDIS_REST_URL= # Local dev'de boş bırakın. Prod'da zorunludur (https://... ile başlamalı).
+   UPSTASH_REDIS_REST_TOKEN= # Local dev'de boş bırakın. Prod'da zorunludur.
    TELEGRAM_BOT_TOKEN=
    TELEGRAM_CHAT_ID=
    TELEGRAM_WEBHOOK_SECRET=

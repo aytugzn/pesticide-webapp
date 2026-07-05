@@ -67,7 +67,7 @@ export const MegaMenuColumn = ({
     ),
     viewAllLink: cn(
       "flex items-center text-sm font-medium text-brand-primary transition-colors",
-      isDesktop && "hover:text-brand-primary-dark group/view-all"
+      isDesktop && "hover:text-brand-primary-hover group/view-all"
     ),
     viewAllIcon: cn(
       "w-4 h-4 ml-1",

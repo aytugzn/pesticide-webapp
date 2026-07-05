@@ -377,8 +377,6 @@ const adminDict = {
     title: "Bölgeler Yönetimi",
     description:
       "İzmir ilçelerini ve hizmet bölgelerini buradan yönetebilirsiniz.",
-    placeholderRegion: "Bölge",
-    placeholderPest: "Haşere",
     addRegion: "Yeni Bölge Ekle",
     editRegion: "Bölge Düzenle",
     formName: "Bölge Adı",

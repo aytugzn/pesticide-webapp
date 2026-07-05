@@ -1,4 +1,6 @@
-export const ROUTES = {
+import { deepFreeze } from "../utils/deep-freeze";
+
+export const ROUTES = deepFreeze({
   login: "/login",
   admin: "/admin",
   adminRegions: "/admin/regions",
@@ -23,7 +25,7 @@ export const ROUTES = {
   privacy: "/gizlilik-politikasi",
   terms: "/kullanim-kosullari",
   kvkk: "/kvkk-aydinlatma-metni",
-} as const;
+} as const);
 
 export const RESERVED_SLUGS = [
   "admin",

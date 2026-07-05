@@ -4,45 +4,69 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { AppError } from "./exceptions";
 
-// Check if Upstash Redis env vars are present
-const isUpstashConfigured =
-  !!process.env.UPSTASH_REDIS_REST_URL &&
-  !!process.env.UPSTASH_REDIS_REST_TOKEN;
+const isValidUpstashUrl = (val: string | undefined): boolean => {
+  if (!val) return false;
+  const trimmed = val.trim();
+  return trimmed !== "" && trimmed !== "..." && trimmed.startsWith("https://");
+};
 
-// Create a new ratelimiter that allows 3 requests per 10 minutes
-const ratelimit = isUpstashConfigured
-  ? new Ratelimit({
-      redis: Redis.fromEnv(),
-      limiter: Ratelimit.slidingWindow(3, "10 m"),
-      analytics: true,
-    })
-  : null;
+const isValidUpstashToken = (val: string | undefined): boolean => {
+  if (!val) return false;
+  const trimmed = val.trim();
+  return trimmed !== "" && trimmed !== "...";
+};
+
+let contactRatelimit: Ratelimit | null | undefined = undefined;
+let hasWarnedAboutInvalidUpstashConfig = false;
+
+const getContactRatelimit = () => {
+  if (contactRatelimit !== undefined) return contactRatelimit;
+
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (isValidUpstashUrl(url) && isValidUpstashToken(token)) {
+    try {
+      contactRatelimit = new Ratelimit({
+        redis: new Redis({ url: url!.trim(), token: token!.trim() }),
+        limiter: Ratelimit.slidingWindow(3, "10 m"),
+        analytics: true,
+      });
+    } catch {
+      contactRatelimit = null;
+    }
+  } else {
+    contactRatelimit = null;
+  }
+
+  return contactRatelimit;
+};
 
 /**
- * Helper to limit contact form submissions based on identifier
- * Falls back safely to true if Upstash is not configured.
+ * Helper to limit contact form submissions based on identifier.
+ * - Development'ta missing/invalid Upstash config rate limit'i bypass eder.
+ * - Production'da missing/invalid Upstash config fail-closed davranır.
  */
 export const limitContactSubmission = async (
   identifier: string
 ): Promise<boolean> => {
+  const ratelimit = getContactRatelimit();
+
   if (!ratelimit) {
     if (process.env.NODE_ENV === "production") {
-      console.error(
-        "CRITICAL ERROR: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing. Contact form rate limiting is disabled. Failing closed."
-      );
       throw new AppError("Missing Upstash configuration", "CONFIG_ERROR");
     }
-    console.warn("UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN missing in development. Bypassing rate limit.");
+    if (!hasWarnedAboutInvalidUpstashConfig) {
+      console.warn("UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN missing or invalid in development. Bypassing rate limit.");
+      hasWarnedAboutInvalidUpstashConfig = true;
+    }
     return true; // Fallback: allow submission if not configured in dev
   }
 
   try {
     const { success } = await ratelimit.limit(identifier);
     return success;
-  } catch (error: unknown) {
-    console.error("Rate limit check failed", {
-      message: error instanceof Error ? error.message : "Unknown rate limit error",
-    });
+  } catch {
     if (process.env.NODE_ENV === "production") {
       throw new AppError("Redis failure during rate limit check", "INTERNAL_ERROR");
     }
