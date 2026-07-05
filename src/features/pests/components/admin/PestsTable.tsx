@@ -94,10 +94,11 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
       render: (row) => (
         <button
           onClick={() => setEditingRow(row)}
-          className="p-2 text-text-secondary hover:text-brand-primary transition-colors"
+          className="min-h-10 min-w-10 rounded-brand-sm p-2.5 text-text-secondary transition-colors hover:bg-brand-primary/10 hover:text-brand-primary"
           title={d.editPest}
+          aria-label={`${d.editPest}: ${row.name}`}
         >
-          <Edit2 size={16} />
+          <Edit2 size={16} aria-hidden="true" />
         </button>
       ),
     },
@@ -116,6 +117,7 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
         isOpen={!!editingRow}
         onClose={() => setEditingRow(null)}
         title={d.editPest}
+        className="max-w-4xl"
       >
         {editingRow && (
           <PestForm

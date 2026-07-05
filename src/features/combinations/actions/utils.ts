@@ -20,3 +20,50 @@ export const getErrorInfo = (
 
   return {};
 };
+
+export type AiErrorReason =
+  | "quota_or_rate_limit"
+  | "provider_unavailable"
+  | "invalid_api_key"
+  | "unknown_ai_error";
+
+export const getAiErrorReason = (
+  errorInfo: { code?: string; message?: string },
+): AiErrorReason => {
+  const code = errorInfo.code?.toLowerCase() || "";
+  const message = errorInfo.message?.toLowerCase() || "";
+
+  if (
+    code === "429" ||
+    message.includes("429") ||
+    message.includes("quota exceeded") ||
+    message.includes("too many requests") ||
+    message.includes("generate_content_free_tier_requests") ||
+    message.includes("rate limit") ||
+    message.includes("limit:")
+  ) {
+    return "quota_or_rate_limit";
+  }
+
+  if (
+    code === "503" ||
+    message.includes("503") ||
+    message.includes("service unavailable") ||
+    message.includes("high demand") ||
+    message.includes("temporarily unavailable") ||
+    message.includes("overloaded")
+  ) {
+    return "provider_unavailable";
+  }
+
+  if (
+    message.includes("invalid api key") ||
+    message.includes("unauthorized") ||
+    message.includes("api_key_invalid") ||
+    message.includes("key invalid")
+  ) {
+    return "invalid_api_key";
+  }
+
+  return "unknown_ai_error";
+};

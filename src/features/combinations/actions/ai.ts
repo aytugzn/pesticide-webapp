@@ -9,7 +9,7 @@ import type { ActionResponse } from "@/types";
 import { COMBINATION_ERRORS, type CombinationErrorCode, type GeneratedContent } from "../types";
 import { combinationSlugParamsSchema, generatedContentSchema } from "../schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { getErrorInfo } from "./utils";
+import { getAiErrorReason, getErrorInfo } from "./utils";
 
 /**
  * Generates SEO content for a region-pest combination using Gemini AI.
@@ -84,7 +84,7 @@ export const generateCombinationContent = async (
           console.error("AI generation failed", {
             regionSlug,
             pestSlug,
-            error: "Generated content validation failed: " + validated.error.message
+            reason: "unknown_ai_error"
           });
           return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
         }
@@ -92,23 +92,35 @@ export const generateCombinationContent = async (
         return { success: true, data: validated.data };
       } catch (error: unknown) {
         const errorInfo = getErrorInfo(error);
-        const msg = errorInfo.message?.toLowerCase() || "";
+        const reason = getAiErrorReason(errorInfo);
 
-        if (
-          msg.includes("429") ||
-          msg.includes("quota exceeded") ||
-          msg.includes("too many requests") ||
-          msg.includes("generate_content_free_tier_requests") ||
-          msg.includes("limit:")
-        ) {
-          console.warn(`Gemini generation failed with key index ${i} due to quota/rate limit`);
+        if (reason === "quota_or_rate_limit") {
+          console.warn("Gemini generation failed for key due to quota or rate limit", {
+            regionSlug,
+            pestSlug,
+            keyIndex: i,
+            reason,
+          });
           isQuotaError = true;
           continue; // Try next key
-        } else if (msg.includes("invalid api key") || msg.includes("unauthorized") || msg.includes("api_key_invalid") || msg.includes("key invalid")) {
-          console.warn(`Gemini generation failed with key index ${i} due to invalid key/auth`);
+        } else if (reason === "invalid_api_key") {
+          console.warn("Gemini generation failed for key due to invalid key", {
+            regionSlug,
+            pestSlug,
+            keyIndex: i,
+            reason,
+          });
           continue; // Try next key
+        } else if (reason === "provider_unavailable") {
+          console.warn("Gemini generation stopped due to provider availability", {
+            regionSlug,
+            pestSlug,
+            keyIndex: i,
+            reason,
+          });
+          return { success: false, error: COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE };
         } else {
-          console.error("AI generation failed", { regionSlug, pestSlug, error: errorInfo });
+          console.error("AI generation failed", { regionSlug, pestSlug, reason });
           return { success: false, error: COMBINATION_ERRORS.AI_GENERATION_FAILED };
         }
       }
@@ -121,7 +133,14 @@ export const generateCombinationContent = async (
     return { success: false, error: COMBINATION_ERRORS.AI_GENERATION_FAILED };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
-    console.error("AI generation failed in main try-catch", { regionSlug, pestSlug, error: errorInfo });
+    const reason = getAiErrorReason(errorInfo);
+    console.error("AI generation failed in main try-catch", { regionSlug, pestSlug, reason });
+    if (reason === "quota_or_rate_limit") {
+      return { success: false, error: COMBINATION_ERRORS.AI_QUOTA_EXCEEDED };
+    }
+    if (reason === "provider_unavailable") {
+      return { success: false, error: COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE };
+    }
     return { success: false, error: COMBINATION_ERRORS.AI_GENERATION_FAILED };
   }
 };

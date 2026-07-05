@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { DICTIONARY } from "@/constants/dictionary";
+import { AdminToast, type AdminToastVariant } from "@/components/ui/AdminToast";
 import { AppError } from "@/lib/exceptions";
 import { generateCombinationContent } from "../../actions/ai";
 import {
@@ -12,10 +14,21 @@ import {
   requestAbortCombinationJob,
   finishCombinationJob
 } from "../../actions/bulk";
-import type { BulkProgressItem } from "../../types";
+import { COMBINATION_ERRORS, type BulkProgressItem } from "../../types";
 
 const RATE_LIMIT_DELAY_MS = 1500;
 const RUNNING_POLL_INTERVAL_MS = 10_000;
+const TOAST_INFO_DURATION_MS = 3500;
+const TOAST_ERROR_DURATION_MS = 5500;
+
+type AdminToastInput = {
+  variant: AdminToastVariant;
+  message: string;
+};
+
+type AdminToastState = AdminToastInput & {
+  id: number;
+};
 
 type CombinationJobContextType = {
   progress: BulkProgressItem[];
@@ -26,6 +39,8 @@ type CombinationJobContextType = {
   allDone: boolean;
   isOwner: boolean;
   isAbortRequested: boolean;
+  hasStartedJobInSession: boolean;
+  showToast: (toast: AdminToastInput) => void;
   startBulkGenerate: (missingItems: BulkProgressItem[]) => Promise<void>;
   abortBulkGenerate: () => Promise<void>;
 };
@@ -43,9 +58,38 @@ export const useCombinationJob = () => {
   return context;
 };
 
-const getSafeErrorInfo = (error: unknown) => ({
-  message: error instanceof Error ? error.message : "Unknown error",
-});
+export const useCombinationAdminToast = () => {
+  const context = useCombinationJob();
+  return { showToast: context.showToast };
+};
+
+const getToastDuration = (variant: AdminToastVariant) =>
+  variant === "error" || variant === "warning"
+    ? TOAST_ERROR_DURATION_MS
+    : TOAST_INFO_DURATION_MS;
+
+const getToastTitle = (variant: AdminToastVariant) => {
+  const d = DICTIONARY.admin.combinations.toast;
+  if (variant === "success") return d.successTitle;
+  if (variant === "warning") return d.warningTitle;
+  if (variant === "error") return d.errorTitle;
+  return d.infoTitle;
+};
+
+const getFatalAiErrorMessage = (errorCode: string) => {
+  const d = DICTIONARY.admin.combinations;
+  if (errorCode === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED) {
+    return d.bulkGenerate.errorQuotaExceeded;
+  }
+  if (errorCode === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE) {
+    return d.bulkGenerate.errorProviderUnavailable;
+  }
+  return d.errorDefault;
+};
+
+const isFatalAiError = (errorCode: string) =>
+  errorCode === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED ||
+  errorCode === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE;
 
 export const CombinationJobProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
@@ -59,6 +103,8 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
   const [isRunning, setIsRunning] = useState(false);
   const [isAbortRequested, setIsAbortRequested] = useState(false);
   const [progress, setProgress] = useState<BulkProgressItem[]>([]);
+  const [hasStartedJobInSession, setHasStartedJobInSession] = useState(false);
+  const [toast, setToast] = useState<AdminToastState | null>(null);
   
   // Job Sync State
   const [jobId, setJobId] = useState<string | null>(null);
@@ -67,11 +113,40 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
 
   const jobIdRef = useRef<string | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doneCount = progress.filter((p) => p.status === "done").length;
   const total = progress.length;
   const hasFinished = !isRunning && (dbJobStatus === "completed" || dbJobStatus === "aborted" || dbJobStatus === "failed" || dbJobStatus === "stale");
   const allDone = hasFinished && doneCount === total && total > 0;
+
+  const dismissToast = useCallback(() => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+    setToast(null);
+  }, []);
+
+  const showToast = useCallback((nextToast: AdminToastInput) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    const id = Date.now();
+    setToast({ ...nextToast, id });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast((current) => (current?.id === id ? null : current));
+      toastTimeoutRef.current = null;
+    }, getToastDuration(nextToast.variant));
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+  }, []);
 
   // BroadcastChannel Setup
   useEffect(() => {
@@ -192,7 +267,11 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
 
     const startRes = await startCombinationJob(missingItems);
     if (!startRes.success) {
-       return;
+      const message = startRes.error === "ALREADY_RUNNING"
+        ? DICTIONARY.admin.combinations.bulkGenerate.errorAlreadyRunning
+        : DICTIONARY.admin.combinations.errorDefault;
+      showToast({ variant: "error", message });
+      return;
     }
 
     const newJobId = startRes.data!.id;
@@ -200,6 +279,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
     jobIdRef.current = newJobId;
     setIsOwner(true);
     setDbJobStatus(null);
+    setHasStartedJobInSession(true);
 
     runningRef.current = true;
     abortRef.current = false;
@@ -223,7 +303,12 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
       });
     }
 
-    let hasQuotaErrorLocal = false;
+    let fatalAiErrorLocal: string | null = null;
+    let hasShownBulkErrorToast = false;
+    showToast({
+      variant: "info",
+      message: DICTIONARY.admin.combinations.bulkGenerate.startToast,
+    });
 
     try {
       for (let i = 0; i < initialProgress.length; i++) {
@@ -254,11 +339,20 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
                setIsAbortRequested(true);
             }
 
-            if (errCode === "AI_QUOTA_EXCEEDED") {
+            if (isFatalAiError(errCode)) {
                abortRef.current = true;
                setIsAbortRequested(true);
-               hasQuotaErrorLocal = true;
+               fatalAiErrorLocal = errCode;
+               showToast({ variant: "error", message: getFatalAiErrorMessage(errCode) });
                break;
+            }
+
+            if (!hasShownBulkErrorToast) {
+              hasShownBulkErrorToast = true;
+              showToast({
+                variant: "error",
+                message: DICTIONARY.admin.combinations.bulkGenerate.itemErrorToast,
+              });
             }
 
             await waitWithAbort(RATE_LIMIT_DELAY_MS);
@@ -286,11 +380,29 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
             if (errUpdate2.success && errUpdate2.data?.abortRequested) {
                abortRef.current = true;
             }
+            if (!hasShownBulkErrorToast) {
+              hasShownBulkErrorToast = true;
+              showToast({
+                variant: "error",
+                message: DICTIONARY.admin.combinations.bulkGenerate.itemErrorToast,
+              });
+            }
           }
-        } catch (itemError: unknown) {
-          console.error("Unexpected error during bulk generation item", { error: getSafeErrorInfo(itemError) });
+        } catch {
+          console.error("Unexpected error during bulk generation item", {
+            regionSlug: item.regionSlug,
+            pestSlug: item.pestSlug,
+            reason: "unknown_ai_error",
+          });
           updateItem(i, { status: "error", error: "UNEXPECTED_ERROR" });
           await updateCombinationJobItem(newJobId, i, { status: "error", error: "UNEXPECTED_ERROR" });
+          if (!hasShownBulkErrorToast) {
+            hasShownBulkErrorToast = true;
+            showToast({
+              variant: "error",
+              message: DICTIONARY.admin.combinations.bulkGenerate.itemErrorToast,
+            });
+          }
         }
 
         if (i < initialProgress.length - 1 && !abortRef.current) {
@@ -299,15 +411,31 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
       }
       
       if (abortRef.current) {
-         const finalStatus = hasQuotaErrorLocal ? "failed" : "aborted";
+         const finalStatus = fatalAiErrorLocal ? "failed" : "aborted";
          await finishCombinationJob(newJobId, finalStatus);
          setDbJobStatus(finalStatus);
       } else {
          await finishCombinationJob(newJobId, "completed");
          setDbJobStatus("completed");
+         const finalProgress = progressRef.current;
+         const finalDoneCount = finalProgress.filter((p) => p.status === "done").length;
+         const finalTotal = finalProgress.length;
+         const message = finalDoneCount === finalTotal
+           ? `${DICTIONARY.admin.combinations.bulkGenerate.doneAll} ${DICTIONARY.admin.combinations.bulkGenerate.draftNote}`
+           : `${DICTIONARY.admin.combinations.bulkGenerate.partialDone.replace("{done}", String(finalDoneCount)).replace("{total}", String(finalTotal))} ${DICTIONARY.admin.combinations.bulkGenerate.draftNote}`;
+         showToast({
+           variant: finalDoneCount === finalTotal ? "success" : "info",
+           message,
+         });
       }
-    } catch (error: unknown) {
-      console.error("Top-level error in bulk generation loop", { error: getSafeErrorInfo(error) });
+    } catch {
+      console.error("Top-level error in bulk generation loop", {
+        reason: "unknown_ai_error",
+      });
+      showToast({
+        variant: "error",
+        message: DICTIONARY.admin.combinations.errorDefault,
+      });
       await finishCombinationJob(newJobId, "failed");
       setDbJobStatus("failed");
     } finally {
@@ -323,7 +451,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
             jobId: jobIdRef.current,
             progress: progressRef.current,
             isRunning: false,
-            dbJobStatus: abortRef.current ? (hasQuotaErrorLocal ? "failed" : "aborted") : "completed",
+            dbJobStatus: abortRef.current ? (fatalAiErrorLocal ? "failed" : "aborted") : "completed",
             isAbortRequested: false
           }
         });
@@ -331,7 +459,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
 
       router.refresh();
     }
-  }, [isRunning, updateItem, router]);
+  }, [isRunning, updateItem, router, showToast]);
 
   const abortBulkGenerate = useCallback(async () => {
     setIsAbortRequested(true);
@@ -354,11 +482,23 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
         allDone,
         isOwner,
         isAbortRequested,
+        hasStartedJobInSession,
+        showToast,
         startBulkGenerate,
         abortBulkGenerate,
       }}
     >
       {children}
+      {toast && (
+        <AdminToast
+          variant={toast.variant}
+          title={getToastTitle(toast.variant)}
+          message={toast.message}
+          durationMs={getToastDuration(toast.variant)}
+          onClose={dismissToast}
+          closeAriaLabel={DICTIONARY.global.ui.closeAria}
+        />
+      )}
     </CombinationJobContext.Provider>
   );
 };

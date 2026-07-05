@@ -299,7 +299,7 @@ export const SeoEntityForm = <TError extends string>({
     formData.content.replace(/<[^>]*>?/gm, "").trim() !== "";
 
   return (
-    <div className="bg-brand-surface border border-brand-border rounded-brand-lg p-6 space-y-6">
+    <div className="bg-brand-surface border border-brand-border rounded-brand-lg p-4 space-y-5 overflow-x-hidden sm:p-6 sm:space-y-6">
       <h2 className="font-heading font-bold text-text-primary text-lg border-b border-brand-border pb-4">
         {d.generatorTitle}
       </h2>
@@ -338,7 +338,7 @@ export const SeoEntityForm = <TError extends string>({
         rows={2}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-stretch sm:justify-end">
         {mode === "create" && (
           <Button
             type="button"
@@ -346,6 +346,7 @@ export const SeoEntityForm = <TError extends string>({
             size="sm"
             onClick={handleGenerate}
             disabled={isGenerating || !formData.name || !formData.slug}
+            className="w-full sm:w-auto"
           >
             {isGenerating ? (
               <>
@@ -403,8 +404,8 @@ export const SeoEntityForm = <TError extends string>({
         />
       </div>
 
-      <div className="pt-4 border-t border-brand-border flex items-center justify-between">
-        <div>
+      <div className="pt-4 border-t border-brand-border flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="w-full sm:w-auto">
           {mode === "create" && (
             <Switch
               id={`${entity}-active`}
@@ -420,6 +421,7 @@ export const SeoEntityForm = <TError extends string>({
               size="sm"
               onClick={handleRegenerate}
               disabled={isGenerating || isSaving}
+              className="w-full sm:w-auto"
             >
               {isGenerating ? (
                 <>
@@ -436,12 +438,13 @@ export const SeoEntityForm = <TError extends string>({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsPreviewOpen(true)}
             disabled={!isFormValid || isGenerating}
+            className="w-full sm:w-auto"
           >
             {DICTIONARY.admin.preview.button}
           </Button>
@@ -451,6 +454,7 @@ export const SeoEntityForm = <TError extends string>({
             variant="primary"
             onClick={handleSave}
             disabled={isSaving || isGenerating || !isFormValid || !isDirty}
+            className="w-full sm:w-auto"
           >
             {isSaving ? (
               <>

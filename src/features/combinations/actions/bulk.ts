@@ -4,6 +4,7 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { randomUUID } from "node:crypto";
+import { updateTag } from "next/cache";
 import type { ActionResponse, CombinationDoc } from "@/types";
 import { 
   COMBINATION_ERRORS, 
@@ -15,6 +16,7 @@ import {
   type BulkProgressItem 
 } from "../types";
 import { saveCombinationSchema } from "../schemas";
+import { getCombinationCacheTag } from "../constants";
 import { AppError } from "@/lib/exceptions";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getErrorInfo } from "./utils";
@@ -23,9 +25,8 @@ const JOB_DOC_PATH = "adminJobs/bulkCombinationGeneration";
 const JOB_STALE_TIMEOUT_MS = 120_000;
 
 /**
- * Saves a combination to Firestore WITHOUT invalidating any cache tags.
- * Intended for bulk generation flows. Saves the combination as a draft
- * without triggering public cache invalidation.
+ * Saves a bulk-generated combination to Firestore as an active public page
+ * and invalidates the affected cache tags.
  *
  * @param regionSlug - The region slug
  * @param pestSlug - The pest slug
@@ -51,7 +52,7 @@ export const saveCombinationSilently = async (
     regionName,
     pestName,
     content,
-    isActive: false,
+    isActive: true,
   });
 
   if (!parsed.success) {
@@ -65,6 +66,7 @@ export const saveCombinationSilently = async (
       regionName: parsedRegionName,
       pestName: parsedPestName,
       content: parsedContent,
+      isActive: parsedIsActive,
     } = parsed.data;
     const docId = `${parsedRegionSlug}_${parsedPestSlug}`;
 
@@ -78,12 +80,14 @@ export const saveCombinationSilently = async (
       metaDesc: parsedContent.metaDesc,
       content: parsedContent.content,
       faq: parsedContent.faq,
-      isActive: false,
+      isActive: parsedIsActive,
     };
 
-    // Intentionally no updateTag here since the combination is saved as a draft.
     const docRef = getAdminDb().collection("combinations").doc(docId);
     await docRef.create(docData);
+
+    updateTag(getCombinationCacheTag(parsedRegionSlug, parsedPestSlug));
+    updateTag("all-combinations");
 
     return { success: true };
   } catch (error: unknown) {

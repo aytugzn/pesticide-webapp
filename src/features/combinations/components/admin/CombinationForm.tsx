@@ -5,6 +5,7 @@ import type { PestDoc, RegionDoc } from "@/types";
 import { Alert } from "@/components/ui/Alert";
 import { CombinationGenerator } from "./CombinationGenerator";
 import { CombinationEditor } from "./CombinationEditor";
+import { useCombinationAdminToast } from "./CombinationJobProvider";
 import { SeoFaqEditor } from "@/features/seo-content/components/admin/SeoFaqEditor";
 import { CombinationActions } from "./CombinationActions";
 import { CombinationPreviewModal } from "./CombinationPreviewModal";
@@ -27,6 +28,17 @@ type Feedback = { type: "success" | "error"; message: string } | null;
 export const CombinationForm = ({ regions, pests }: CombinationFormProps) => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const { showToast } = useCombinationAdminToast();
+
+  const handleActionFeedback = useCallback((nextFeedback: Feedback) => {
+    setFeedback(nextFeedback);
+    if (nextFeedback) {
+      showToast({
+        variant: nextFeedback.type,
+        message: nextFeedback.message,
+      });
+    }
+  }, [showToast]);
 
   const selection = useCombinationSelection();
 
@@ -39,7 +51,7 @@ export const CombinationForm = ({ regions, pests }: CombinationFormProps) => {
     content,
     regions,
     pests,
-    onFeedback: setFeedback,
+    onFeedback: handleActionFeedback,
   });
 
   /** Handles combined selection change + content loading when a region is chosen. */

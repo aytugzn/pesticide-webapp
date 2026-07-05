@@ -94,7 +94,7 @@ export const generatePestContent = async (
         if (!validated.success) {
           console.error(
             "Pest AI generation failed validation",
-            validated.error.message,
+            { reason: "unknown_ai_error" },
           );
           return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
         }
@@ -121,7 +121,7 @@ export const generatePestContent = async (
           console.warn(`Gemini generation failed with key index ${i} due to 503`);
           continue; // Try next key
         } else {
-          console.error("Pest AI generation failed", { error: errorInfo });
+          console.error("Pest AI generation failed", { reason: "unknown_ai_error" });
           return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
         }
       }
@@ -132,9 +132,8 @@ export const generatePestContent = async (
     }
 
     return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
-  } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    console.error("Pest AI generation failed in main try-catch", { error: errorInfo });
+  } catch {
+    console.error("Pest AI generation failed in main try-catch", { reason: "unknown_ai_error" });
     return { success: false, error: PEST_ERRORS.AI_GENERATION_FAILED };
   }
 };

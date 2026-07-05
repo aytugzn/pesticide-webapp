@@ -13,6 +13,10 @@ export const COMBINATION_ERRORS = {
   UNAUTHORIZED: "UNAUTHORIZED",
   UPDATE_FAILED: "UPDATE_FAILED",
   AI_QUOTA_EXCEEDED: "AI_QUOTA_EXCEEDED",
+  AI_PROVIDER_UNAVAILABLE: "AI_PROVIDER_UNAVAILABLE",
+  BULK_NO_FILTER: "BULK_NO_FILTER",
+  BULK_NO_MATCH: "BULK_NO_MATCH",
+  BULK_MUTATION_FAILED: "BULK_MUTATION_FAILED",
 } as const;
 
 export type CombinationErrorCode = keyof typeof COMBINATION_ERRORS;
@@ -49,6 +53,18 @@ export type CombinationsPageResponse = {
   items: CombinationLightRow[];
   nextCursor: string | null;
   hasMore: boolean;
+};
+
+export type BulkCombinationMutationOperation = "deactivate" | "archive" | "delete";
+
+export type BulkCombinationMutationInput = {
+  regionSlug?: string;
+  pestSlug?: string;
+  operation: BulkCombinationMutationOperation;
+};
+
+export type BulkCombinationMutationResult = {
+  affectedCount: number;
 };
 
 export const COMBINATION_JOB_ERRORS = {

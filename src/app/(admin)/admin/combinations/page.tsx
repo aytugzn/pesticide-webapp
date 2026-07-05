@@ -6,6 +6,7 @@ import { getAdminCombinationsPage } from "@/features/combinations/actions";
 import { CombinationForm } from "@/features/combinations/components/admin/CombinationForm";
 import { CombinationsTable } from "@/features/combinations/components/admin/CombinationsTable";
 import { BulkGeneratePanel } from "@/features/combinations/components/admin/BulkGeneratePanel";
+import { BulkMutationPanel } from "@/features/combinations/components/admin/BulkMutationPanel";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.combinations.title} | ${DICTIONARY.global.brand} ${DICTIONARY.admin.dashboard.subtitle}`,
@@ -47,6 +48,7 @@ const AdminCombinationsPage = async () => {
       <div className="space-y-10">
         <CombinationForm regions={regions} pests={pests} />
         <BulkGeneratePanel regions={regions} pests={pests} />
+        <BulkMutationPanel regions={regions} pests={pests} />
         <CombinationsTable
           key={tableKey}
           initialRows={visibleRows}

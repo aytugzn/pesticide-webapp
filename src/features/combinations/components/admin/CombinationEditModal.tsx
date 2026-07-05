@@ -14,9 +14,10 @@ import { generateCombinationContent } from "../../actions/ai";
 import { DICTIONARY } from "@/constants/dictionary";
 import { COMBINATION_ERRORS } from "../../types";
 import { useScrollLock } from "@/hooks/useScrollLock";
+import { useCombinationAdminToast } from "./CombinationJobProvider";
 import type { CombinationRow, GeneratedContent } from "../../types";
 
-const MODAL_STYLE: CSSProperties = { maxHeight: "90vh" };
+const MODAL_STYLE: CSSProperties = { maxHeight: "calc(100dvh - 1.5rem)" };
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
@@ -35,6 +36,7 @@ type CombinationEditFormProps = {
 
 const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormProps) => {
   const d = DICTIONARY.admin.combinations;
+  const { showToast } = useCombinationAdminToast();
 
   const [formData, setFormData] = useState<GeneratedContent>({
     title: row.title || "",
@@ -47,6 +49,16 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+
+  const publishFeedback = (nextFeedback: Feedback) => {
+    setFeedback(nextFeedback);
+    if (nextFeedback) {
+      showToast({
+        variant: nextFeedback.type,
+        message: nextFeedback.message,
+      });
+    }
+  };
 
   const updateField = <TKey extends keyof GeneratedContent>(
     key: TKey,
@@ -80,13 +92,14 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
     try {
       const res = await updateCombination(row.region, row.pest, formData);
       if (res.success) {
+        showToast({ variant: "success", message: d.updateSuccess });
         onSuccess({ ...row, ...formData });
         onClose();
       } else {
-        setFeedback({ type: "error", message: d.updateError });
+        publishFeedback({ type: "error", message: d.updateError });
       }
     } catch {
-      setFeedback({ type: "error", message: d.errorDefault });
+      publishFeedback({ type: "error", message: d.errorDefault });
     } finally {
       setIsSaving(false);
     }
@@ -101,17 +114,19 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
       if (res.success) {
         if (res.data) {
           setFormData(res.data);
-          setFeedback({ type: "success", message: d.regenerateSuccess });
+          publishFeedback({ type: "success", message: d.regenerateSuccess });
         }
       } else {
         if (res.error === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED) {
-          setFeedback({ type: "error", message: d.regenerateQuotaError });
+          publishFeedback({ type: "error", message: d.regenerateQuotaError });
+        } else if (res.error === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE) {
+          publishFeedback({ type: "error", message: d.errorProviderUnavailable });
         } else {
-          setFeedback({ type: "error", message: d.regenerateError });
+          publishFeedback({ type: "error", message: d.regenerateError });
         }
       }
     } catch {
-      setFeedback({ type: "error", message: d.regenerateError });
+      publishFeedback({ type: "error", message: d.regenerateError });
     } finally {
       setIsGenerating(false);
     }
@@ -121,16 +136,16 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
 
   return (
     <section
-      className="w-full max-w-5xl bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden pointer-events-auto transform transition-all duration-300"
+      className="w-full max-w-5xl min-w-0 bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300"
       style={MODAL_STYLE}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <header className="flex items-center justify-between p-5 border-b border-brand-border/50 shrink-0 bg-brand-surface">
+      <header className="flex items-center justify-between gap-3 p-4 border-b border-brand-border/50 shrink-0 bg-brand-surface sm:p-5">
         <h2
           id="modal-title"
-          className="font-heading font-bold text-lg text-text-primary"
+          className="min-w-0 break-words font-heading font-bold text-lg text-text-primary"
         >
           {d.editTitle}
         </h2>
@@ -139,14 +154,14 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
           size="none"
           onClick={onClose}
           disabled={isPending}
-          className="p-1.5 -mr-1.5 text-text-muted hover:text-text-primary rounded-md transition-colors"
+          className="min-h-10 min-w-10 shrink-0 p-2 -mr-2 text-text-muted hover:text-text-primary rounded-md transition-colors"
           aria-label={DICTIONARY.global.ui.closeAria}
         >
           <X className="w-5 h-5" aria-hidden="true" />
         </Button>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-brand-surface">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 bg-brand-surface sm:p-6">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -208,12 +223,13 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
         </div>
       </div>
 
-      <footer className="shrink-0 border-t border-brand-border/50 p-5 flex items-center justify-between gap-3 bg-brand-surface flex-wrap">
-        <div>
+      <footer className="shrink-0 border-t border-brand-border/50 p-4 flex flex-col gap-3 bg-brand-surface sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={handleRegenerate}
             disabled={isPending}
+            className="w-full sm:w-auto"
           >
             {isGenerating ? (
               <>
@@ -229,14 +245,20 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={onClose} disabled={isPending}>
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isPending}
+            className="w-full sm:w-auto"
+          >
             {DICTIONARY.global.ui.cancel}
           </Button>
           <Button
             variant="primary"
             onClick={handleSave}
             disabled={isPending || !isFormValid}
+            className="w-full sm:w-auto"
           >
             {isSaving ? (
               <>
@@ -267,8 +289,8 @@ export const CombinationEditModal = ({
   if (!isOpen || !row) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-overlay-strong backdrop-blur-sm p-4 transition-opacity duration-300">
-      <div className="min-h-full flex items-start justify-center py-6 pointer-events-none">
+    <div className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-overlay-strong backdrop-blur-sm p-3 transition-opacity duration-300 sm:p-4">
+      <div className="min-h-full flex items-center justify-center py-3 pointer-events-none sm:py-6">
         <CombinationEditForm
           key={`${row.region}_${row.pest}`}
           row={row}

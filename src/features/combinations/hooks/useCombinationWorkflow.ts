@@ -6,7 +6,7 @@ import { generateCombinationContent } from "../actions/ai";
 import { saveCombination } from "../actions";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { PestDoc, RegionDoc } from "@/types";
-import type { GeneratedContent } from "../types";
+import { COMBINATION_ERRORS, type GeneratedContent } from "../types";
 import type { CombinationSelection } from "./useCombinationSelection";
 import type { CombinationContent } from "./useCombinationContent";
 
@@ -57,17 +57,25 @@ export const useCombinationWorkflow = ({
     setIsGenerating(true);
     onFeedback(null);
 
-    const result = await generateCombinationContent(selectedRegion, selectedPest);
+    try {
+      const result = await generateCombinationContent(selectedRegion, selectedPest);
 
-    if (result.success && result.data) {
-      content.populateContent(result.data);
-      onFeedback({ type: "success", message: d.successGen });
-    } else {
+      if (result.success && result.data) {
+        content.populateContent(result.data);
+        onFeedback({ type: "success", message: d.successGen });
+      } else if (!result.success && result.error === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED) {
+        onFeedback({ type: "error", message: d.regenerateQuotaError });
+      } else if (!result.success && result.error === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE) {
+        onFeedback({ type: "error", message: d.errorProviderUnavailable });
+      } else {
+        onFeedback({ type: "error", message: d.errorDefault });
+      }
+    } catch {
       onFeedback({ type: "error", message: d.errorDefault });
+    } finally {
+      setIsGenerating(false);
     }
-
-    setIsGenerating(false);
-  }, [selection, content, onFeedback, d.errorRequired, d.errorAlreadyExists, d.successGen, d.errorDefault]);
+  }, [selection, content, onFeedback, d.errorRequired, d.errorAlreadyExists, d.successGen, d.regenerateQuotaError, d.errorProviderUnavailable, d.errorDefault]);
 
   /** Saves the current content to Firestore and resets the form on success. */
   const handleSave = useCallback(async () => {
@@ -92,34 +100,38 @@ export const useCombinationWorkflow = ({
       faq: content.faq,
     };
 
-    const result = await saveCombination(
-      selectedRegion,
-      selectedPest,
-      regionName,
-      pestName,
-      contentData,
-      content.isActive,
-    );
+    try {
+      const result = await saveCombination(
+        selectedRegion,
+        selectedPest,
+        regionName,
+        pestName,
+        contentData,
+        content.isActive,
+      );
 
-    if (result.success) {
-      onFeedback({ type: "success", message: d.successSave });
-      localStorage.removeItem(`admin_combo_draft_${selectedRegion}_${selectedPest}`);
+      if (result.success) {
+        onFeedback({ type: "success", message: d.successSave });
+        localStorage.removeItem(`admin_combo_draft_${selectedRegion}_${selectedPest}`);
 
-      content.clearContent();
-      clearSelection();
+        content.clearContent();
+        clearSelection();
 
-      router.refresh();
+        router.refresh();
 
-      setTimeout(() => onFeedback(null), 3000);
-    } else {
-      if (result.error === "ALREADY_EXISTS") {
-        onFeedback({ type: "error", message: d.errorAlreadyExists });
+        setTimeout(() => onFeedback(null), 3000);
       } else {
-        onFeedback({ type: "error", message: d.errorSave });
+        if (result.error === "ALREADY_EXISTS") {
+          onFeedback({ type: "error", message: d.errorAlreadyExists });
+        } else {
+          onFeedback({ type: "error", message: d.errorSave });
+        }
       }
+    } catch {
+      onFeedback({ type: "error", message: d.errorSave });
+    } finally {
+      setIsSaving(false);
     }
-
-    setIsSaving(false);
   }, [selection, content, regions, pests, onFeedback, d.errorAlreadyExists, d.successSave, d.errorSave, router]);
 
   return {

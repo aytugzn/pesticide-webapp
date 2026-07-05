@@ -6,13 +6,22 @@ import { getAdminDb } from "@/lib/firebase-admin";
 
 import { parseCombinationDoc } from "@/utils/parsers";
 import { cacheTag, updateTag } from "next/cache";
+import type { DocumentReference, Query } from "firebase-admin/firestore";
 import type { ActionResponse, CombinationDoc } from "@/types";
-import { COMBINATION_ERRORS, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow } from "./types";
+import { COMBINATION_ERRORS, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type BulkCombinationMutationInput, type BulkCombinationMutationResult } from "./types";
 import { getCombinationCacheTag } from "./constants";
-import { saveCombinationSchema, toggleCombinationSchema, updateCombinationSchema } from "./schemas";
+import { bulkCombinationMutationSchema, saveCombinationSchema, toggleCombinationSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getGlobalData } from "@/features/settings/actions";
 import { getErrorInfo } from "./actions/utils";
+
+const BULK_COMBINATION_BATCH_SIZE = 400;
+
+type BulkCombinationTarget = {
+  ref: DocumentReference;
+  region: string;
+  pest: string;
+};
 
 
 /**
@@ -248,6 +257,104 @@ export const toggleCombinationStatus = async (
 };
 
 /**
+ * Mutates combinations matching a region and/or pest filter in safe Firestore batch chunks.
+ *
+ * @param input - Bulk filter and operation
+ * @returns Affected combination count or a typed error
+ */
+export const bulkMutateCombinationsByFilter = async (
+  input: BulkCombinationMutationInput
+): Promise<ActionResponse<BulkCombinationMutationResult, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsed = bulkCombinationMutationSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return { success: false, error: COMBINATION_ERRORS.BULK_NO_FILTER };
+  }
+
+  const { regionSlug, pestSlug, operation } = parsed.data;
+
+  try {
+    const db = getAdminDb();
+    const now = Date.now();
+    const targets: BulkCombinationTarget[] = [];
+
+    let query: Query = db.collection("combinations").select("region", "pest");
+
+    if (regionSlug) {
+      query = query.where("region", "==", regionSlug);
+    } else if (pestSlug) {
+      query = query.where("pest", "==", pestSlug);
+    }
+
+    const snap = await query.get();
+
+    snap.docs.forEach((doc) => {
+      const data = doc.data() as Record<string, unknown>;
+      const region = typeof data.region === "string" ? data.region : "";
+      const pest = typeof data.pest === "string" ? data.pest : "";
+      const matchesRegion = !regionSlug || region === regionSlug;
+      const matchesPest = !pestSlug || pest === pestSlug;
+
+      if (region && pest && matchesRegion && matchesPest) {
+        targets.push({ ref: doc.ref, region, pest });
+      }
+    });
+
+    if (targets.length === 0) {
+      return { success: false, error: COMBINATION_ERRORS.BULK_NO_MATCH };
+    }
+
+    for (let index = 0; index < targets.length; index += BULK_COMBINATION_BATCH_SIZE) {
+      const batch = db.batch();
+      const chunk = targets.slice(index, index + BULK_COMBINATION_BATCH_SIZE);
+
+      chunk.forEach((target) => {
+        if (operation === "delete") {
+          batch.delete(target.ref);
+          return;
+        }
+
+        if (operation === "archive") {
+          batch.update(target.ref, {
+            isArchived: true,
+            isActive: false,
+            archivedAt: now,
+            updatedAt: now,
+          });
+          return;
+        }
+
+        batch.update(target.ref, {
+          isActive: false,
+          updatedAt: now,
+        });
+      });
+
+      await batch.commit();
+    }
+
+    const affectedTags = new Set(targets.map((target) => getCombinationCacheTag(target.region, target.pest)));
+    affectedTags.forEach((tag) => updateTag(tag));
+    updateTag("all-combinations");
+
+    return { success: true, data: { affectedCount: targets.length } };
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to bulk mutate combinations", {
+      regionSlug,
+      pestSlug,
+      operation,
+      error: errorInfo,
+    });
+    return { success: false, error: COMBINATION_ERRORS.BULK_MUTATION_FAILED };
+  }
+};
+
+/**
  * Fetches lightweight combination rows for the admin table view.
  * Only fetches id, region, pest, isActive and enriches with region/pest display names.
  *
@@ -380,9 +487,11 @@ export const getAllActiveCombinations = async (): Promise<{ region: string; pest
         return {
           region: String(data.region || ""),
           pest: String(data.pest || ""),
+          isArchived: data.isArchived === true,
         };
       })
-      .filter((combo) => activeRegions.has(combo.region) && activePests.has(combo.pest));
+      .filter((combo) => !combo.isArchived && activeRegions.has(combo.region) && activePests.has(combo.pest))
+      .map(({ region, pest }) => ({ region, pest }));
   } catch (error: unknown) {
     console.error("Failed to fetch active combinations", { error: getErrorInfo(error) });
     throw error;

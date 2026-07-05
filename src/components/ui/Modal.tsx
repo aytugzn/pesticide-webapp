@@ -9,7 +9,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 const MODAL_STYLE: CSSProperties = {
-  maxHeight: "90vh",
+  maxHeight: "calc(100dvh - 1.5rem)",
 };
 
 type ModalProps = {
@@ -41,17 +41,17 @@ export const Modal = ({
     <>
       <div
         className={cn(
-          "fixed inset-0 z-50 transition-opacity duration-300",
+          "fixed inset-0 z-50 overflow-x-hidden transition-opacity duration-300",
           overlayClassName,
         )}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none sm:p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden p-3 pointer-events-none sm:p-6">
         <section
           className={cn(
-            "w-full max-w-lg bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden pointer-events-auto transform transition-all duration-300",
+            "w-full max-w-lg max-w-full bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300",
             className,
           )}
           style={MODAL_STYLE}
@@ -60,10 +60,10 @@ export const Modal = ({
           aria-labelledby={title ? titleId : undefined}
         >
           {title && (
-            <header className="flex items-center justify-between p-5 border-b border-brand-border/50 shrink-0">
+            <header className="flex items-center justify-between gap-3 p-4 border-b border-brand-border/50 shrink-0 sm:p-5">
               <span
                 id={titleId}
-                className="font-heading font-bold text-lg text-text-primary"
+                className="min-w-0 break-words font-heading font-bold text-lg text-text-primary"
               >
                 {title}
               </span>
@@ -72,7 +72,7 @@ export const Modal = ({
                 variant="unstyled"
                 size="none"
                 onClick={onClose}
-                className="p-1.5 -mr-1.5 text-text-muted hover:text-text-primary rounded-md transition-colors"
+                className="min-h-10 min-w-10 shrink-0 p-2 -mr-2 text-text-muted hover:text-text-primary rounded-md transition-colors"
                 aria-label={closeAriaLabel}
               >
                 <X className="w-5 h-5" aria-hidden="true" />
@@ -80,7 +80,7 @@ export const Modal = ({
             </header>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">{children}</div>
         </section>
       </div>
     </>

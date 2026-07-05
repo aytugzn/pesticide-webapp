@@ -94,7 +94,7 @@ export const generateRegionContent = async (
         if (!validated.success) {
           console.error(
             "Region AI generation failed validation",
-            validated.error.message,
+            { reason: "unknown_ai_error" },
           );
           return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
         }
@@ -121,7 +121,7 @@ export const generateRegionContent = async (
           console.warn(`Gemini generation failed with key index ${i} due to 503`);
           continue; // Try next key
         } else {
-          console.error("Region AI generation failed", { error: errorInfo });
+          console.error("Region AI generation failed", { reason: "unknown_ai_error" });
           return { success: false, error: REGION_ERRORS.AI_GENERATION_FAILED };
         }
       }
@@ -132,9 +132,8 @@ export const generateRegionContent = async (
     }
 
     return { success: false, error: REGION_ERRORS.AI_GENERATION_FAILED };
-  } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    console.error("Region AI generation failed in main try-catch", { error: errorInfo });
+  } catch {
+    console.error("Region AI generation failed in main try-catch", { reason: "unknown_ai_error" });
     return { success: false, error: REGION_ERRORS.AI_GENERATION_FAILED };
   }
 };

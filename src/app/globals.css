@@ -34,6 +34,11 @@
   --status-error-border: #fecaca;
   --status-error-text: #ef4444;
 
+  --status-warning-bg: #fffbeb;
+  --status-warning-border: #fcd34d;
+  --status-warning-text: #92400e;
+  --status-warning-hover: #fef3c7;
+
   --status-success-bg: #f0fdf4;
   --status-success-border: #bbf7d0;
   --status-success-text: #16a34a;
@@ -87,6 +92,11 @@
     --status-error-border: #7f1d1d;
     --status-error-text: #fca5a5;
 
+    --status-warning-bg: #451a03;
+    --status-warning-border: #92400e;
+    --status-warning-text: #fbbf24;
+    --status-warning-hover: #78350f;
+
     --status-success-bg: #052e16;
     --status-success-border: #14532d;
     --status-success-text: #4ade80;
@@ -125,6 +135,11 @@
   --color-error-bg: var(--status-error-bg);
   --color-error-border: var(--status-error-border);
   --color-error-text: var(--status-error-text);
+
+  --color-warning-bg: var(--status-warning-bg);
+  --color-warning-border: var(--status-warning-border);
+  --color-warning-text: var(--status-warning-text);
+  --color-warning-hover: var(--status-warning-hover);
 
   --color-success-bg: var(--status-success-bg);
   --color-success-border: var(--status-success-border);
@@ -255,3 +270,17 @@
   animation-play-state: paused;
 }
 
+@utility animate-toast-progress {
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}

@@ -42,7 +42,37 @@ export const AdminEntityTable = <T,>({
           </h2>
         </div>
       )}
-      <div className="overflow-x-auto">
+      <div className="md:hidden divide-y divide-brand-border/60">
+        {rows.map((row) => {
+          const actionColumn = columns.find((col) => col.key === "actions");
+          const detailColumns = columns.filter((col) => col.key !== "actions");
+
+          return (
+            <article key={getRowKey(row)} className="p-4 space-y-4 bg-brand-surface">
+              <div className="space-y-3">
+                {detailColumns.map((col) => (
+                  <div key={col.key} className="min-w-0">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                      {col.header}
+                    </div>
+                    <div className="mt-1 text-sm text-text-primary break-words">
+                      {col.render(row)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {actionColumn && (
+                <div className="flex w-full flex-wrap items-center justify-end gap-2 border-t border-brand-border/50 pt-3">
+                  {actionColumn.render(row)}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-brand-border/60 bg-surface-neutral/50">

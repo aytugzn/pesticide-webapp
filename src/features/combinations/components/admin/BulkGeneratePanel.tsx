@@ -8,7 +8,7 @@ import { Alert } from "@/components/ui/Alert";
 import { useCombinationJob } from "./CombinationJobProvider";
 import { getExistingCombinationKeys } from "../../actions/bulk";
 import type { RegionDoc, PestDoc } from "@/types";
-import type { BulkProgressItem, BulkJobStatus } from "../../types";
+import { COMBINATION_ERRORS, type BulkProgressItem, type BulkJobStatus } from "../../types";
 
 const ICON_SIZE = 14;
 
@@ -44,7 +44,7 @@ const statusConfig: Record<BulkJobStatus, { icon: React.ReactNode; label: string
 /**
  * Admin panel section for bulk-generating all missing region × pest combinations.
  * Displays missing count, starts/stops the generation run, and shows per-item progress.
- * All generated combinations are saved as drafts (isActive: false).
+ * All generated combinations are saved as active public pages.
  */
 export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) => {
   const d = DICTIONARY.admin.combinations.bulkGenerate;
@@ -56,6 +56,8 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
     hasFinished,
     allDone,
     isAbortRequested,
+    hasStartedJobInSession,
+    showToast,
     startBulkGenerate,
     abortBulkGenerate,
   } = useCombinationJob();
@@ -87,7 +89,9 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
 
   const total = isRunning || hasFinished ? jobTotal : missingItems.length;
 
-  const hasQuotaError = hasFinished && progress.some((p) => p.error === "AI_QUOTA_EXCEEDED");
+  const shouldShowJobResult = hasStartedJobInSession && hasFinished;
+  const hasQuotaError = shouldShowJobResult && progress.some((p) => p.error === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED);
+  const hasProviderUnavailableError = shouldShowJobResult && progress.some((p) => p.error === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE);
 
   const statusText = isRunning
     ? isAbortRequested
@@ -113,6 +117,10 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
         setExistingKeys(currentKeys);
       } else {
         setKeysError(true);
+        showToast({
+          variant: "error",
+          message: DICTIONARY.admin.combinations.errorDefault,
+        });
         return;
       }
     }
@@ -201,11 +209,11 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
         <Alert variant="error" message={DICTIONARY.admin.combinations.errorDefault} />
       )}
 
-      {allDone && (
+      {shouldShowJobResult && allDone && (
         <Alert variant="success" message={`${d.doneAll} ${d.draftNote}`} />
       )}
 
-      {hasFinished && !allDone && !hasQuotaError && (
+      {shouldShowJobResult && hasFinished && !allDone && !hasQuotaError && !hasProviderUnavailableError && (
         <Alert
           variant="info"
           message={`${d.partialDone.replace("{done}", String(doneCount)).replace("{total}", String(progress.length))} ${d.draftNote}`}
@@ -219,6 +227,13 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
         />
       )}
 
+      {hasProviderUnavailableError && (
+        <Alert
+          variant="error"
+          message={d.errorProviderUnavailable}
+        />
+      )}
+
       {activeProgress.length > 0 && (
         <ul className="divide-y divide-brand-border/40 rounded-xl border border-brand-border/60 overflow-hidden max-h-72 overflow-y-auto">
           {activeProgress.map((item) => {
@@ -226,9 +241,9 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
             return (
               <li
                 key={`${item.regionSlug}_${item.pestSlug}`}
-                className="flex items-center justify-between px-4 py-2.5 text-sm bg-brand-surface"
+                className="flex flex-col items-start justify-between gap-1.5 px-4 py-3 text-sm bg-brand-surface sm:flex-row sm:items-center sm:gap-3"
               >
-                <span className="text-text-primary font-medium">
+                <span className="text-text-primary font-medium break-words">
                   {item.regionName} — {item.pestName}
                 </span>
                 <span className={`inline-flex items-center gap-1.5 font-medium ${cfg.className}`}>
@@ -266,6 +281,7 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
               onClick={abortBulkGenerate}
               disabled={isAbortRequested}
               id="bulk-generate-stop-btn"
+              className="border border-error-border bg-error-bg/30 text-error-text shadow-none hover:bg-error-bg/60 hover:text-error-text disabled:opacity-60"
             >
               <Square size={ICON_SIZE} aria-hidden="true" />
               {isAbortRequested ? d.stoppingBtn : d.stopBtn}
