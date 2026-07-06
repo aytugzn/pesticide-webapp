@@ -18,6 +18,18 @@ type PestPageProps = {
   params: Promise<{ pestSlug: string }>;
 };
 
+const getRelatedRegionDescription = (
+  region: string,
+  cardDescription?: string,
+) => {
+  if (cardDescription) return cardDescription;
+
+  return DICTIONARY.pages.regions.cardDescriptionTemplate.replace(
+    "{region}",
+    region,
+  );
+};
+
 export const generateStaticParams = async () => {
   const { pests } = await getGlobalData();
 
@@ -66,7 +78,7 @@ const PestPage = async ({ params }: PestPageProps) => {
     return {
       href: hasCombination ? `/${region.slug}/${pest.slug}` : `${ROUTES.regionBase}/${region.slug}`,
       title: `${region.name} ${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`,
-      description: region.description || `${region.name}${DICTIONARY.pages.regions.regionDescSuffix}`,
+      description: getRelatedRegionDescription(region.name, region.cardDescription),
       icon: "map-pin" as const,
     };
   });
@@ -117,6 +129,10 @@ const PestPage = async ({ params }: PestPageProps) => {
       <RelatedLinksSection
         title={DICTIONARY.pages.regions.heading}
         items={relatedLinks}
+        viewAllHref={ROUTES.regions}
+        viewAllTitle={DICTIONARY.navbar.columns.viewAllRegions}
+        viewAllDescription={DICTIONARY.navbar.columns.viewAllRegionsDesc}
+        viewAllIcon="map-pin"
       />
       {pest.faq && pest.faq.length > 0 && <SeoFaq faq={pest.faq} />}
       <CtaSection />

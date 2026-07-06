@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AdminEntityTable, type AdminEntityColumn } from "@/components/ui/AdminEntityTable";
 import { Switch } from "@/components/ui/Switch";
+import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
-import { toggleRegionStatus } from "../../actions";
+import { getRegionForAdminEdit, toggleRegionStatus } from "../../actions";
 import type { RegionDoc } from "@/types";
-import { Edit2 } from "lucide-react";
+import { Edit2, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { RegionForm } from "./RegionForm";
 
@@ -17,15 +18,17 @@ type RegionsTableProps = {
 
 export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
   const d = DICTIONARY.admin.regions;
-  const [rows, setRows] = useState(initialRows);
+  const [activeOverrides, setActiveOverrides] = useState<Record<string, boolean>>({});
   const [pendingToggleIds, setPendingToggleIds] = useState<Set<string>>(new Set());
   const [editingRow, setEditingRow] = useState<RegionDoc | null>(null);
-  const [prevInitialRows, setPrevInitialRows] = useState(initialRows);
+  const [pendingEditSlug, setPendingEditSlug] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
-  if (initialRows !== prevInitialRows) {
-    setPrevInitialRows(initialRows);
-    setRows(initialRows);
-  }
+  const rows = initialRows.map((row) =>
+    Object.hasOwn(activeOverrides, row.slug)
+      ? { ...row, isActive: activeOverrides[row.slug] }
+      : row,
+  );
 
   const handleToggleActive = useCallback(async (row: RegionDoc, isActive: boolean) => {
     if (pendingToggleIds.has(row.slug)) return;
@@ -36,15 +39,23 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
       return next;
     });
 
-    setRows((prev) => prev.map((r) => r.slug === row.slug ? { ...r, isActive } : r));
+    setActiveOverrides((prev) => ({ ...prev, [row.slug]: isActive }));
     
     try {
       const result = await toggleRegionStatus(row.slug, isActive);
       if (!result.success) {
-        setRows((prev) => prev.map((r) => r.slug === row.slug ? { ...r, isActive: !isActive } : r));
+        setActiveOverrides((prev) => {
+          const next = { ...prev };
+          delete next[row.slug];
+          return next;
+        });
       }
     } catch {
-      setRows((prev) => prev.map((r) => r.slug === row.slug ? { ...r, isActive: !isActive } : r));
+      setActiveOverrides((prev) => {
+        const next = { ...prev };
+        delete next[row.slug];
+        return next;
+      });
     } finally {
       setPendingToggleIds((prev) => {
         const next = new Set(prev);
@@ -53,6 +64,33 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
       });
     }
   }, [pendingToggleIds]);
+
+  const handleEdit = useCallback(async (row: RegionDoc) => {
+    if (pendingEditSlug) return;
+
+    setEditError(null);
+    setPendingEditSlug(row.slug);
+
+    try {
+      const result = await getRegionForAdminEdit(row.slug);
+
+      if (result.success && result.data) {
+        setEditingRow(result.data);
+        return;
+      }
+
+      setEditError(d.errorDefault);
+    } catch {
+      setEditError(d.errorDefault);
+    } finally {
+      setPendingEditSlug(null);
+    }
+  }, [d.errorDefault, pendingEditSlug]);
+
+  const handleCloseEdit = useCallback(() => {
+    setEditingRow(null);
+    setEditError(null);
+  }, []);
 
   const columns: AdminEntityColumn<RegionDoc>[] = [
     {
@@ -93,12 +131,17 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
       header: d.table.actions,
       render: (row) => (
         <button
-          onClick={() => setEditingRow(row)}
-          className="min-h-10 min-w-10 rounded-brand-sm p-2.5 text-text-secondary transition-colors hover:bg-brand-primary/10 hover:text-brand-primary"
+          onClick={() => handleEdit(row)}
+          disabled={!!pendingEditSlug}
+          className="min-h-10 min-w-10 rounded-brand-sm p-2.5 text-text-secondary transition-colors hover:bg-brand-primary/10 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
           title={d.editRegion}
           aria-label={`${d.editRegion}: ${row.name}`}
         >
-          <Edit2 size={16} aria-hidden="true" />
+          {pendingEditSlug === row.slug ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Edit2 size={16} aria-hidden="true" />
+          )}
         </button>
       ),
     },
@@ -106,6 +149,10 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
 
   return (
     <>
+      {editError && (
+        <Alert variant="error" message={editError} className="mb-4" />
+      )}
+
       <AdminEntityTable
         emptyMessage={d.empty}
         columns={columns}
@@ -115,16 +162,18 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
 
       <Modal
         isOpen={!!editingRow}
-        onClose={() => setEditingRow(null)}
+        onClose={handleCloseEdit}
         title={d.editRegion}
         className="max-w-4xl"
       >
         {editingRow && (
           <RegionForm
+            key={editingRow.slug}
             mode="edit"
             initialData={{
               ...editingRow,
               description: editingRow.description || "",
+              cardDescription: editingRow.cardDescription || "",
               title: editingRow.title || "",
               h1: editingRow.h1 || "",
               metaDesc: editingRow.metaDesc || "",
@@ -132,7 +181,7 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
               faq: editingRow.faq || [],
               isActive: editingRow.isActive ?? true,
             }}
-            onSuccess={() => setEditingRow(null)}
+            onSuccess={handleCloseEdit}
           />
         )}
       </Modal>

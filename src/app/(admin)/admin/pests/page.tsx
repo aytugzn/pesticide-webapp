@@ -17,7 +17,14 @@ export const metadata: Metadata = {
 const AdminPestsPage = async () => {
   await connection();
   const snap = await getAdminDb().collection("pests").get();
-  const rows = snap.docs.map((doc) => parsePestDoc(doc.data()));
+  const rows = snap.docs.map((doc) => {
+    const parsed = parsePestDoc(doc.data());
+
+    return {
+      ...parsed,
+      slug: doc.id,
+    };
+  });
 
   const tableKey = rows.map((r) => r.slug).join("|");
 

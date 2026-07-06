@@ -10,7 +10,7 @@ export const PublicPageHeader = ({
   description,
 }: PublicPageHeaderProps) => (
   <header className="bg-brand-surface border-b border-brand-border">
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
       {eyebrow && (
         <p className="text-brand-primary text-xs font-bold tracking-widest uppercase mb-3">
           {eyebrow}

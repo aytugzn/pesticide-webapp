@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bug, MapPin } from "lucide-react";
+import { ArrowRight, Bug, MapPin } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { CLICK_EFFECT } from "@/constants/ui";
 
@@ -13,19 +13,37 @@ type RelatedLinkItem = {
 type RelatedLinksSectionProps = {
   title: string;
   items: RelatedLinkItem[];
+  viewAllHref?: string;
+  viewAllTitle?: string;
+  viewAllDescription?: string;
+  viewAllIcon?: RelatedLinkItem["icon"];
 };
 
-export const RelatedLinksSection = ({ title, items }: RelatedLinksSectionProps) => {
+const RELATED_LINKS_VISIBLE_ITEMS = 5;
+
+export const RelatedLinksSection = ({
+  title,
+  items,
+  viewAllHref,
+  viewAllTitle,
+  viewAllDescription,
+  viewAllIcon,
+}: RelatedLinksSectionProps) => {
   if (!items || items.length === 0) return null;
+
+  const shouldShowViewAll = !!viewAllHref && !!viewAllTitle && items.length > RELATED_LINKS_VISIBLE_ITEMS;
+  const visibleItems = shouldShowViewAll
+    ? items.slice(0, RELATED_LINKS_VISIBLE_ITEMS)
+    : items.slice(0, RELATED_LINKS_VISIBLE_ITEMS + 1);
 
   return (
     <section className="bg-surface-neutral">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-2xl font-heading font-bold text-text-primary mb-8 text-center sm:text-left">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+        <h2 className="font-heading font-black text-text-primary text-3xl sm:text-4xl leading-tight mb-6 text-center sm:text-left">
           {title}
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => {
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleItems.map((item) => {
             const IconComponent = item.icon === "map-pin" ? MapPin : Bug;
             
             return (
@@ -33,25 +51,61 @@ export const RelatedLinksSection = ({ title, items }: RelatedLinksSectionProps) 
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group bg-brand-surface border border-brand-border rounded-lg p-6 hover:border-brand-primary/50 hover:shadow-lg transition-all flex flex-col",
+                  "group flex min-h-36 flex-col rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
                   CLICK_EFFECT
                 )}
               >
-                <IconComponent
-                  className="w-7 h-7 text-brand-primary mb-5"
-                  aria-hidden="true"
-                />
-                <h3 className="font-heading font-bold text-text-primary text-xl group-hover:text-brand-primary transition-colors">
-                  {item.title}
-                </h3>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
+                    <IconComponent
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    />
+                  </span>
+                  <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
+                    {item.title}
+                  </h3>
+                </div>
                 {item.description && (
-                  <p className="text-text-secondary text-sm leading-relaxed mt-3 flex-1">
+                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
                     {item.description}
                   </p>
                 )}
               </Link>
             );
           })}
+          {shouldShowViewAll && (
+            <Link
+              href={viewAllHref}
+              className={cn(
+                "group flex min-h-36 flex-col justify-between rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
+                CLICK_EFFECT
+              )}
+            >
+              <div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
+                    {viewAllIcon === "map-pin" ? (
+                      <MapPin className="h-5 w-5" aria-hidden="true" />
+                    ) : (
+                      <Bug className="h-5 w-5" aria-hidden="true" />
+                    )}
+                  </span>
+                  <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
+                    {viewAllTitle}
+                  </h3>
+                </div>
+                {viewAllDescription && (
+                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                    {viewAllDescription}
+                  </p>
+                )}
+              </div>
+              <span className="mt-4 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary transition-transform group-hover:translate-x-1">
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </section>

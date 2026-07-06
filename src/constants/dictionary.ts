@@ -11,6 +11,10 @@ const navbarDict = {
     regions: "HİZMET BÖLGELERİ",
     viewAllPests: "Tüm Hizmetleri Gör",
     viewAllRegions: "Tüm Bölgeleri Gör",
+    viewAllPestsDesc:
+      "İzmir genelinde sunduğumuz tüm ilaçlama ve dezenfeksiyon hizmetlerini birlikte inceleyin.",
+    viewAllRegionsDesc:
+      "DMR İlaçlama'nın İzmir'de hizmet verdiği tüm aktif bölgeleri tek listede görüntüleyin.",
   },
   emptyStates: {
     pests: "Kayıtlı haşere bulunamadı.",
@@ -104,7 +108,7 @@ const homeDict = {
     titlePrefix: "Farkımız ",
     titleHighlight: "ve Kalitemiz",
     description:
-      "İzmir genelinde müşteri memnuniyeti odaklı çalışıyor, sorunu geçici değil kalıcı olarak çözüyoruz.",
+      "İzmir genelinde keşiften uygulama sonrasına kadar şeffaf, güvenli ve takip edilebilir bir süreç yürütüyoruz.",
     steps: [
       {
         title: "Ücretsiz Keşif & Analiz",
@@ -133,7 +137,46 @@ const homeDict = {
     titlePrefix: "Ücretsiz",
     titleHighlight: "Keşif ve Danışma",
     description:
-      "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
+      "Formu doldurabilir, bizi doğrudan arayabilir veya WhatsApp üzerinden hızlıca ulaşabilirsiniz. Uzman ekibimiz ihtiyacınıza göre en uygun yönlendirmeyi yapar.",
+    channels: {
+      title: "Tüm iletişim kanallarımız",
+      description:
+        "Acil durum, keşif talebi veya hizmet bilgisi için size en uygun kanaldan DMR İlaçlama ekibine ulaşın.",
+      phoneTitle: "Telefon",
+      phoneDesc: "Hızlı bilgi ve randevu için doğrudan arayın.",
+      whatsappTitle: "WhatsApp",
+      whatsappDesc: "Fotoğraf, konum veya kısa not ile talebinizi iletin.",
+      emailTitle: "E-posta",
+      emailDesc: "Kurumsal talepler ve detaylı bilgi için yazın.",
+      addressTitle: "Adres",
+      addressDesc: "İzmir merkezli ekibimiz bölgelere planlı servis sağlar.",
+      hoursTitle: "Çalışma Saatleri",
+      hoursDesc: "Uygun servis zamanı için güncel saatleri kontrol edin.",
+      instagramTitle: "Instagram",
+      instagramDesc: "Güncel paylaşımlar ve duyurular için takip edin.",
+      facebookTitle: "Facebook",
+      facebookDesc: "Sosyal medya üzerinden de bizimle iletişimde kalın.",
+      processTitle: "Talep sonrası süreç",
+      processDescription:
+        "Form gönderildikten sonra ekibimiz ihtiyacı netleştirir ve size en uygun servis planını oluşturur.",
+      processSteps: [
+        {
+          title: "Talebiniz alınır",
+          description:
+            "İletişim bilgileriniz, seçtiğiniz hizmet ve bölge bilgisi ekibimize ulaşır.",
+        },
+        {
+          title: "İhtiyaç netleşir",
+          description:
+            "Alan, haşere türü ve aciliyet durumuna göre kısa bir ön değerlendirme yapılır.",
+        },
+        {
+          title: "Servis planlanır",
+          description:
+            "Size uygun zaman aralığı belirlenir ve uygulama süreci için dönüş sağlanır.",
+        },
+      ],
+    },
     form: {
       name: "Adınız Soyadınız",
       namePlaceholder: "Örn: Ahmet Demir",
@@ -228,11 +271,11 @@ const metaDict = {
   },
   regions: {
     title: "Hizmet Bölgeleri",
-    description: "İzmir genelindeki aktif hizmet bölgelerimizi inceleyin.",
+    description: "İzmir genelinde profesyonel ilaçlama hizmeti sunduğumuz aktif bölgeleri, mahalle dokusu ve ihtiyaç yoğunluğuna göre inceleyin.",
   },
   services: {
     title: "Hizmetler",
-    description: "İzmir genelinde sunduğumuz profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri.",
+    description: "İzmir genelinde ev, apartman, işletme ve açık alanlarda uyguladığımız profesyonel böcek, haşere, kemirgen ve dezenfeksiyon çözümlerini inceleyin.",
   },
   about: {
     title: "Hakkımızda",
@@ -240,7 +283,7 @@ const metaDict = {
   },
   contact: {
     title: "İletişim",
-    description: "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
+    description: "DMR İlaçlama ile telefon, WhatsApp, e-posta veya iletişim formu üzerinden hızlıca görüşün.",
   },
   privacy: {
     title: "Gizlilik Politikası",
@@ -274,27 +317,35 @@ const pagesDict = {
   regions: {
     heading: "Hizmet Bölgeleri",
     eyebrow: "Hizmet Bölgeleri",
-    headerDesc: "İzmir genelindeki aktif hizmet bölgelerimizi inceleyin.",
+    headerDesc: "İzmir'in farklı ilçe ve mahalle yapılarında karşılaşılan haşere riskleri değişir. DMR İlaçlama, her bölgenin bina yoğunluğu, iklim etkisi ve kullanım alışkanlıklarını dikkate alarak güvenli, planlı ve kalıcı ilaçlama hizmeti sunar.",
     regionTitleSuffix: " İlaçlama",
-    regionDescSuffix: " bölgesinde profesyonel ilaçlama hizmetleri.",
+    regionDescSuffix: " bölgesinde profesyonel ilaçlama hizmetleri için yerel koşullara uygun keşif, uygulama ve takip süreci planlanır.",
+    cardDescriptionTemplate:
+      "{region} ve çevresinde ev, apartman, site ve işletmeler için hızlı keşif, güvenli uygulama ve işlem sonrası bilgilendirme desteği sağlıyoruz.",
+    cardDescriptionFallback:
+      "{region} için yerel koşullara uygun, güvenli ve planlı ilaçlama hizmeti sunuyoruz.",
     pestTitleSuffix: " İlaçlama",
   },
   services: {
     heading: "Hizmetler",
     eyebrow: "Hizmetlerimiz",
-    headerDesc: "İzmir genelinde sunduğumuz profesyonel ve garantili böcek, haşere ve kemirgen ilaçlama hizmetleri.",
-    defaultPestDesc: "Sağlık Bakanlığı onaylı ve garantili yöntemlerle, alanınıza özel profesyonel ilaçlama çözümleri sunuyoruz.",
+    headerDesc: "Böcek, haşere, kemirgen ve dezenfeksiyon ihtiyaçlarında doğru tür tespiti, güvenli ürün seçimi ve alanınıza uygun uygulama planı kritik önem taşır. DMR İlaçlama, İzmir genelinde yaşam ve çalışma alanlarına özel profesyonel çözümler sunar.",
+    defaultPestDesc: "Sağlık Bakanlığı onaylı ürünler ve alanınıza uygun yöntemlerle, haşere kaynağını hedefleyen güvenli ve profesyonel ilaçlama çözümleri sunuyoruz.",
+    cardDescriptionTemplate:
+      "{service} için yaşam ve çalışma alanınıza uygun keşif, güvenli ürün seçimi ve doğru uygulama planı oluşturuyoruz.",
+    cardDescriptionFallback:
+      "Haşere türüne ve alanın kullanımına göre güvenli, planlı ve takip edilebilir ilaçlama hizmeti sunuyoruz.",
     pestTitleSuffix: "İlaçlama",
   },
   about: {
     heading: "Hakkımızda",
     eyebrow: "Hakkımızda",
-    headerDesc: "İzmir genelinde müşteri memnuniyeti odaklı çalışıyor, sorunu geçici değil kalıcı olarak çözüyoruz.",
+    headerDesc: "DMR İlaçlama, İzmir'de ev, apartman, site ve işletmeler için güvenli, planlı ve takip edilebilir ilaçlama hizmeti sunar. Amacımız yalnızca uygulama yapmak değil, doğru tespit ve doğru yönlendirme ile müşterinin içini rahatlatmaktır.",
   },
   contact: {
     heading: "İletişim",
     eyebrow: "Bize Ulaşın",
-    headerDesc: "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
+    headerDesc: "Keşif, randevu, fiyat bilgisi veya acil yönlendirme için telefon, WhatsApp, e-posta ve iletişim formu üzerinden bize ulaşabilirsiniz.",
   },
   privacy: {
     heading: "Gizlilik Politikası",
@@ -441,7 +492,7 @@ const adminDict = {
     editPest: "Haşere Düzenle",
     formName: "Haşere Adı",
     formNamePlaceholder: "Örn: Hamamböceği",
-    formSlugPlaceholder: "Otomatik oluşturulur...",
+    formSlugPlaceholder: "Otomatik oluşturulur (-ilaclama eklenir)",
     formImage: "Resim URL (Opsiyonel)",
     empty: "Kayıtlı haşere bulunamadı.",
     errorDuplicate: "Bu haşere zaten kullanımda. Lütfen farklı bir isim girin.",
@@ -737,7 +788,7 @@ const globalDict = {
   cta: {
     titlePrefix: "Ücretsiz",
     titleHighlight: "Keşif ve Danışma",
-    description: "Aşağıdaki formu doldurun, uzman ekibimiz en kısa sürede size dönüş yapıp sorununuzu çözsün.",
+    description: "Sorununuzu anlatın; ekibimiz alanınıza, bölgenize ve ihtiyacınıza göre en doğru yönlendirmeyi yapsın.",
     buttonText: "İletişim",
   },
   contact: {

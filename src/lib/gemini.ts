@@ -9,6 +9,9 @@ const modelsCache = new Map<
   ReturnType<typeof GoogleGenerativeAI.prototype.getGenerativeModel>
 >();
 
+const SEO_ENTITY_JSON_FORMAT =
+  '{ "title": "...", "description": "...", "cardDescription": "...", "h1": "...", "metaDesc": "...", "content": "...", "faq": [{"question": "...", "answer": "..."}] }';
+
 export const getGeminiApiKeys = (): string[] => {
   const keysEnv = process.env.GEMINI_API_KEYS || "";
   const keys = keysEnv.split(",").map(k => k.trim()).filter(Boolean);
@@ -110,6 +113,7 @@ CRITICAL RULES FOR CONTENT & FAQ:
 Generate the following fields for a regional pest control landing page:
 - title: max 60 chars. Must be 100% unique, highly clickable, and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
 - description: max 150 chars. Comma separated list of environmental, architectural, and geographical factors in this region that specifically increase PEST RISKS (e.g. "nemli sahil şeridi, eski altyapı, bahçeli müstakil evler, sıcak iklim, kanalizasyon sorunları"). Do not just describe the region's tourism or beauty. Focus strictly on factors relevant to pest control.
+- cardDescription: max 220 chars. Customer-facing card text for public listing pages. Write one natural, trustworthy sentence about pest control service in this region. Do NOT expose raw environmental notes, comma lists, prices, durations, or chemical names.
 - h1: max 70 chars. 100% unique, natural, and engaging. Do not copy the title exactly.
 - metaDesc: max 160 chars. Must be natural, match local search intent, and include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
 - content: 300-400 words. Describe pest control services in this specific region with unique paragraphs.
@@ -120,7 +124,7 @@ Generate the following fields for a regional pest control landing page:
 - faq: 3 highly relevant, distinct question-answer pairs specific to pest control in this region. Do NOT repeat standard generic questions.
 
 Return RAW JSON only. Do not wrap the JSON in markdown code blocks (e.g. no \`\`\`json). Do not add any conversational text before or after the JSON.
-${DICTIONARY.gemini.jsonFormat}
+${SEO_ENTITY_JSON_FORMAT}
   `.trim();
 };
 
@@ -146,6 +150,7 @@ CRITICAL RULES FOR CONTENT & FAQ:
 Generate the following fields for a pest-specific informational and service landing page:
 - title: max 60 chars. Must be 100% unique, highly clickable, and SEO optimized. Format MUST exactly end with " | ${DICTIONARY.global.brand}". Do not use "-" or any other format.
 - description: max 150 chars. Comma separated list of physical characteristics and common nesting areas for this pest (e.g. "bodrum, çatı ve depolarda yuvalanır, kışın kapalı alanlara girer"). Do not write promotional text.
+- cardDescription: max 220 chars. Customer-facing card text for public listing pages. Write one natural, reassuring sentence about this pest control service. Do NOT expose raw pest notes, comma lists, prices, durations, or chemical names.
 - h1: max 70 chars. 100% unique, natural, and engaging. Do not copy the title exactly.
 - metaDesc: max 160 chars. Must be natural, match local search intent, and include a clear Call-To-Action (CTA) like "Hemen arayın", "İletişime geçin" (Do NOT use "ücretsiz teklif").
 - content: 300-400 words. Describe this pest, its dangers, and professional solutions with unique paragraphs.
@@ -156,6 +161,6 @@ Generate the following fields for a pest-specific informational and service land
 - faq: 3 highly relevant, distinct question-answer pairs specific to this pest. Do NOT repeat standard generic questions.
 
 Return RAW JSON only. Do not wrap the JSON in markdown code blocks (e.g. no \`\`\`json). Do not add any conversational text before or after the JSON.
-${DICTIONARY.gemini.jsonFormat}
+${SEO_ENTITY_JSON_FORMAT}
   `.trim();
 };

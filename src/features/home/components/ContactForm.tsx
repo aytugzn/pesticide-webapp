@@ -11,14 +11,16 @@ import { formatTurkishPhoneInput } from "@/utils/phone";
 import { Alert } from "@/components/ui/Alert";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
+import { cn } from "@/utils/cn";
 import type { PestDoc, RegionDoc } from "@/types";
 
 type ContactFormProps = {
   pests: PestDoc[];
   regions: RegionDoc[];
+  className?: string;
 };
 
-export const ContactForm = ({ pests, regions }: ContactFormProps) => {
+export const ContactForm = ({ pests, regions, className }: ContactFormProps) => {
   const dict = DICTIONARY.home.contact.form;
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -81,9 +83,13 @@ export const ContactForm = ({ pests, regions }: ContactFormProps) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-brand-surface rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl border border-brand-border relative">
-      {/* Decorative Blob Wrapper (contains blob without clipping dropdowns) */}
-      <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+    <div
+      className={cn(
+        "w-full max-w-2xl mx-auto bg-brand-surface rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl border border-brand-border relative overflow-hidden",
+        className,
+      )}
+    >
+      <div className="absolute inset-0 pointer-events-none">
         <div
           className="absolute top-0 right-0 w-64 h-64 bg-brand-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
           aria-hidden="true"

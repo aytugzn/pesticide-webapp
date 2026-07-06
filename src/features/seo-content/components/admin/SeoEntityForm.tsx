@@ -21,6 +21,41 @@ import type {
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
+const PEST_SLUG_SUFFIX = "-ilaclama";
+
+/**
+ * Converts optional entity data into the complete controlled form shape.
+ */
+const normalizeInitialData = (
+  initialData?: SeoEntityInitialData,
+): SeoEntityInitialData => ({
+  name: initialData?.name ?? "",
+  slug: initialData?.slug ?? "",
+  description: initialData?.description ?? "",
+  cardDescription: initialData?.cardDescription ?? "",
+  isActive: initialData?.isActive ?? true,
+  title: initialData?.title ?? "",
+  h1: initialData?.h1 ?? "",
+  metaDesc: initialData?.metaDesc ?? "",
+  content: initialData?.content ?? "",
+  faq: initialData?.faq ?? [],
+});
+
+/**
+ * Creates the default slug for new SEO entities.
+ */
+const createEntitySlug = (
+  entity: SeoEntityFormConfig<string>["entity"],
+  name: string,
+) => {
+  const baseSlug = slugify(name);
+
+  if (entity !== "pest" || !baseSlug) return baseSlug;
+  if (baseSlug.endsWith(PEST_SLUG_SUFFIX)) return baseSlug;
+
+  return `${baseSlug}${PEST_SLUG_SUFFIX}`;
+};
+
 export const SeoEntityForm = <TError extends string>({
   entity,
   mode = "create",
@@ -33,18 +68,8 @@ export const SeoEntityForm = <TError extends string>({
   onSuccess,
 }: SeoEntityFormConfig<TError>) => {
   const router = useRouter();
-
-  const [formData, setFormData] = useState<SeoEntityInitialData>({
-    name: initialData?.name || "",
-    slug: initialData?.slug || "",
-    description: initialData?.description || "",
-    isActive: initialData?.isActive ?? true,
-    title: initialData?.title || "",
-    h1: initialData?.h1 || "",
-    metaDesc: initialData?.metaDesc || "",
-    content: initialData?.content || "",
-    faq: initialData?.faq || [],
-  });
+  const normalizedInitialData = normalizeInitialData(initialData);
+  const [formData, setFormData] = useState(() => normalizedInitialData);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -100,6 +125,7 @@ export const SeoEntityForm = <TError extends string>({
         setFormData((prev) => ({
           ...prev,
           description: generated.description,
+          cardDescription: generated.cardDescription ?? "",
           title: generated.title,
           h1: generated.h1,
           metaDesc: generated.metaDesc,
@@ -141,6 +167,7 @@ export const SeoEntityForm = <TError extends string>({
         setFormData((prev) => ({
           ...prev,
           description: generated.description,
+          cardDescription: generated.cardDescription ?? "",
           title: generated.title,
           h1: generated.h1,
           metaDesc: generated.metaDesc,
@@ -194,6 +221,7 @@ export const SeoEntityForm = <TError extends string>({
       const generatedContent: SeoGeneratedContent = {
         title: formData.title,
         description: formData.description,
+        cardDescription: formData.cardDescription || undefined,
         h1: formData.h1,
         metaDesc: formData.metaDesc,
         content: formData.content,
@@ -204,6 +232,7 @@ export const SeoEntityForm = <TError extends string>({
         const res = await update(formData.slug, {
           name: formData.name,
           description: formData.description,
+          cardDescription: formData.cardDescription || undefined,
           title: formData.title,
           h1: formData.h1,
           metaDesc: formData.metaDesc,
@@ -213,6 +242,7 @@ export const SeoEntityForm = <TError extends string>({
 
         if (res.success) {
           setFeedback({ type: "success", message: d.updateSuccess });
+          router.refresh();
           onSuccess?.();
           return;
         }
@@ -236,17 +266,7 @@ export const SeoEntityForm = <TError extends string>({
         setFeedback({ type: "success", message: d.successSave });
 
         if (!initialData) {
-          setFormData({
-            name: "",
-            slug: "",
-            description: "",
-            title: "",
-            h1: "",
-            metaDesc: "",
-            content: "",
-            faq: [],
-            isActive: true,
-          });
+          setFormData(normalizeInitialData());
         }
 
         router.refresh();
@@ -280,15 +300,16 @@ export const SeoEntityForm = <TError extends string>({
   };
 
   const isDirty =
-    formData.name !== (initialData?.name || "") ||
-    formData.slug !== (initialData?.slug || "") ||
-    formData.description !== (initialData?.description || "") ||
-    formData.isActive !== (initialData?.isActive ?? true) ||
-    formData.title !== (initialData?.title || "") ||
-    formData.h1 !== (initialData?.h1 || "") ||
-    formData.metaDesc !== (initialData?.metaDesc || "") ||
-    formData.content !== (initialData?.content || "") ||
-    JSON.stringify(formData.faq) !== JSON.stringify(initialData?.faq || []);
+    formData.name !== normalizedInitialData.name ||
+    formData.slug !== normalizedInitialData.slug ||
+    formData.description !== normalizedInitialData.description ||
+    formData.cardDescription !== normalizedInitialData.cardDescription ||
+    formData.isActive !== normalizedInitialData.isActive ||
+    formData.title !== normalizedInitialData.title ||
+    formData.h1 !== normalizedInitialData.h1 ||
+    formData.metaDesc !== normalizedInitialData.metaDesc ||
+    formData.content !== normalizedInitialData.content ||
+    JSON.stringify(formData.faq) !== JSON.stringify(normalizedInitialData.faq);
 
   const isFormValid =
     formData.name.trim() !== "" &&
@@ -314,7 +335,7 @@ export const SeoEntityForm = <TError extends string>({
             setFormData((prev) => ({
               ...prev,
               name: newName,
-              slug: !initialData ? slugify(newName) : prev.slug,
+              slug: !initialData ? createEntitySlug(entity, newName) : prev.slug,
             }));
           }}
           placeholder={d.formNamePlaceholder}
@@ -327,6 +348,7 @@ export const SeoEntityForm = <TError extends string>({
           onChange={(event) => updateField("slug", event.target.value)}
           placeholder={d.formSlugPlaceholder}
           disabled
+          className="disabled:bg-surface-neutral/60 disabled:text-text-muted disabled:border-brand-border/60 disabled:cursor-not-allowed"
         />
       </div>
 

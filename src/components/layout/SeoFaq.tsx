@@ -10,15 +10,17 @@ export const SeoFaq = ({ faq }: SeoFaqProps) => {
 
   return (
     <section className="bg-surface-neutral border-t border-brand-border">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-        <h2 className="font-heading font-bold text-text-primary text-2xl sm:text-3xl mb-6 sm:mb-8 text-center sm:text-left">
-          {DICTIONARY.global.faqTitle}
-        </h2>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="flex w-full flex-col gap-6">
+          <h2 className="font-heading font-black text-text-primary text-3xl sm:text-4xl leading-tight text-center sm:text-left">
+            {DICTIONARY.global.faqTitle}
+          </h2>
 
-        <div className="space-y-3 sm:space-y-4">
-          {faq.map((item, index) => (
-            <SeoFaqItem key={index} item={item} />
-          ))}
+          <div className="w-full space-y-3 sm:space-y-4">
+            {faq.map((item, index) => (
+              <SeoFaqItem key={index} item={item} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

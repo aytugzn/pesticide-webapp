@@ -5,14 +5,20 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { updateTag } from "next/cache";
 import { getGeminiModel, getGeminiApiKeys, buildRegionPrompt } from "@/lib/gemini";
-import { extractAndParseJson } from "@/utils/parsers";
+import { extractAndParseJson, parseRegionDoc } from "@/utils/parsers";
 import type { ActionResponse } from "@/types";
+import type { RegionDoc } from "@/types";
 import {
   REGION_ERRORS,
   type RegionErrorCode,
   type GeneratedContent,
 } from "./types";
-import { saveRegionSchema, updateRegionSchema, generatedContentSchema } from "./schemas";
+import {
+  saveRegionSchema,
+  updateRegionSchema,
+  generatedContentSchema,
+  slugSchema,
+} from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getCombinationCacheTag } from "@/features/combinations/constants";
 import type { UpdateRegionInput } from "./types";
@@ -47,14 +53,62 @@ export const checkRegionExists = async (
     return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
-    const doc = await getAdminDb().collection("regions").doc(slug).get();
+    const doc = await getAdminDb().collection("regions").doc(parsedSlug.data).get();
     return { success: true, data: doc.exists };
   } catch (error: unknown) {
     console.error("Failed to check region existence", {
       message: error instanceof Error ? error.message : "Unknown error",
     });
     return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+};
+
+/**
+ * Fetches the authoritative region document for admin edit forms.
+ *
+ * @param slug - Region document slug/id to fetch
+ * @returns Full parsed region data for editing
+ */
+export const getRegionForAdminEdit = async (
+  slug: string,
+): Promise<ActionResponse<RegionDoc, RegionErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const doc = await getAdminDb().collection("regions").doc(parsedSlug.data).get();
+
+    if (!doc.exists) {
+      return { success: false, error: REGION_ERRORS.NOT_FOUND };
+    }
+
+    const parsed = parseRegionDoc(doc.data());
+
+    return {
+      success: true,
+      data: {
+        ...parsed,
+        slug: doc.id,
+      },
+    };
+  } catch (error: unknown) {
+    console.error("Failed to fetch region for admin edit", {
+      slug,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return { success: false, error: REGION_ERRORS.FETCH_FAILED };
   }
 };
 
@@ -168,6 +222,7 @@ export const saveRegion = async (
       name,
       slug,
       description,
+      cardDescription: content.cardDescription,
       title: content.title,
       h1: content.h1,
       metaDesc: content.metaDesc,
@@ -205,6 +260,11 @@ export const updateRegion = async (
     return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+
   const parsed = updateRegionSchema.safeParse(payload);
   if (!parsed.success) {
     return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
@@ -212,7 +272,7 @@ export const updateRegion = async (
 
   try {
     const db = getAdminDb();
-    const docRef = db.collection("regions").doc(slug);
+    const docRef = db.collection("regions").doc(parsedSlug.data);
 
     const updateData = {
       ...parsed.data,
@@ -244,9 +304,14 @@ export const toggleRegionStatus = async (
     return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
     const db = getAdminDb();
-    const regionRef = db.collection("regions").doc(slug);
+    const regionRef = db.collection("regions").doc(parsedSlug.data);
 
     const regionDoc = await regionRef.get(); if (!regionDoc.exists) {
       return { success: false, error: REGION_ERRORS.NOT_FOUND };
@@ -274,7 +339,7 @@ export const toggleRegionStatus = async (
     if (!isActive) {
       const activeCombinationsQuery = await db
         .collection("combinations")
-        .where("region", "==", slug)
+        .where("region", "==", parsedSlug.data)
         .where("isActive", "==", true)
         .get();
 

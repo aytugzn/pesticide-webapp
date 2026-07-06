@@ -1,5 +1,5 @@
-export type PestDoc = { name: string; slug: string; description?: string; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
-export type RegionDoc = { name: string; slug: string; description?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
+export type PestDoc = { name: string; slug: string; description?: string; cardDescription?: string; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
+export type RegionDoc = { name: string; slug: string; description?: string; cardDescription?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
 
 export type SettingsDoc = {
   phone?: string;
@@ -43,4 +43,3 @@ export type ContactRequestDoc = {
   telegramChatId?: string;
   notificationStatus?: "pending" | "sent" | "failed";
 };
-

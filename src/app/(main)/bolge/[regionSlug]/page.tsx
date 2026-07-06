@@ -18,6 +18,20 @@ type RegionPageProps = {
   params: Promise<{ regionSlug: string }>;
 };
 
+const getRelatedServiceDescription = (
+  service: string,
+  cardDescription?: string,
+) => {
+  if (cardDescription) return cardDescription;
+
+  const serviceTitle = `${service} ${DICTIONARY.pages.services.pestTitleSuffix}`;
+
+  return DICTIONARY.pages.services.cardDescriptionTemplate.replace(
+    "{service}",
+    serviceTitle,
+  );
+};
+
 export const generateStaticParams = async () => {
   const { regions } = await getGlobalData();
 
@@ -66,7 +80,7 @@ const RegionPage = async ({ params }: RegionPageProps) => {
     return {
       href: hasCombination ? `/${region.slug}/${pest.slug}` : `${ROUTES.pestBase}/${pest.slug}`,
       title: `${region.name} ${pest.name}${DICTIONARY.pages.regions.pestTitleSuffix}`,
-      description: pest.description || DICTIONARY.pages.services.defaultPestDesc,
+      description: getRelatedServiceDescription(pest.name, pest.cardDescription),
       icon: "bug" as const,
     };
   });
@@ -108,6 +122,10 @@ const RegionPage = async ({ params }: RegionPageProps) => {
       <RelatedLinksSection
         title={DICTIONARY.pages.services.heading}
         items={relatedLinks}
+        viewAllHref={ROUTES.services}
+        viewAllTitle={DICTIONARY.navbar.columns.viewAllPests}
+        viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
+        viewAllIcon="bug"
       />
       {region.faq && region.faq.length > 0 && (
         <SeoFaq faq={region.faq} />

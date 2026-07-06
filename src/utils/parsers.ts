@@ -92,6 +92,9 @@ export const parsePestDoc = (data: unknown): PestDoc => {
     name: String(d.name || ""),
     slug: String(d.slug || ""),
     description: d.description ? String(d.description) : undefined,
+    cardDescription: d.cardDescription
+      ? String(d.cardDescription)
+      : undefined,
     imageUrl: d.imageUrl ? String(d.imageUrl) : undefined,
     isActive: Boolean(d.isActive ?? false),
     title: d.title ? String(d.title) : undefined,
@@ -132,6 +135,9 @@ export const parseRegionDoc = (data: unknown): RegionDoc => {
     name: String(d.name || ""),
     slug: String(d.slug || ""),
     description: d.description ? String(d.description) : undefined,
+    cardDescription: d.cardDescription
+      ? String(d.cardDescription)
+      : undefined,
     isActive: Boolean(d.isActive ?? false),
     title: d.title ? String(d.title) : undefined,
     h1: d.h1 ? String(d.h1) : undefined,

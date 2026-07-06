@@ -14,7 +14,10 @@ export const CheckListItem = ({
 }: CheckListItemProps) => {
   return (
     <div className={cn("flex items-start", className)}>
-      <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-brand-primary mt-1 md:mt-0.5 mr-4 md:mr-6 flex-shrink-0" />
+      <CheckCircle2
+        className="w-6 h-6 md:w-8 md:h-8 text-brand-primary mt-1 md:mt-0.5 mr-4 md:mr-6 flex-shrink-0"
+        aria-hidden="true"
+      />
       <div>
         <h3 className="text-xl md:text-2xl font-bold text-text-primary mb-2">
           {title}

@@ -5,12 +5,12 @@ export const CtaSection = () => {
   const { titlePrefix, titleHighlight, description, buttonText } = DICTIONARY.global.cta;
 
   return (
-    <section className="bg-brand-primary">
+    <section className="bg-brand-primary border-y border-brand-primary-hover">
       <div className="max-w-4xl mx-auto px-6 py-12 sm:py-16 text-center">
         <h2 className="font-heading font-bold text-brand-surface text-2xl sm:text-3xl mb-4">
           {titlePrefix} {titleHighlight}
         </h2>
-        <p className="text-brand-surface/80 mb-8 max-w-xl mx-auto">
+        <p className="text-brand-surface/85 mb-8 max-w-xl mx-auto">
           {description}
         </p>
         <a

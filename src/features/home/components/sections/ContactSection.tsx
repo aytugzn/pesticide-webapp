@@ -18,7 +18,6 @@ export const ContactSection = ({ pests, regions }: ContactSectionProps) => {
       aria-labelledby="contact-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <SectionHeader
           id="contact-heading"
           eyebrow={data.title}
@@ -28,7 +27,6 @@ export const ContactSection = ({ pests, regions }: ContactSectionProps) => {
           align="center"
         />
 
-        {/* Form Container */}
         <div className="mt-12">
           <ContactForm pests={pests} regions={regions} />
         </div>

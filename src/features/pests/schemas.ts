@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { RESERVED_SLUGS } from "@/constants/routes";
 
-const slugSchema = z
+export const slugSchema = z
   .string()
   .trim()
   .min(1)
@@ -14,6 +14,7 @@ const slugSchema = z
 export const generatedContentSchema = z.object({
   title: z.string().trim().min(1).max(60),
   description: z.string().trim().min(1).max(300),
+  cardDescription: z.string().trim().max(220).optional(),
   h1: z.string().trim().min(1).max(70),
   metaDesc: z.string().trim().min(1).max(160),
   content: z.string().trim().min(1),
@@ -40,6 +41,7 @@ export const savePestSchema = z.object({
 export const updatePestSchema = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().optional(),
+  cardDescription: z.string().trim().max(220).optional(),
   imageUrl: z.string().optional(),
   title: z.string().trim().min(1).max(60),
   h1: z.string().trim().min(1).max(70),

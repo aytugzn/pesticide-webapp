@@ -5,14 +5,20 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { updateTag } from "next/cache";
 import { getGeminiModel, getGeminiApiKeys, buildPestPrompt } from "@/lib/gemini";
-import { extractAndParseJson } from "@/utils/parsers";
+import { extractAndParseJson, parsePestDoc } from "@/utils/parsers";
 import type { ActionResponse } from "@/types";
+import type { PestDoc } from "@/types";
 import {
   PEST_ERRORS,
   type PestErrorCode,
   type GeneratedContent,
 } from "./types";
-import { savePestSchema, updatePestSchema, generatedContentSchema } from "./schemas";
+import {
+  savePestSchema,
+  updatePestSchema,
+  generatedContentSchema,
+  slugSchema,
+} from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getCombinationCacheTag } from "@/features/combinations/constants";
 import type { UpdatePestInput } from "./types";
@@ -47,14 +53,62 @@ export const checkPestExists = async (
     return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
-    const doc = await getAdminDb().collection("pests").doc(slug).get();
+    const doc = await getAdminDb().collection("pests").doc(parsedSlug.data).get();
     return { success: true, data: doc.exists };
   } catch (error: unknown) {
     console.error("Failed to check pest existence", {
       message: error instanceof Error ? error.message : "Unknown error",
     });
     return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+};
+
+/**
+ * Fetches the authoritative pest document for admin edit forms.
+ *
+ * @param slug - Pest document slug/id to fetch
+ * @returns Full parsed pest data for editing
+ */
+export const getPestForAdminEdit = async (
+  slug: string,
+): Promise<ActionResponse<PestDoc, PestErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const doc = await getAdminDb().collection("pests").doc(parsedSlug.data).get();
+
+    if (!doc.exists) {
+      return { success: false, error: PEST_ERRORS.NOT_FOUND };
+    }
+
+    const parsed = parsePestDoc(doc.data());
+
+    return {
+      success: true,
+      data: {
+        ...parsed,
+        slug: doc.id,
+      },
+    };
+  } catch (error: unknown) {
+    console.error("Failed to fetch pest for admin edit", {
+      slug,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return { success: false, error: PEST_ERRORS.FETCH_FAILED };
   }
 };
 
@@ -171,6 +225,7 @@ export const savePest = async (
       name,
       slug,
       description,
+      cardDescription: content.cardDescription,
       imageUrl,
       title: content.title,
       h1: content.h1,
@@ -209,6 +264,11 @@ export const updatePest = async (
     return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
   const parsed = updatePestSchema.safeParse(payload);
   if (!parsed.success) {
     return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
@@ -216,7 +276,7 @@ export const updatePest = async (
 
   try {
     const db = getAdminDb();
-    const docRef = db.collection("pests").doc(slug);
+    const docRef = db.collection("pests").doc(parsedSlug.data);
 
     const updateData = {
       ...parsed.data,
@@ -248,9 +308,14 @@ export const togglePestStatus = async (
     return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
     const db = getAdminDb();
-    const pestRef = db.collection("pests").doc(slug);
+    const pestRef = db.collection("pests").doc(parsedSlug.data);
 
     const pestDoc = await pestRef.get(); if (!pestDoc.exists) {
       return { success: false, error: PEST_ERRORS.NOT_FOUND };
@@ -278,7 +343,7 @@ export const togglePestStatus = async (
     if (!isActive) {
       const activeCombinationsQuery = await db
         .collection("combinations")
-        .where("pest", "==", slug)
+        .where("pest", "==", parsedSlug.data)
         .where("isActive", "==", true)
         .get();
 

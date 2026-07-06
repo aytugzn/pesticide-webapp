@@ -26,18 +26,16 @@ export const ServiceCard = ({
         href={href}
         aria-label={ariaLabel}
         className={cn(
-          "group relative flex items-center gap-3 p-3 sm:p-4 rounded-2xl bg-brand-primary text-brand-surface overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-brand-primary/30 hover:-translate-y-1",
+          "group relative flex items-center gap-3 p-3 sm:p-4 rounded-lg bg-brand-surface-muted border border-brand-border-strong text-text-primary overflow-hidden transition-all duration-300 hover:border-brand-primary/60 hover:shadow-xl hover:shadow-brand-primary/10 hover:-translate-y-1",
           CLICK_EFFECT,
           className
         )}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-primary-hover to-brand-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
-        
         <h3 className="font-bold flex-1 text-sm sm:text-base relative z-10 leading-snug">
           {title}
         </h3>
         
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-surface/20 flex items-center justify-center flex-shrink-0 group-hover:translate-x-2 transition-transform duration-300 relative z-10">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-brand-primary-light text-brand-primary flex items-center justify-center flex-shrink-0 group-hover:translate-x-2 transition-transform duration-300 relative z-10">
           <ArrowRight size={ICON_SIZE} className="sm:w-6 sm:h-6" aria-hidden="true" />
         </div>
       </Link>

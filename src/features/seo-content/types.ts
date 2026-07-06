@@ -3,6 +3,7 @@ import type { ActionResponse } from "@/types";
 export type SeoGeneratedContent = {
   title: string;
   description: string;
+  cardDescription?: string;
   h1: string;
   metaDesc: string;
   content: string;
@@ -13,6 +14,7 @@ export type SeoEntityInitialData = {
   name: string;
   slug: string;
   description: string;
+  cardDescription: string;
   title: string;
   h1: string;
   metaDesc: string;

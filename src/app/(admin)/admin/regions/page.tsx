@@ -17,7 +17,14 @@ export const metadata: Metadata = {
 const AdminRegionsPage = async () => {
   await connection();
   const snap = await getAdminDb().collection("regions").get();
-  const rows = snap.docs.map((doc) => parseRegionDoc(doc.data()));
+  const rows = snap.docs.map((doc) => {
+    const parsed = parseRegionDoc(doc.data());
+
+    return {
+      ...parsed,
+      slug: doc.id,
+    };
+  });
 
   const tableKey = rows.map((r) => r.slug).join("|");
 
