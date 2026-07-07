@@ -11,6 +11,8 @@ export const PEST_ERRORS = {
   UNAUTHORIZED: "UNAUTHORIZED",
   TOGGLE_FAILED: "TOGGLE_FAILED",
   UPDATE_FAILED: "UPDATE_FAILED",
+  DELETE_FAILED: "DELETE_FAILED",
+  PEST_IN_USE: "PEST_IN_USE",
 } as const;
 
 export type PestErrorCode = keyof typeof PEST_ERRORS;

@@ -373,3 +373,53 @@ export const toggleRegionStatus = async (
     return { success: false, error: REGION_ERRORS.TOGGLE_FAILED };
   }
 };
+
+/**
+ * Deletes a region only when no combination references it.
+ *
+ * @param slug - Region document slug/id to delete
+ * @returns Success or a safe dictionary-backed error code
+ */
+export const deleteRegion = async (
+  slug: string,
+): Promise<ActionResponse<void, RegionErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const db = getAdminDb();
+    const regionRef = db.collection("regions").doc(parsedSlug.data);
+    const regionDoc = await regionRef.get();
+
+    if (!regionDoc.exists) {
+      return { success: false, error: REGION_ERRORS.NOT_FOUND };
+    }
+
+    const linkedCombination = await db
+      .collection("combinations")
+      .where("region", "==", parsedSlug.data)
+      .limit(1)
+      .get();
+
+    if (!linkedCombination.empty) {
+      return { success: false, error: REGION_ERRORS.REGION_IN_USE };
+    }
+
+    await regionRef.delete();
+
+    updateTag("global-data");
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to delete region", {
+      slug,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return { success: false, error: REGION_ERRORS.DELETE_FAILED };
+  }
+};

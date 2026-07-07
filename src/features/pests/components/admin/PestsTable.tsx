@@ -3,12 +3,13 @@
 import { useCallback, useState } from "react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AdminEntityTable, type AdminEntityColumn } from "@/components/ui/AdminEntityTable";
+import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
 import { Alert } from "@/components/ui/Alert";
 import { cn } from "@/utils/cn";
-import { getPestForAdminEdit, togglePestStatus } from "../../actions";
+import { deletePest, getPestForAdminEdit, togglePestStatus } from "../../actions";
 import type { PestDoc } from "@/types";
-import { Edit2, Loader2 } from "lucide-react";
+import { Edit2, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { PestForm } from "./PestForm";
 
@@ -16,19 +17,27 @@ type PestsTableProps = {
   initialRows: PestDoc[];
 };
 
+const ICON_SIZE = 16;
+
 export const PestsTable = ({ initialRows }: PestsTableProps) => {
   const d = DICTIONARY.admin.pests;
+  const [deletedSlugs, setDeletedSlugs] = useState<Set<string>>(new Set());
   const [activeOverrides, setActiveOverrides] = useState<Record<string, boolean>>({});
   const [pendingToggleIds, setPendingToggleIds] = useState<Set<string>>(new Set());
   const [editingRow, setEditingRow] = useState<PestDoc | null>(null);
   const [pendingEditSlug, setPendingEditSlug] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  const [rowToDelete, setRowToDelete] = useState<PestDoc | null>(null);
+  const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<{ variant: "success" | "error"; message: string } | null>(null);
 
-  const rows = initialRows.map((row) =>
-    Object.hasOwn(activeOverrides, row.slug)
-      ? { ...row, isActive: activeOverrides[row.slug] }
-      : row,
-  );
+  const rows = initialRows
+    .filter((row) => !deletedSlugs.has(row.slug))
+    .map((row) =>
+      Object.hasOwn(activeOverrides, row.slug)
+        ? { ...row, isActive: activeOverrides[row.slug] }
+        : row,
+    );
 
   const handleToggleActive = useCallback(async (row: PestDoc, isActive: boolean) => {
     if (pendingToggleIds.has(row.slug)) return;
@@ -92,6 +101,49 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
     setEditError(null);
   }, []);
 
+  const handleDeleteClick = useCallback((row: PestDoc) => {
+    setDeleteNotice(null);
+    setRowToDelete(row);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!rowToDelete || deletingSlug) return;
+
+    setDeletingSlug(rowToDelete.slug);
+    setDeleteNotice(null);
+
+    try {
+      const result = await deletePest(rowToDelete.slug);
+
+      if (result.success) {
+        setDeletedSlugs((prev) => {
+          const next = new Set(prev);
+          next.add(rowToDelete.slug);
+          return next;
+        });
+        setActiveOverrides((prev) => {
+          const next = { ...prev };
+          delete next[rowToDelete.slug];
+          return next;
+        });
+        setDeleteNotice({ variant: "success", message: d.deleteSuccess });
+        setRowToDelete(null);
+        return;
+      }
+
+      setDeleteNotice({
+        variant: "error",
+        message: result.error === "PEST_IN_USE" ? d.deleteInUseError : d.deleteError,
+      });
+      setRowToDelete(null);
+    } catch {
+      setDeleteNotice({ variant: "error", message: d.deleteError });
+      setRowToDelete(null);
+    } finally {
+      setDeletingSlug(null);
+    }
+  }, [d.deleteError, d.deleteInUseError, d.deleteSuccess, deletingSlug, rowToDelete]);
+
   const columns: AdminEntityColumn<PestDoc>[] = [
     {
       key: "name",
@@ -130,19 +182,50 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
       key: "actions",
       header: d.table.actions,
       render: (row) => (
-        <button
-          onClick={() => handleEdit(row)}
-          disabled={!!pendingEditSlug}
-          className="min-h-10 min-w-10 rounded-brand-sm p-2.5 text-text-secondary transition-colors hover:bg-brand-primary/10 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
-          title={d.editPest}
-          aria-label={`${d.editPest}: ${row.name}`}
-        >
-          {pendingEditSlug === row.slug ? (
-            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-          ) : (
-            <Edit2 size={16} aria-hidden="true" />
+        <div className="flex items-center justify-end gap-1.5">
+          <Button
+            variant="unstyled"
+            size="none"
+            onClick={() => handleEdit(row)}
+            disabled={!!pendingEditSlug}
+            className="min-h-10 min-w-10 rounded-brand-sm p-2.5 text-text-secondary transition-colors hover:bg-brand-primary/10 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
+            title={d.editPest}
+            aria-label={`${d.editPest}: ${row.name}`}
+          >
+            {pendingEditSlug === row.slug ? (
+              <Loader2 size={ICON_SIZE} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Edit2 size={ICON_SIZE} aria-hidden="true" />
+            )}
+          </Button>
+          {row.isActive && (
+            <a
+              href={`/hasere/${row.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-10 min-w-10 items-center justify-center rounded-brand-sm p-2.5 text-text-muted transition-colors hover:bg-brand-primary/10 hover:text-brand-primary"
+              aria-label={`${d.viewPublicPage}: ${row.name}`}
+              title={d.viewPublicPage}
+            >
+              <ExternalLink size={ICON_SIZE} aria-hidden="true" />
+            </a>
           )}
-        </button>
+          <Button
+            variant="unstyled"
+            size="none"
+            onClick={() => handleDeleteClick(row)}
+            disabled={deletingSlug === row.slug}
+            className="min-h-10 min-w-10 rounded-brand-sm p-2.5 text-text-secondary transition-colors hover:bg-error-bg hover:text-error-text disabled:cursor-not-allowed disabled:opacity-60"
+            title={d.delete}
+            aria-label={`${d.delete}: ${row.name}`}
+          >
+            {deletingSlug === row.slug ? (
+              <Loader2 size={ICON_SIZE} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Trash2 size={ICON_SIZE} aria-hidden="true" />
+            )}
+          </Button>
+        </div>
       ),
     },
   ];
@@ -151,6 +234,9 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
     <>
       {editError && (
         <Alert variant="error" message={editError} className="mb-4" />
+      )}
+      {deleteNotice && (
+        <Alert variant={deleteNotice.variant} message={deleteNotice.message} className="mb-4" />
       )}
 
       <AdminEntityTable
@@ -184,6 +270,30 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
             onSuccess={handleCloseEdit}
           />
         )}
+      </Modal>
+
+      <Modal
+        isOpen={!!rowToDelete}
+        onClose={() => setRowToDelete(null)}
+        title={d.delete}
+      >
+        <p className="mb-6 text-text-secondary">{d.deleteConfirm}</p>
+        <div className="mt-2 flex items-center justify-end gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setRowToDelete(null)}
+            disabled={!!deletingSlug}
+          >
+            {DICTIONARY.global.ui.cancel}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={confirmDelete}
+            disabled={!!deletingSlug}
+          >
+            {deletingSlug ? DICTIONARY.global.loading : d.delete}
+          </Button>
+        </div>
       </Modal>
     </>
   );

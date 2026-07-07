@@ -377,3 +377,53 @@ export const togglePestStatus = async (
     return { success: false, error: PEST_ERRORS.TOGGLE_FAILED };
   }
 };
+
+/**
+ * Deletes a pest only when no combination references it.
+ *
+ * @param slug - Pest document slug/id to delete
+ * @returns Success or a safe dictionary-backed error code
+ */
+export const deletePest = async (
+  slug: string,
+): Promise<ActionResponse<void, PestErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsedSlug = slugSchema.safeParse(slug);
+  if (!parsedSlug.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
+  try {
+    const db = getAdminDb();
+    const pestRef = db.collection("pests").doc(parsedSlug.data);
+    const pestDoc = await pestRef.get();
+
+    if (!pestDoc.exists) {
+      return { success: false, error: PEST_ERRORS.NOT_FOUND };
+    }
+
+    const linkedCombination = await db
+      .collection("combinations")
+      .where("pest", "==", parsedSlug.data)
+      .limit(1)
+      .get();
+
+    if (!linkedCombination.empty) {
+      return { success: false, error: PEST_ERRORS.PEST_IN_USE };
+    }
+
+    await pestRef.delete();
+
+    updateTag("global-data");
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to delete pest", {
+      slug,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return { success: false, error: PEST_ERRORS.DELETE_FAILED };
+  }
+};
