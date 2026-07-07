@@ -8,9 +8,9 @@ import { parseCombinationDoc } from "@/utils/parsers";
 import { cacheTag, updateTag } from "next/cache";
 import type { DocumentReference, Query } from "firebase-admin/firestore";
 import type { ActionResponse, CombinationDoc } from "@/types";
-import { COMBINATION_ERRORS, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type BulkCombinationMutationInput, type BulkCombinationMutationResult } from "./types";
+import { COMBINATION_ERRORS, type AdminCombinationListFilter, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type BulkCombinationMutationInput, type BulkCombinationMutationResult } from "./types";
 import { getCombinationCacheTag } from "./constants";
-import { bulkCombinationMutationSchema, saveCombinationSchema, toggleCombinationSchema, updateCombinationSchema } from "./schemas";
+import { bulkCombinationMutationSchema, saveCombinationSchema, toggleCombinationSchema, unarchiveCombinationSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getGlobalData } from "@/features/settings/actions";
 import { getErrorInfo } from "./actions/utils";
@@ -21,7 +21,65 @@ type BulkCombinationTarget = {
   ref: DocumentReference;
   region: string;
   pest: string;
+  row: CombinationLightRow;
 };
+
+type BulkCombinationRestoreSummary = {
+  matchedCount: number;
+  restoredTargets: BulkCombinationTarget[];
+  skippedMissingRelatedCount: number;
+  skippedInactiveRelatedCount: number;
+};
+
+const getStringField = (data: Record<string, unknown>, key: string) =>
+  typeof data[key] === "string" ? data[key] : "";
+
+const getBulkTargetRow = (id: string, data: Record<string, unknown>): CombinationLightRow | null => {
+  const region = getStringField(data, "region");
+  const pest = getStringField(data, "pest");
+
+  if (!region || !pest) return null;
+
+  const regionName = getStringField(data, "regionName") || region;
+  const pestName = getStringField(data, "pestName") || pest;
+
+  return {
+    id,
+    region,
+    pest,
+    isActive: data.isActive === true,
+    isArchived: data.isArchived === true,
+    regionName,
+    pestName,
+  };
+};
+
+const getBulkMutationRow = (
+  row: CombinationLightRow,
+  operation: BulkCombinationMutationInput["operation"]
+): CombinationLightRow => {
+  if (operation === "archive") {
+    return { ...row, isActive: false, isArchived: true };
+  }
+
+  if (operation === "restore") {
+    return { ...row, isActive: false, isArchived: false };
+  }
+
+  if (operation === "deactivate") {
+    return { ...row, isActive: false };
+  }
+
+  return row;
+};
+
+const getBulkMutationResultPayload = (
+  targets: BulkCombinationTarget[],
+  operation: BulkCombinationMutationInput["operation"]
+) => ({
+  affectedKeys: targets.map((target) => target.row.id),
+  affectedRows: targets.map((target) => getBulkMutationRow(target.row, operation)),
+});
 
 
 /**
@@ -124,6 +182,18 @@ export const saveCombination = async (
     };
 
     const docRef = getAdminDb().collection("combinations").doc(docId);
+    const existingSnap = await docRef.get();
+
+    if (existingSnap.exists) {
+      const existingData = parseCombinationDoc(existingSnap.data());
+      return {
+        success: false,
+        error: existingData.isArchived
+          ? COMBINATION_ERRORS.ARCHIVED_EXISTS
+          : COMBINATION_ERRORS.ALREADY_EXISTS,
+      };
+    }
+
     await docRef.create(docData);
 
     // Invalidate cache with read-your-writes semantics
@@ -136,6 +206,20 @@ export const saveCombination = async (
     console.error("Failed to create combination", { regionSlug, pestSlug, error: errorInfo });
 
     if (errorInfo.code === "6" || errorInfo.message?.includes("ALREADY_EXISTS")) {
+      try {
+        const docId = `${regionSlug}_${pestSlug}`;
+        const existingSnap = await getAdminDb().collection("combinations").doc(docId).get();
+        if (existingSnap.exists && parseCombinationDoc(existingSnap.data()).isArchived) {
+          return { success: false, error: COMBINATION_ERRORS.ARCHIVED_EXISTS };
+        }
+      } catch (lookupError: unknown) {
+        console.error("Failed to inspect existing combination after duplicate create", {
+          regionSlug,
+          pestSlug,
+          error: getErrorInfo(lookupError),
+        });
+      }
+
       return { success: false, error: COMBINATION_ERRORS.ALREADY_EXISTS };
     }
 
@@ -282,9 +366,11 @@ export const bulkMutateCombinationsByFilter = async (
     const now = Date.now();
     const targets: BulkCombinationTarget[] = [];
 
-    let query: Query = db.collection("combinations").select("region", "pest");
+    let query: Query = db.collection("combinations").select("region", "pest", "isActive", "regionName", "pestName", "isArchived");
 
-    if (regionSlug) {
+    if (operation === "restore") {
+      query = query.where("isArchived", "==", true);
+    } else if (regionSlug) {
       query = query.where("region", "==", regionSlug);
     } else if (pestSlug) {
       query = query.where("pest", "==", pestSlug);
@@ -294,13 +380,17 @@ export const bulkMutateCombinationsByFilter = async (
 
     snap.docs.forEach((doc) => {
       const data = doc.data() as Record<string, unknown>;
-      const region = typeof data.region === "string" ? data.region : "";
-      const pest = typeof data.pest === "string" ? data.pest : "";
+      const row = getBulkTargetRow(doc.id, data);
+      if (!row) return;
+
+      const region = row.region;
+      const pest = row.pest;
       const matchesRegion = !regionSlug || region === regionSlug;
       const matchesPest = !pestSlug || pest === pestSlug;
+      const isArchived = row.isArchived === true;
 
-      if (region && pest && matchesRegion && matchesPest) {
-        targets.push({ ref: doc.ref, region, pest });
+      if (region && pest && matchesRegion && matchesPest && (operation !== "restore" || isArchived)) {
+        targets.push({ ref: doc.ref, region, pest, row });
       }
     });
 
@@ -308,9 +398,88 @@ export const bulkMutateCombinationsByFilter = async (
       return { success: false, error: COMBINATION_ERRORS.BULK_NO_MATCH };
     }
 
-    for (let index = 0; index < targets.length; index += BULK_COMBINATION_BATCH_SIZE) {
+    let restoreSummary: BulkCombinationRestoreSummary | null = null;
+    const mutationTargets: BulkCombinationTarget[] = operation === "restore" ? [] : targets;
+
+    if (operation === "restore") {
+      const restoredTargets: BulkCombinationTarget[] = [];
+      let skippedMissingRelatedCount = 0;
+      let skippedInactiveRelatedCount = 0;
+      const relatedCache = new Map<string, { exists: boolean; isActive: boolean }>();
+
+      for (const target of targets) {
+        const pestKey = `pest:${target.pest}`;
+        const regionKey = `region:${target.region}`;
+        let pestState = relatedCache.get(pestKey);
+        let regionState = relatedCache.get(regionKey);
+
+        if (!pestState || !regionState) {
+          const [pestSnap, regionSnap] = await Promise.all([
+            pestState ? Promise.resolve(null) : db.collection("pests").doc(target.pest).get(),
+            regionState ? Promise.resolve(null) : db.collection("regions").doc(target.region).get(),
+          ]);
+
+          if (!pestState && pestSnap) {
+            const data = pestSnap.data() as Record<string, unknown> | undefined;
+            pestState = {
+              exists: pestSnap.exists,
+              isActive: data?.isActive === true,
+            };
+            relatedCache.set(pestKey, pestState);
+          }
+
+          if (!regionState && regionSnap) {
+            const data = regionSnap.data() as Record<string, unknown> | undefined;
+            regionState = {
+              exists: regionSnap.exists,
+              isActive: data?.isActive === true,
+            };
+            relatedCache.set(regionKey, regionState);
+          }
+        }
+
+        if (!pestState?.exists || !regionState?.exists) {
+          skippedMissingRelatedCount += 1;
+          continue;
+        }
+
+        if (!pestState.isActive || !regionState.isActive) {
+          skippedInactiveRelatedCount += 1;
+          continue;
+        }
+
+        restoredTargets.push(target);
+      }
+
+      restoreSummary = {
+        matchedCount: targets.length,
+        restoredTargets,
+        skippedMissingRelatedCount,
+        skippedInactiveRelatedCount,
+      };
+      mutationTargets.push(...restoredTargets);
+
+      if (mutationTargets.length === 0) {
+        return {
+          success: true,
+          data: {
+            affectedCount: 0,
+            affectedKeys: [],
+            affectedRows: [],
+            matchedCount: targets.length,
+            restoredCount: 0,
+            restoredKeys: [],
+            skippedCount: skippedMissingRelatedCount + skippedInactiveRelatedCount,
+            skippedMissingRelatedCount,
+            skippedInactiveRelatedCount,
+          },
+        };
+      }
+    }
+
+    for (let index = 0; index < mutationTargets.length; index += BULK_COMBINATION_BATCH_SIZE) {
       const batch = db.batch();
-      const chunk = targets.slice(index, index + BULK_COMBINATION_BATCH_SIZE);
+      const chunk = mutationTargets.slice(index, index + BULK_COMBINATION_BATCH_SIZE);
 
       chunk.forEach((target) => {
         if (operation === "delete") {
@@ -328,6 +497,15 @@ export const bulkMutateCombinationsByFilter = async (
           return;
         }
 
+        if (operation === "restore") {
+          batch.update(target.ref, {
+            isArchived: false,
+            isActive: false,
+            updatedAt: now,
+          });
+          return;
+        }
+
         batch.update(target.ref, {
           isActive: false,
           updatedAt: now,
@@ -337,11 +515,36 @@ export const bulkMutateCombinationsByFilter = async (
       await batch.commit();
     }
 
-    const affectedTags = new Set(targets.map((target) => getCombinationCacheTag(target.region, target.pest)));
+    const affectedTags = new Set(mutationTargets.map((target) => getCombinationCacheTag(target.region, target.pest)));
     affectedTags.forEach((tag) => updateTag(tag));
     updateTag("all-combinations");
 
-    return { success: true, data: { affectedCount: targets.length } };
+    if (restoreSummary) {
+      const resultPayload = getBulkMutationResultPayload(restoreSummary.restoredTargets, operation);
+
+      return {
+        success: true,
+        data: {
+          affectedCount: restoreSummary.restoredTargets.length,
+          affectedKeys: resultPayload.affectedKeys,
+          affectedRows: resultPayload.affectedRows,
+          matchedCount: restoreSummary.matchedCount,
+          restoredCount: restoreSummary.restoredTargets.length,
+          restoredKeys: resultPayload.affectedKeys,
+          skippedCount: restoreSummary.skippedMissingRelatedCount + restoreSummary.skippedInactiveRelatedCount,
+          skippedMissingRelatedCount: restoreSummary.skippedMissingRelatedCount,
+          skippedInactiveRelatedCount: restoreSummary.skippedInactiveRelatedCount,
+        },
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        affectedCount: mutationTargets.length,
+        ...getBulkMutationResultPayload(mutationTargets, operation),
+      },
+    };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
     console.error("Failed to bulk mutate combinations", {
@@ -362,7 +565,8 @@ export const bulkMutateCombinationsByFilter = async (
  */
 export const getAdminCombinationsPage = async (
   pageSize: number = 50,
-  cursor: string | null = null
+  cursor: string | null = null,
+  listFilter: AdminCombinationListFilter = "all"
 ): Promise<ActionResponse<{ items: CombinationLightRow[]; nextCursor: string | null; hasMore: boolean }, CombinationErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
@@ -383,8 +587,13 @@ export const getAdminCombinationsPage = async (
     let query = getAdminDb()
       .collection("combinations")
       .select("region", "pest", "isActive", "regionName", "pestName", "isArchived")
-      .orderBy("__name__")
-      .limit(validPageSize + 1);
+      .orderBy("__name__");
+
+    if (listFilter === "archived") {
+      query = query.where("isArchived", "==", true);
+    }
+
+    query = query.limit(validPageSize + 1);
 
     if (cursor) {
       query = query.startAfter(cursor);
@@ -413,7 +622,7 @@ export const getAdminCombinationsPage = async (
     return { success: true, data: { items: rows, nextCursor, hasMore } };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
-    console.error("Failed to fetch paginated lightweight combinations", { error: errorInfo });
+    console.error("Failed to fetch paginated lightweight combinations", { listFilter, error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.FETCH_FAILED };
   }
 };
@@ -537,6 +746,71 @@ export const archiveCombination = async (
     const errorInfo = getErrorInfo(error);
     console.error("Failed to archive combination", { regionSlug, pestSlug, error: errorInfo });
     return { success: false, error: COMBINATION_ERRORS.ARCHIVE_FAILED };
+  }
+};
+
+/**
+ * Restores an archived combination only when its related region and pest still exist.
+ *
+ * @param regionSlug - The region slug
+ * @param pestSlug - The pest slug
+ * @returns Success or a safe restore error
+ */
+export const unarchiveCombination = async (
+  regionSlug: string,
+  pestSlug: string
+): Promise<ActionResponse<void, CombinationErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsed = unarchiveCombinationSchema.safeParse({ regionSlug, pestSlug });
+
+  if (!parsed.success) {
+    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
+  }
+
+  const { regionSlug: parsedRegion, pestSlug: parsedPest } = parsed.data;
+
+  try {
+    const db = getAdminDb();
+    const docId = `${parsedRegion}_${parsedPest}`;
+    const combinationRef = db.collection("combinations").doc(docId);
+    const combinationSnap = await combinationRef.get();
+
+    if (!combinationSnap.exists) {
+      return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
+    }
+
+    const [pestSnap, regionSnap] = await Promise.all([
+      db.collection("pests").doc(parsedPest).get(),
+      db.collection("regions").doc(parsedRegion).get(),
+    ]);
+
+    if (!pestSnap.exists || !regionSnap.exists) {
+      return { success: false, error: COMBINATION_ERRORS.RELATED_ENTITY_MISSING };
+    }
+
+    const data = parseCombinationDoc(combinationSnap.data());
+
+    if (!data.isArchived) {
+      return { success: true };
+    }
+
+    await combinationRef.update({
+      isArchived: false,
+      isActive: false,
+      updatedAt: Date.now(),
+    });
+
+    updateTag(getCombinationCacheTag(parsedRegion, parsedPest));
+    updateTag("all-combinations");
+
+    return { success: true };
+  } catch (error: unknown) {
+    const errorInfo = getErrorInfo(error);
+    console.error("Failed to unarchive combination", { regionSlug, pestSlug, error: errorInfo });
+    return { success: false, error: COMBINATION_ERRORS.UNARCHIVE_FAILED };
   }
 };
 

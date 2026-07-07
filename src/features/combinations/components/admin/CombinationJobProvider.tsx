@@ -14,7 +14,12 @@ import {
   requestAbortCombinationJob,
   finishCombinationJob
 } from "../../actions/bulk";
-import { COMBINATION_ERRORS, type BulkProgressItem } from "../../types";
+import {
+  COMBINATION_ERRORS,
+  type BulkCombinationMutationOperation,
+  type BulkProgressItem,
+  type CombinationLightRow,
+} from "../../types";
 
 const RATE_LIMIT_DELAY_MS = 1500;
 const RUNNING_POLL_INTERVAL_MS = 10_000;
@@ -30,6 +35,15 @@ type AdminToastState = AdminToastInput & {
   id: number;
 };
 
+export type BulkMutationNotice = {
+  id: number;
+  operation: BulkCombinationMutationOperation;
+  affectedKeys: string[];
+  affectedRows: CombinationLightRow[];
+};
+
+type BulkMutationHandler = (notice: BulkMutationNotice) => void;
+
 type CombinationJobContextType = {
   progress: BulkProgressItem[];
   isRunning: boolean;
@@ -41,6 +55,8 @@ type CombinationJobContextType = {
   isAbortRequested: boolean;
   hasStartedJobInSession: boolean;
   showToast: (toast: AdminToastInput) => void;
+  notifyBulkMutation: (notice: Omit<BulkMutationNotice, "id">) => void;
+  subscribeBulkMutation: (handler: BulkMutationHandler) => () => void;
   startBulkGenerate: (missingItems: BulkProgressItem[]) => Promise<void>;
   abortBulkGenerate: () => Promise<void>;
 };
@@ -114,6 +130,8 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
   const jobIdRef = useRef<string | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bulkMutationNoticeIdRef = useRef(0);
+  const bulkMutationHandlersRef = useRef(new Set<BulkMutationHandler>());
 
   const doneCount = progress.filter((p) => p.status === "done").length;
   const total = progress.length;
@@ -140,6 +158,21 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
       setToast((current) => (current?.id === id ? null : current));
       toastTimeoutRef.current = null;
     }, getToastDuration(nextToast.variant));
+  }, []);
+
+  const notifyBulkMutation = useCallback((notice: Omit<BulkMutationNotice, "id">) => {
+    bulkMutationNoticeIdRef.current += 1;
+    const nextNotice = { ...notice, id: bulkMutationNoticeIdRef.current };
+    bulkMutationHandlersRef.current.forEach((handler) => handler(nextNotice));
+  }, []);
+
+  const subscribeBulkMutation = useCallback((handler: BulkMutationHandler) => {
+    const handlers = bulkMutationHandlersRef.current;
+    handlers.add(handler);
+
+    return () => {
+      handlers.delete(handler);
+    };
   }, []);
 
   useEffect(() => () => {
@@ -484,6 +517,8 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
         isAbortRequested,
         hasStartedJobInSession,
         showToast,
+        notifyBulkMutation,
+        subscribeBulkMutation,
         startBulkGenerate,
         abortBulkGenerate,
       }}

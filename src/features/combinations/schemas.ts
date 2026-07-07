@@ -40,6 +40,8 @@ export const toggleCombinationSchema = combinationSlugParamsSchema.extend({
   isActive: z.boolean(),
 });
 
+export const unarchiveCombinationSchema = combinationSlugParamsSchema;
+
 export const updateCombinationSchema = combinationSlugParamsSchema.extend({
   content: generatedContentSchema,
 });
@@ -48,7 +50,7 @@ export const bulkCombinationMutationSchema = z
   .object({
     regionSlug: slugSchema.optional(),
     pestSlug: slugSchema.optional(),
-    operation: z.enum(["deactivate", "archive", "delete"]),
+    operation: z.enum(["deactivate", "archive", "restore", "delete"]),
   })
   .refine((value) => !!value.regionSlug || !!value.pestSlug, {
     path: ["regionSlug"],

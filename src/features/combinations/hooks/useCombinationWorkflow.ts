@@ -50,7 +50,10 @@ export const useCombinationWorkflow = ({
     }
 
     if (content.isExistingCombination) {
-      onFeedback({ type: "error", message: d.errorAlreadyExists });
+      onFeedback({
+        type: "error",
+        message: content.isArchivedExistingCombination ? d.errorArchivedExists : d.errorAlreadyExists,
+      });
       return;
     }
 
@@ -75,7 +78,7 @@ export const useCombinationWorkflow = ({
     } finally {
       setIsGenerating(false);
     }
-  }, [selection, content, onFeedback, d.errorRequired, d.errorAlreadyExists, d.successGen, d.regenerateQuotaError, d.errorProviderUnavailable, d.errorDefault]);
+  }, [selection, content, onFeedback, d.errorRequired, d.errorArchivedExists, d.errorAlreadyExists, d.successGen, d.regenerateQuotaError, d.errorProviderUnavailable, d.errorDefault]);
 
   /** Saves the current content to Firestore and resets the form on success. */
   const handleSave = useCallback(async () => {
@@ -83,7 +86,10 @@ export const useCombinationWorkflow = ({
     if (!selectedRegion || !selectedPest) return;
 
     if (content.isExistingCombination) {
-      onFeedback({ type: "error", message: d.errorAlreadyExists });
+      onFeedback({
+        type: "error",
+        message: content.isArchivedExistingCombination ? d.errorArchivedExists : d.errorAlreadyExists,
+      });
       return;
     }
 
@@ -121,7 +127,9 @@ export const useCombinationWorkflow = ({
 
         setTimeout(() => onFeedback(null), 3000);
       } else {
-        if (result.error === "ALREADY_EXISTS") {
+        if (result.error === "ARCHIVED_EXISTS") {
+          onFeedback({ type: "error", message: d.errorArchivedExists });
+        } else if (result.error === "ALREADY_EXISTS") {
           onFeedback({ type: "error", message: d.errorAlreadyExists });
         } else {
           onFeedback({ type: "error", message: d.errorSave });
@@ -132,7 +140,7 @@ export const useCombinationWorkflow = ({
     } finally {
       setIsSaving(false);
     }
-  }, [selection, content, regions, pests, onFeedback, d.errorAlreadyExists, d.successSave, d.errorSave, router]);
+  }, [selection, content, regions, pests, onFeedback, d.errorArchivedExists, d.errorAlreadyExists, d.successSave, d.errorSave, router]);
 
   return {
     isGenerating,

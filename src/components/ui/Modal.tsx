@@ -19,6 +19,7 @@ type ModalProps = {
   children: ReactNode;
   overlayClassName?: string;
   className?: string;
+  bodyClassName?: string;
   closeAriaLabel?: string;
 };
 
@@ -29,6 +30,7 @@ export const Modal = ({
   children,
   overlayClassName = "bg-overlay-strong backdrop-blur-sm",
   className,
+  bodyClassName,
   closeAriaLabel = DICTIONARY.global.ui.closeAria,
 }: ModalProps) => {
   const titleId = useId();
@@ -41,17 +43,17 @@ export const Modal = ({
     <>
       <div
         className={cn(
-          "fixed inset-0 z-50 overflow-x-hidden transition-opacity duration-300",
+          "fixed inset-0 z-50 m-0 overflow-x-hidden transition-opacity duration-300",
           overlayClassName,
         )}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden p-3 pointer-events-none sm:p-6">
+      <div className="fixed inset-0 z-50 m-0 flex items-center justify-center overflow-x-hidden p-3 pointer-events-none sm:p-6">
         <section
           className={cn(
-            "w-full max-w-lg max-w-full bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300",
+            "m-0 w-full max-w-lg max-w-full bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300",
             className,
           )}
           style={MODAL_STYLE}
@@ -80,7 +82,9 @@ export const Modal = ({
             </header>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">{children}</div>
+          <div className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5", bodyClassName)}>
+            {children}
+          </div>
         </section>
       </div>
     </>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Archive,
+  ArchiveRestore,
   Loader2,
   PowerOff,
   ShieldAlert,
@@ -20,7 +20,7 @@ import { bulkMutateCombinationsByFilter } from "../../actions";
 import { getExistingCombinationKeys } from "../../actions/bulk";
 import type { PestDoc, RegionDoc } from "@/types";
 import type { BulkCombinationMutationOperation } from "../../types";
-import { useCombinationAdminToast } from "./CombinationJobProvider";
+import { useCombinationJob } from "./CombinationJobProvider";
 
 type BulkMutationPanelProps = {
   regions: RegionDoc[];
@@ -58,6 +58,14 @@ const OPERATION_TONES: Record<BulkCombinationMutationOperation, OperationTone> =
     confirmButtonClassName:
       "border-warning-border bg-warning-bg/70 text-warning-text hover:bg-warning-hover hover:text-warning-text",
   },
+  restore: {
+    icon: ArchiveRestore,
+    accentClassName: "border-success-border bg-success-bg/60 text-success-text",
+    buttonClassName:
+      "border-success-border bg-success-bg/50 text-success-text hover:bg-success-bg/80 hover:text-success-text",
+    confirmButtonClassName:
+      "border-success-border bg-success-bg/70 text-success-text hover:bg-success-bg/80 hover:text-success-text",
+  },
   delete: {
     icon: Trash2,
     accentClassName: "border-error-border bg-error-bg/60 text-error-text",
@@ -83,8 +91,7 @@ const parseCombinationKey = (key: string): CombinationPair | null => {
 
 export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) => {
   const d = DICTIONARY.admin.combinations.bulkMutation;
-  const router = useRouter();
-  const { showToast } = useCombinationAdminToast();
+  const { showToast, notifyBulkMutation } = useCombinationJob();
 
   const [regionSlug, setRegionSlug] = useState("");
   const [pestSlug, setPestSlug] = useState("");
@@ -250,11 +257,38 @@ export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) =>
 
     if (result.success) {
       const count = result.data?.affectedCount ?? 0;
-      showToast({
-        variant: "success",
-        message: d.success.replace("{count}", String(count)),
+      notifyBulkMutation({
+        operation,
+        affectedKeys: result.data?.affectedKeys ?? result.data?.restoredKeys ?? [],
+        affectedRows: result.data?.affectedRows ?? [],
       });
-      router.refresh();
+
+      if (operation === "restore") {
+        const skippedCount = result.data?.skippedCount ?? 0;
+
+        if (count > 0 && skippedCount > 0) {
+          showToast({
+            variant: "warning",
+            message: d.restorePartial,
+          });
+        } else if (count > 0) {
+          showToast({
+            variant: "success",
+            message: d.restoreSuccess.replace("{count}", String(count)),
+          });
+        } else {
+          showToast({
+            variant: "warning",
+            message: d.restoreNoneEligible,
+          });
+        }
+      } else {
+        showToast({
+          variant: "success",
+          message: d.success.replace("{count}", String(count)),
+        });
+      }
+
       return;
     }
 
@@ -320,6 +354,7 @@ export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) =>
           options={[
             { value: "deactivate", label: d.operations.deactivate },
             { value: "archive", label: d.operations.archive },
+            { value: "restore", label: d.operations.restore },
             { value: "delete", label: d.operations.delete },
           ]}
         />
@@ -369,8 +404,10 @@ export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) =>
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         title={d.confirmTitles[operation]}
+        className="h-auto max-w-md"
+        bodyClassName="flex-none grow-0 shrink-0 basis-auto overflow-visible p-4 sm:p-4"
       >
-        <div className="space-y-5">
+        <div className="flex flex-col gap-4">
           <p className="text-sm leading-relaxed text-text-secondary">
             {confirmDescription}
           </p>
@@ -393,7 +430,7 @@ export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) =>
               {d.deleteWarning}
             </p>
           )}
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"

@@ -26,10 +26,8 @@ const AdminCombinationsPage = async () => {
   const nextCursor = combinationsResult.success && combinationsResult.data ? combinationsResult.data.nextCursor : null;
   const hasMore = combinationsResult.success && combinationsResult.data ? combinationsResult.data.hasMore : false;
 
-  const visibleRows = allRows.filter((row) => !row.isArchived);
-
   // Generate a deterministic key so the table remounts and resets local state when server data changes
-  const tableKey = visibleRows.map((row) => `${row.id}:${row.region}:${row.pest}:${row.regionName ?? ""}:${row.pestName ?? ""}:${row.isActive ? "active" : "inactive"}`).join("|") || "empty";
+  const tableKey = allRows.map((row) => `${row.id}:${row.region}:${row.pest}:${row.regionName ?? ""}:${row.pestName ?? ""}:${row.isActive ? "active" : "inactive"}:${row.isArchived ? "archived" : "visible"}`).join("|") || "empty";
 
   return (
     <div className="space-y-8">
@@ -51,7 +49,7 @@ const AdminCombinationsPage = async () => {
         <BulkMutationPanel regions={regions} pests={pests} />
         <CombinationsTable
           key={tableKey}
-          initialRows={visibleRows}
+          initialRows={allRows}
           initialNextCursor={nextCursor}
           initialHasMore={hasMore}
         />

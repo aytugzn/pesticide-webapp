@@ -6,9 +6,12 @@ export const COMBINATION_ERRORS = {
   REGION_NOT_FOUND: "REGION_NOT_FOUND",
   PEST_NOT_FOUND: "PEST_NOT_FOUND",
   ALREADY_EXISTS: "ALREADY_EXISTS",
+  ARCHIVED_EXISTS: "ARCHIVED_EXISTS",
   AI_GENERATION_FAILED: "AI_GENERATION_FAILED",
   SAVE_FAILED: "SAVE_FAILED",
   ARCHIVE_FAILED: "ARCHIVE_FAILED",
+  UNARCHIVE_FAILED: "UNARCHIVE_FAILED",
+  RELATED_ENTITY_MISSING: "RELATED_ENTITY_MISSING",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   UNAUTHORIZED: "UNAUTHORIZED",
   UPDATE_FAILED: "UPDATE_FAILED",
@@ -55,7 +58,9 @@ export type CombinationsPageResponse = {
   hasMore: boolean;
 };
 
-export type BulkCombinationMutationOperation = "deactivate" | "archive" | "delete";
+export type AdminCombinationListFilter = "all" | "archived";
+
+export type BulkCombinationMutationOperation = "deactivate" | "archive" | "restore" | "delete";
 
 export type BulkCombinationMutationInput = {
   regionSlug?: string;
@@ -65,6 +70,14 @@ export type BulkCombinationMutationInput = {
 
 export type BulkCombinationMutationResult = {
   affectedCount: number;
+  affectedKeys?: string[];
+  affectedRows?: CombinationLightRow[];
+  matchedCount?: number;
+  restoredCount?: number;
+  restoredKeys?: string[];
+  skippedCount?: number;
+  skippedMissingRelatedCount?: number;
+  skippedInactiveRelatedCount?: number;
 };
 
 export const COMBINATION_JOB_ERRORS = {

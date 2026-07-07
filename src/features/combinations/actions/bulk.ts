@@ -84,6 +84,18 @@ export const saveCombinationSilently = async (
     };
 
     const docRef = getAdminDb().collection("combinations").doc(docId);
+    const existingSnap = await docRef.get();
+
+    if (existingSnap.exists) {
+      const existingData = existingSnap.data() as Record<string, unknown> | undefined;
+      return {
+        success: false,
+        error: existingData?.isArchived === true
+          ? COMBINATION_ERRORS.ARCHIVED_EXISTS
+          : COMBINATION_ERRORS.ALREADY_EXISTS,
+      };
+    }
+
     await docRef.create(docData);
 
     updateTag(getCombinationCacheTag(parsedRegionSlug, parsedPestSlug));
@@ -95,6 +107,21 @@ export const saveCombinationSilently = async (
     console.error("Failed to create combination", { regionSlug, pestSlug, error: errorInfo });
 
     if (errorInfo.code === "6" || errorInfo.message?.includes("ALREADY_EXISTS")) {
+      try {
+        const docId = `${regionSlug}_${pestSlug}`;
+        const existingSnap = await getAdminDb().collection("combinations").doc(docId).get();
+        const existingData = existingSnap.data() as Record<string, unknown> | undefined;
+        if (existingSnap.exists && existingData?.isArchived === true) {
+          return { success: false, error: COMBINATION_ERRORS.ARCHIVED_EXISTS };
+        }
+      } catch (lookupError: unknown) {
+        console.error("Failed to inspect existing combination after duplicate silent create", {
+          regionSlug,
+          pestSlug,
+          error: getErrorInfo(lookupError),
+        });
+      }
+
       return { success: false, error: COMBINATION_ERRORS.ALREADY_EXISTS };
     }
 

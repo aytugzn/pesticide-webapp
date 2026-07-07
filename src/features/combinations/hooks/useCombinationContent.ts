@@ -32,6 +32,7 @@ export const useCombinationContent = ({
   const [faq, setFaq] = useState<{ question: string; answer: string }[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [isExistingCombination, setIsExistingCombination] = useState(false);
+  const [isArchivedExistingCombination, setIsArchivedExistingCombination] = useState(false);
 
   // Use a ref to track which combination the current content actually belongs to.
   // This prevents saving old content into a newly selected region's draft key during state transitions.
@@ -64,6 +65,7 @@ export const useCombinationContent = ({
     setFaq([]);
     setIsActive(true);
     setIsExistingCombination(false);
+    setIsArchivedExistingCombination(false);
   }, []);
 
   /**
@@ -86,6 +88,7 @@ export const useCombinationContent = ({
 
         // Fix: Do not populate form if exists, just mark it and feedback
         setIsExistingCombination(true);
+        setIsArchivedExistingCombination(result.data.isArchived === true);
         setTitle("");
         setH1("");
         setMetaDesc("");
@@ -97,11 +100,15 @@ export const useCombinationContent = ({
         const draftKey = `admin_combo_draft_${regionSlug}_${pestSlug}`;
         localStorage.removeItem(draftKey);
 
-        onFeedback({ type: "error", message: d.errorAlreadyExists });
+        onFeedback({
+          type: "error",
+          message: result.data.isArchived ? d.errorArchivedExists : d.errorAlreadyExists,
+        });
         return;
       }
 
       setIsExistingCombination(false);
+      setIsArchivedExistingCombination(false);
 
       // Check for unsaved draft in localStorage
       const draftKey = `admin_combo_draft_${regionSlug}_${pestSlug}`;
@@ -125,7 +132,7 @@ export const useCombinationContent = ({
       loadedComboRef.current = { region: regionSlug, pest: pestSlug };
       clearContent();
     },
-    [d.errorAlreadyExists, d.draftRestored, onFeedback, populateContent, clearContent],
+    [d.errorArchivedExists, d.errorAlreadyExists, d.draftRestored, onFeedback, populateContent, clearContent],
   );
 
   /** Auto-saves a draft to localStorage whenever content changes, and removes it when cleared. */
@@ -159,6 +166,7 @@ export const useCombinationContent = ({
     faq, setFaq,
     isActive, setIsActive,
     isExistingCombination,
+    isArchivedExistingCombination,
     hasContent,
     loadContent,
     clearContent,
