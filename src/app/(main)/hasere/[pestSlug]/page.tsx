@@ -70,18 +70,24 @@ const PestPage = async ({ params }: PestPageProps) => {
 
   const activeCombinations = await getAllActiveCombinations();
   const sections = pest.content ? parseHtmlIntoSections(pest.content) : [];
+  const regionDescriptions = new Map(
+    regions.map((region) => [region.slug, region.cardDescription]),
+  );
+  const serviceTitle = `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`;
 
-  const relatedLinks = regions.map((region) => {
-    const hasCombination = activeCombinations.some(
-      (combination) => combination.region === region.slug && combination.pest === pest.slug
-    );
-    return {
-      href: hasCombination ? `/${region.slug}/${pest.slug}` : `${ROUTES.regionBase}/${region.slug}`,
-      title: `${region.name} ${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`,
-      description: getRelatedRegionDescription(region.name, region.cardDescription),
+  const relatedLinks = activeCombinations
+    .filter((combination) => combination.pest === pest.slug)
+    .map((combination) => ({
+      href: `/${combination.region}/${combination.pest}`,
+      title: combination.h1 || `${combination.regionName} ${serviceTitle}`,
+      description:
+        combination.metaDesc ||
+        getRelatedRegionDescription(
+          combination.regionName,
+          regionDescriptions.get(combination.region),
+        ),
       icon: "map-pin" as const,
-    };
-  });
+    }));
 
   return (
     <div className="flex-1 flex flex-col w-full">
@@ -129,7 +135,11 @@ const PestPage = async ({ params }: PestPageProps) => {
       <RelatedLinksSection
         title={DICTIONARY.pages.regions.heading}
         items={relatedLinks}
-        viewAllHref={`${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`}
+        viewAllHref={
+          relatedLinks.length > 0
+            ? `${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`
+            : undefined
+        }
         viewAllTitle={DICTIONARY.navbar.columns.viewAllRegions}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllRegionsDesc}
         viewAllIcon="map-pin"

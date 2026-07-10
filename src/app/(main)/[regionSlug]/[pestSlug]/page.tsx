@@ -156,42 +156,47 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
   const regionName = data.regionName || region?.name || "";
   const pestName = data.pestName || pest?.name || "";
   const serviceTitle = getServiceTitle(pestName);
+  const pestDescriptions = new Map(
+    globalData.pests.map((item) => [item.slug, item.cardDescription]),
+  );
+  const regionDescriptions = new Map(
+    globalData.regions.map((item) => [item.slug, item.cardDescription]),
+  );
 
-  const regionServiceLinks = globalData.pests
-    .filter((relatedPest) =>
-      activeCombinations.some(
-        (combination) =>
-          combination.region === regionSlug &&
-          combination.pest === relatedPest.slug &&
-          relatedPest.slug !== pestSlug,
-      ),
-    )
-    .map((relatedPest) => ({
-      href: `/${regionSlug}/${relatedPest.slug}`,
-      title: `${regionName} ${relatedPest.name}${DICTIONARY.pages.regions.pestTitleSuffix}`,
-      description: getRelatedServiceDescription(
-        relatedPest.name,
-        relatedPest.cardDescription,
-      ),
+  const regionCombinations = activeCombinations.filter(
+    (combination) => combination.region === regionSlug,
+  );
+  const pestCombinations = activeCombinations.filter(
+    (combination) => combination.pest === pestSlug,
+  );
+
+  const regionServiceLinks = regionCombinations
+    .filter((combination) => combination.pest !== pestSlug)
+    .map((combination) => ({
+      href: `/${combination.region}/${combination.pest}`,
+      title:
+        combination.h1 ||
+        `${combination.regionName} ${combination.pestName}${DICTIONARY.pages.regions.pestTitleSuffix}`,
+      description:
+        combination.metaDesc ||
+        getRelatedServiceDescription(
+          combination.pestName,
+          pestDescriptions.get(combination.pest),
+        ),
       icon: "bug" as const,
     }));
 
-  const pestRegionLinks = globalData.regions
-    .filter((relatedRegion) =>
-      activeCombinations.some(
-        (combination) =>
-          combination.region === relatedRegion.slug &&
-          combination.pest === pestSlug &&
-          relatedRegion.slug !== regionSlug,
-      ),
-    )
-    .map((relatedRegion) => ({
-      href: `/${relatedRegion.slug}/${pestSlug}`,
-      title: `${relatedRegion.name} ${serviceTitle}`,
-      description: getRelatedRegionDescription(
-        relatedRegion.name,
-        relatedRegion.cardDescription,
-      ),
+  const pestRegionLinks = pestCombinations
+    .filter((combination) => combination.region !== regionSlug)
+    .map((combination) => ({
+      href: `/${combination.region}/${combination.pest}`,
+      title: combination.h1 || `${combination.regionName} ${serviceTitle}`,
+      description:
+        combination.metaDesc ||
+        getRelatedRegionDescription(
+          combination.regionName,
+          regionDescriptions.get(combination.region),
+        ),
       icon: "map-pin" as const,
     }));
 
@@ -244,7 +249,11 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
       <RelatedLinksSection
         title={getRegionServicesListTitle(regionName)}
         items={regionServiceLinks}
-        viewAllHref={`${ROUTES.regionBase}/${regionSlug}${ROUTES.services}`}
+        viewAllHref={
+          regionCombinations.length > 0
+            ? `${ROUTES.regionBase}/${regionSlug}${ROUTES.services}`
+            : undefined
+        }
         viewAllTitle={DICTIONARY.navbar.columns.viewAllPests}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
         viewAllIcon="bug"
@@ -252,7 +261,11 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
       <RelatedLinksSection
         title={getPestRegionsListTitle(serviceTitle)}
         items={pestRegionLinks}
-        viewAllHref={`${ROUTES.pestBase}/${pestSlug}${ROUTES.regions}`}
+        viewAllHref={
+          pestCombinations.length > 0
+            ? `${ROUTES.pestBase}/${pestSlug}${ROUTES.regions}`
+            : undefined
+        }
         viewAllTitle={DICTIONARY.navbar.columns.viewAllRegions}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllRegionsDesc}
         viewAllIcon="map-pin"

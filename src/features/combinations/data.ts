@@ -8,6 +8,24 @@ import type { CombinationDoc } from "@/types";
 import { getCombinationCacheTag } from "./constants";
 import { getErrorInfo } from "./actions/utils";
 
+export type ActivePublicCombination = {
+  region: string;
+  pest: string;
+  regionName: string;
+  pestName: string;
+  title?: string;
+  h1?: string;
+  metaDesc?: string;
+};
+
+const isAddressableCombination = (
+  docId: string,
+  combination: CombinationDoc,
+) =>
+  !!combination.region &&
+  !!combination.pest &&
+  docId === `${combination.region}_${combination.pest}`;
+
 /**
  * Fetches a single active public combination without importing admin auth guards.
  *
@@ -56,13 +74,11 @@ export const getCombination = async (
 };
 
 /**
- * Fetches active public combination slugs without importing admin auth guards.
+ * Fetches active public combinations without importing admin auth guards.
  *
- * @returns Active, non-archived combinations with active region and pest slugs.
+ * @returns Active, non-archived, URL-addressable combinations with active region and pest data.
  */
-export const getAllActiveCombinations = async (): Promise<
-  { region: string; pest: string }[]
-> => {
+export const getAllActiveCombinations = async (): Promise<ActivePublicCombination[]> => {
   "use cache";
   cacheTag("all-combinations");
   cacheTag("global-data");
@@ -73,28 +89,33 @@ export const getAllActiveCombinations = async (): Promise<
       .where("isActive", "==", true)
       .get();
 
-    const globalData = await getGlobalData();
-    const activeRegions = new Set(
-      globalData.regions.map((region) => region.slug),
+    const { regions, pests } = await getGlobalData();
+    const activeRegions = new Map(
+      regions.map((region) => [region.slug, region.name]),
     );
-    const activePests = new Set(globalData.pests.map((pest) => pest.slug));
+    const activePests = new Map(pests.map((pest) => [pest.slug, pest.name]));
 
     return snap.docs
       .map((doc) => {
-        const data = doc.data() as Record<string, unknown>;
-        return {
-          region: String(data.region || ""),
-          pest: String(data.pest || ""),
-          isArchived: data.isArchived === true,
-        };
+        const data = parseCombinationDoc(doc.data());
+        return { id: doc.id, data };
       })
       .filter(
-        (combination) =>
-          !combination.isArchived &&
-          activeRegions.has(combination.region) &&
-          activePests.has(combination.pest),
+        ({ id, data }) =>
+          isAddressableCombination(id, data) &&
+          !data.isArchived &&
+          activeRegions.has(data.region) &&
+          activePests.has(data.pest),
       )
-      .map(({ region, pest }) => ({ region, pest }));
+      .map(({ data }) => ({
+        region: data.region,
+        pest: data.pest,
+        regionName: data.regionName || activeRegions.get(data.region) || data.region,
+        pestName: data.pestName || activePests.get(data.pest) || data.pest,
+        title: data.title,
+        h1: data.h1,
+        metaDesc: data.metaDesc,
+      }));
   } catch (error: unknown) {
     console.error("Failed to fetch active public combinations", {
       error: getErrorInfo(error),

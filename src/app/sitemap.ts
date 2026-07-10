@@ -55,8 +55,15 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
     });
 
     const visibleCombinations = combinationsSnap.docs
-      .map((doc) => doc.data() as CombinationDoc)
-      .filter((data) => !data.isArchived && activeRegions.has(data.region) && activePests.has(data.pest));
+      .map((doc) => ({ id: doc.id, data: doc.data() as CombinationDoc }))
+      .filter(
+        ({ id, data }) =>
+          id === `${data.region}_${data.pest}` &&
+          !data.isArchived &&
+          activeRegions.has(data.region) &&
+          activePests.has(data.pest),
+      )
+      .map(({ data }) => data);
 
     const regionHubSlugs = Array.from(new Set(visibleCombinations.map((data) => data.region)));
     regionServiceHubPages = regionHubSlugs.map((slug) => ({

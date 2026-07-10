@@ -72,18 +72,25 @@ const RegionPage = async ({ params }: RegionPageProps) => {
 
   const activeCombinations = await getAllActiveCombinations();
   const sections = region.content ? parseHtmlIntoSections(region.content) : [];
+  const pestDescriptions = new Map(
+    pests.map((pest) => [pest.slug, pest.cardDescription]),
+  );
 
-  const relatedLinks = pests.map((pest) => {
-    const hasCombination = activeCombinations.some(
-      (combination) => combination.region === region.slug && combination.pest === pest.slug
-    );
-    return {
-      href: hasCombination ? `/${region.slug}/${pest.slug}` : `${ROUTES.pestBase}/${pest.slug}`,
-      title: `${region.name} ${pest.name}${DICTIONARY.pages.regions.pestTitleSuffix}`,
-      description: getRelatedServiceDescription(pest.name, pest.cardDescription),
+  const relatedLinks = activeCombinations
+    .filter((combination) => combination.region === region.slug)
+    .map((combination) => ({
+      href: `/${combination.region}/${combination.pest}`,
+      title:
+        combination.h1 ||
+        `${combination.regionName} ${combination.pestName}${DICTIONARY.pages.regions.pestTitleSuffix}`,
+      description:
+        combination.metaDesc ||
+        getRelatedServiceDescription(
+          combination.pestName,
+          pestDescriptions.get(combination.pest),
+        ),
       icon: "bug" as const,
-    };
-  });
+    }));
 
   return (
     <div className="flex-1 flex flex-col w-full">
@@ -122,7 +129,11 @@ const RegionPage = async ({ params }: RegionPageProps) => {
       <RelatedLinksSection
         title={DICTIONARY.pages.services.heading}
         items={relatedLinks}
-        viewAllHref={`${ROUTES.regionBase}/${region.slug}${ROUTES.services}`}
+        viewAllHref={
+          relatedLinks.length > 0
+            ? `${ROUTES.regionBase}/${region.slug}${ROUTES.services}`
+            : undefined
+        }
         viewAllTitle={DICTIONARY.navbar.columns.viewAllPests}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
         viewAllIcon="bug"

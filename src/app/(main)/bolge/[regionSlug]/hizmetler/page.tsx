@@ -50,6 +50,14 @@ const getServiceDescription = (service: string, cardDescription?: string) => {
   );
 };
 
+const getCombinationServiceTitle = (
+  regionName: string,
+  pestName: string,
+  combinationTitle?: string,
+) =>
+  combinationTitle ||
+  `${regionName} ${pestName}${DICTIONARY.pages.regions.pestTitleSuffix}`;
+
 /**
  * Generates static region service hub paths only for regions with active combinations.
  */
@@ -77,10 +85,16 @@ export const generateMetadata = async ({
   params,
 }: RegionServicesHubPageProps): Promise<Metadata> => {
   const { regionSlug } = await params;
-  const { regions } = await getGlobalData();
+  const [{ regions }, activeCombinations] = await Promise.all([
+    getGlobalData(),
+    getAllActiveCombinations(),
+  ]);
   const region = regions.find((item) => item.slug === regionSlug);
+  const hasCombinations = activeCombinations.some(
+    (combination) => combination.region === regionSlug,
+  );
 
-  if (!region) {
+  if (!region || !hasCombinations) {
     return {
       title: DICTIONARY.global.brand,
       robots: { index: false },
@@ -108,23 +122,32 @@ const RegionServicesHubPage = async ({
 
   if (!region) notFound();
 
-  const activePestSlugs = new Set(
-    activeCombinations
-      .filter((combination) => combination.region === region.slug)
-      .map((combination) => combination.pest),
+  const pestDescriptions = new Map(
+    pests.map((pest) => [pest.slug, pest.cardDescription]),
+  );
+  const regionCombinations = activeCombinations.filter(
+    (combination) => combination.region === region.slug,
   );
 
-  if (activePestSlugs.size === 0) notFound();
+  if (regionCombinations.length === 0) notFound();
 
   const title = getRegionServicesHubTitle(region.name);
   const description = getRegionServicesHubDescription(region.name);
   const canonicalUrl = `${ROUTES.regionBase}/${region.slug}${ROUTES.services}`;
-  const relatedLinks = pests
-    .filter((pest) => activePestSlugs.has(pest.slug))
-    .map((pest) => ({
-      href: `/${region.slug}/${pest.slug}`,
-      title: `${region.name} ${pest.name}${DICTIONARY.pages.regions.pestTitleSuffix}`,
-      description: getServiceDescription(pest.name, pest.cardDescription),
+  const relatedLinks = regionCombinations
+    .map((combination) => ({
+      href: `/${combination.region}/${combination.pest}`,
+      title: getCombinationServiceTitle(
+        combination.regionName,
+        combination.pestName,
+        combination.h1,
+      ),
+      description:
+        combination.metaDesc ||
+        getServiceDescription(
+          combination.pestName,
+          pestDescriptions.get(combination.pest),
+        ),
       icon: "bug" as const,
     }));
 
