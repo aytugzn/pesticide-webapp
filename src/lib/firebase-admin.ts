@@ -1,13 +1,27 @@
 import "server-only";
 
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
+import { createRequire } from "module";
+import type { App } from "firebase-admin/app";
+import type { Auth } from "firebase-admin/auth";
+import type { Firestore } from "firebase-admin/firestore";
 import { AppError } from "./exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 
-const getAdminApp = () => {
-  if (getApps().length > 0) return getApps()[0];
+const nodeRequire = createRequire(import.meta.url);
+
+const getAdminAppModule = () =>
+  nodeRequire("firebase-admin/app") as typeof import("firebase-admin/app");
+
+const getAdminFirestoreModule = () =>
+  nodeRequire("firebase-admin/firestore") as typeof import("firebase-admin/firestore");
+
+const getAdminAuthModule = () =>
+  nodeRequire("firebase-admin/auth") as typeof import("firebase-admin/auth");
+
+const getAdminApp = (): App => {
+  const { cert, getApps, getApp, initializeApp } = getAdminAppModule();
+
+  if (getApps().length > 0) return getApp();
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -26,5 +40,12 @@ const getAdminApp = () => {
   });
 };
 
-export const getAdminDb = () => getFirestore(getAdminApp());
-export const getAdminAuth = () => getAuth(getAdminApp());
+export const getAdminDb = (): Firestore => {
+  const { getFirestore } = getAdminFirestoreModule();
+  return getFirestore(getAdminApp());
+};
+
+export const getAdminAuth = (): Auth => {
+  const { getAuth } = getAdminAuthModule();
+  return getAuth(getAdminApp());
+};
