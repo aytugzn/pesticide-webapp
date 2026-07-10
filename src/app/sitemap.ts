@@ -29,6 +29,8 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
 
   let regionPages: MetadataRoute.Sitemap = [];
   let pestPages: MetadataRoute.Sitemap = [];
+  let regionServiceHubPages: MetadataRoute.Sitemap = [];
+  let pestRegionHubPages: MetadataRoute.Sitemap = [];
   let combinationPages: MetadataRoute.Sitemap = [];
 
   try {
@@ -52,18 +54,40 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
       return { url: `${baseUrl}${ROUTES.pestBase}/${slug}`, priority: 0.8, changeFrequency: "monthly" };
     });
 
-    combinationPages = combinationsSnap.docs
+    const visibleCombinations = combinationsSnap.docs
       .map((doc) => doc.data() as CombinationDoc)
-      .filter((data) => !data.isArchived && activeRegions.has(data.region) && activePests.has(data.pest))
-      .map((data) => {
-        return { url: `${baseUrl}/${data.region}/${data.pest}`, priority: 0.9, changeFrequency: "monthly" };
-      });
+      .filter((data) => !data.isArchived && activeRegions.has(data.region) && activePests.has(data.pest));
+
+    const regionHubSlugs = Array.from(new Set(visibleCombinations.map((data) => data.region)));
+    regionServiceHubPages = regionHubSlugs.map((slug) => ({
+      url: `${baseUrl}${ROUTES.regionBase}/${slug}${ROUTES.services}`,
+      priority: 0.8,
+      changeFrequency: "monthly",
+    }));
+
+    const pestHubSlugs = Array.from(new Set(visibleCombinations.map((data) => data.pest)));
+    pestRegionHubPages = pestHubSlugs.map((slug) => ({
+      url: `${baseUrl}${ROUTES.pestBase}/${slug}${ROUTES.regions}`,
+      priority: 0.8,
+      changeFrequency: "monthly",
+    }));
+
+    combinationPages = visibleCombinations.map((data) => {
+      return { url: `${baseUrl}/${data.region}/${data.pest}`, priority: 0.9, changeFrequency: "monthly" };
+    });
   } catch (error: unknown) {
     console.error("Failed to generate sitemap", { error: error instanceof Error ? error.message : "Unknown error" });
     throw error;
   }
 
-  return [...staticPages, ...regionPages, ...pestPages, ...combinationPages];
+  return [
+    ...staticPages,
+    ...regionPages,
+    ...pestPages,
+    ...regionServiceHubPages,
+    ...pestRegionHubPages,
+    ...combinationPages,
+  ];
 };
 
 export default sitemap;

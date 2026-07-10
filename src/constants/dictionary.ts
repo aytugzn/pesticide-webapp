@@ -325,6 +325,13 @@ const pagesDict = {
       "{region} ve çevresinde ev, apartman, site ve işletmeler için hızlı keşif, güvenli uygulama ve işlem sonrası bilgilendirme desteği sağlıyoruz.",
     cardDescriptionFallback:
       "{region} için yerel koşullara uygun, güvenli ve planlı ilaçlama hizmeti sunuyoruz.",
+    serviceHubEyebrow: "Bölge Hizmetleri",
+    serviceHubTitleTemplate: "{region} İlaçlama Hizmetleri",
+    serviceHubDescriptionTemplate:
+      "{region} bölgesinde aktif olarak sunduğumuz ilaçlama ve dezenfeksiyon hizmetlerini tek sayfada inceleyin.",
+    serviceHubListTitleTemplate: "{region} Hizmetleri",
+    serviceHubMetaDescriptionTemplate:
+      "{region} için aktif ilaçlama ve dezenfeksiyon hizmetlerini inceleyin; ihtiyacınıza uygun DMR İlaçlama çözümüne hızlıca ulaşın.",
     pestTitleSuffix: " İlaçlama",
   },
   services: {
@@ -336,6 +343,13 @@ const pagesDict = {
       "{service} için yaşam ve çalışma alanınıza uygun keşif, güvenli ürün seçimi ve doğru uygulama planı oluşturuyoruz.",
     cardDescriptionFallback:
       "Haşere türüne ve alanın kullanımına göre güvenli, planlı ve takip edilebilir ilaçlama hizmeti sunuyoruz.",
+    regionHubEyebrow: "Hizmet Bölgeleri",
+    regionHubTitleTemplate: "{service} Hizmeti Verilen Bölgeler",
+    regionHubDescriptionTemplate:
+      "{service} için İzmir'de aktif hizmet verilen bölgeleri ve her bölgeye özel uygulama sayfalarını inceleyin.",
+    regionHubListTitleTemplate: "{service} Bölgeleri",
+    regionHubMetaDescriptionTemplate:
+      "{service} için hizmet verilen aktif bölgeleri inceleyin; bölgenize özel DMR İlaçlama sayfasına hızlıca ulaşın.",
     pestTitleSuffix: "İlaçlama",
   },
   about: {

@@ -5,7 +5,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { ServiceHero } from "@/components/layout/ServiceHero";
 import { getGlobalData } from "@/features/settings/data";
-import { getAllActiveCombinations } from "@/features/combinations/actions";
+import { getAllActiveCombinations } from "@/features/combinations/data";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { SeoContent } from "@/components/layout/SeoContent";
 import { SeoFaq } from "@/components/layout/SeoFaq";
@@ -122,7 +122,7 @@ const RegionPage = async ({ params }: RegionPageProps) => {
       <RelatedLinksSection
         title={DICTIONARY.pages.services.heading}
         items={relatedLinks}
-        viewAllHref={ROUTES.services}
+        viewAllHref={`${ROUTES.regionBase}/${region.slug}${ROUTES.services}`}
         viewAllTitle={DICTIONARY.navbar.columns.viewAllPests}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
         viewAllIcon="bug"

@@ -4,7 +4,7 @@ import { AppError } from "@/lib/exceptions";
 import {
   getCombination,
   getAllActiveCombinations,
-} from "@/features/combinations/actions";
+} from "@/features/combinations/data";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { getGlobalData } from "@/features/settings/data";
 import { SeoContent } from "@/components/layout/SeoContent";
@@ -15,10 +15,52 @@ import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { CombinationHero } from "@/features/combinations/components/public/CombinationHero";
 import { SeoFaq } from "@/components/layout/SeoFaq";
 import { CtaSection } from "@/components/layout/CtaSection";
+import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
 };
+
+const getRelatedServiceDescription = (
+  service: string,
+  cardDescription?: string,
+) => {
+  if (cardDescription) return cardDescription;
+
+  const serviceTitle = `${service} ${DICTIONARY.pages.services.pestTitleSuffix}`;
+
+  return DICTIONARY.pages.services.cardDescriptionTemplate.replace(
+    "{service}",
+    serviceTitle,
+  );
+};
+
+const getRelatedRegionDescription = (
+  region: string,
+  cardDescription?: string,
+) => {
+  if (cardDescription) return cardDescription;
+
+  return DICTIONARY.pages.regions.cardDescriptionTemplate.replace(
+    "{region}",
+    region,
+  );
+};
+
+const getServiceTitle = (pestName: string) =>
+  `${pestName} ${DICTIONARY.pages.services.pestTitleSuffix}`;
+
+const getRegionServicesListTitle = (regionName: string) =>
+  DICTIONARY.pages.regions.serviceHubListTitleTemplate.replace(
+    "{region}",
+    regionName,
+  );
+
+const getPestRegionsListTitle = (serviceTitle: string) =>
+  DICTIONARY.pages.services.regionHubListTitleTemplate.replace(
+    "{service}",
+    serviceTitle,
+  );
 
 /**
  * Generates static paths for all active combinations at build time.
@@ -98,9 +140,10 @@ export const generateMetadata = async ({
  */
 const CombinationPage = async ({ params }: CombinationPageProps) => {
   const { regionSlug, pestSlug } = await params;
-  const [data, globalData] = await Promise.all([
+  const [data, globalData, activeCombinations] = await Promise.all([
     getCombination(regionSlug, pestSlug),
     getGlobalData(),
+    getAllActiveCombinations(),
   ]);
 
   if (!data) notFound();
@@ -112,6 +155,45 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
 
   const regionName = data.regionName || region?.name || "";
   const pestName = data.pestName || pest?.name || "";
+  const serviceTitle = getServiceTitle(pestName);
+
+  const regionServiceLinks = globalData.pests
+    .filter((relatedPest) =>
+      activeCombinations.some(
+        (combination) =>
+          combination.region === regionSlug &&
+          combination.pest === relatedPest.slug &&
+          relatedPest.slug !== pestSlug,
+      ),
+    )
+    .map((relatedPest) => ({
+      href: `/${regionSlug}/${relatedPest.slug}`,
+      title: `${regionName} ${relatedPest.name}${DICTIONARY.pages.regions.pestTitleSuffix}`,
+      description: getRelatedServiceDescription(
+        relatedPest.name,
+        relatedPest.cardDescription,
+      ),
+      icon: "bug" as const,
+    }));
+
+  const pestRegionLinks = globalData.regions
+    .filter((relatedRegion) =>
+      activeCombinations.some(
+        (combination) =>
+          combination.region === relatedRegion.slug &&
+          combination.pest === pestSlug &&
+          relatedRegion.slug !== regionSlug,
+      ),
+    )
+    .map((relatedRegion) => ({
+      href: `/${relatedRegion.slug}/${pestSlug}`,
+      title: `${relatedRegion.name} ${serviceTitle}`,
+      description: getRelatedRegionDescription(
+        relatedRegion.name,
+        relatedRegion.cardDescription,
+      ),
+      icon: "map-pin" as const,
+    }));
 
   const sliderImages = imageUrl
     ? [
@@ -159,6 +241,22 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
         pestName={pestName}
       />
       <SeoContent sections={sections} />
+      <RelatedLinksSection
+        title={getRegionServicesListTitle(regionName)}
+        items={regionServiceLinks}
+        viewAllHref={`${ROUTES.regionBase}/${regionSlug}${ROUTES.services}`}
+        viewAllTitle={DICTIONARY.navbar.columns.viewAllPests}
+        viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
+        viewAllIcon="bug"
+      />
+      <RelatedLinksSection
+        title={getPestRegionsListTitle(serviceTitle)}
+        items={pestRegionLinks}
+        viewAllHref={`${ROUTES.pestBase}/${pestSlug}${ROUTES.regions}`}
+        viewAllTitle={DICTIONARY.navbar.columns.viewAllRegions}
+        viewAllDescription={DICTIONARY.navbar.columns.viewAllRegionsDesc}
+        viewAllIcon="map-pin"
+      />
       <SeoFaq faq={data.faq || []} />
       <CtaSection />
     </div>

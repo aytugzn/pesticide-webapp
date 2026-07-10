@@ -9,7 +9,7 @@ import { SeoFaq } from "@/components/layout/SeoFaq";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { getGlobalData } from "@/features/settings/data";
-import { getAllActiveCombinations } from "@/features/combinations/actions";
+import { getAllActiveCombinations } from "@/features/combinations/data";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
@@ -129,7 +129,7 @@ const PestPage = async ({ params }: PestPageProps) => {
       <RelatedLinksSection
         title={DICTIONARY.pages.regions.heading}
         items={relatedLinks}
-        viewAllHref={ROUTES.regions}
+        viewAllHref={`${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`}
         viewAllTitle={DICTIONARY.navbar.columns.viewAllRegions}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllRegionsDesc}
         viewAllIcon="map-pin"

@@ -17,6 +17,7 @@ type RelatedLinksSectionProps = {
   viewAllTitle?: string;
   viewAllDescription?: string;
   viewAllIcon?: RelatedLinkItem["icon"];
+  showAllItems?: boolean;
 };
 
 const RELATED_LINKS_VISIBLE_ITEMS = 5;
@@ -28,13 +29,17 @@ export const RelatedLinksSection = ({
   viewAllTitle,
   viewAllDescription,
   viewAllIcon,
+  showAllItems = false,
 }: RelatedLinksSectionProps) => {
   if (!items || items.length === 0) return null;
 
-  const shouldShowViewAll = !!viewAllHref && !!viewAllTitle && items.length > RELATED_LINKS_VISIBLE_ITEMS;
-  const visibleItems = shouldShowViewAll
-    ? items.slice(0, RELATED_LINKS_VISIBLE_ITEMS)
-    : items.slice(0, RELATED_LINKS_VISIBLE_ITEMS + 1);
+  const shouldShowViewAll = !showAllItems && !!viewAllHref && !!viewAllTitle && items.length > RELATED_LINKS_VISIBLE_ITEMS;
+  const visibleItems = (() => {
+    if (showAllItems) return items;
+    if (shouldShowViewAll) return items.slice(0, RELATED_LINKS_VISIBLE_ITEMS);
+
+    return items.slice(0, RELATED_LINKS_VISIBLE_ITEMS + 1);
+  })();
 
   return (
     <section className="bg-surface-neutral">
