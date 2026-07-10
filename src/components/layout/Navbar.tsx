@@ -54,21 +54,21 @@ export const Navbar = async () => {
             {/* Desktop Navigation*/}
             <nav className="hidden lg:flex space-x-8 items-center h-full">
               {/* Mega Menu Wrapper */}
-              <div className="group h-full flex items-center">
+              <div className="group/services h-full flex items-center">
                 <Button
                   variant="unstyled"
                   size="none"
-                  className="text-sm font-medium text-text-primary hover:text-brand-primary transition-colors flex items-center group/btn"
+                  className="text-sm font-medium text-text-primary hover:text-brand-primary group-hover/services:text-brand-primary transition-colors flex items-center"
                 >
                   {DICTIONARY.navbar.links.services}
                   <ChevronDown
-                    className="w-4 h-4 ml-1 opacity-50 group-hover/btn:opacity-100 group-hover/btn:rotate-180 transition-all duration-300"
+                    className="w-4 h-4 ml-1 opacity-50 group-hover/services:opacity-100 group-hover/services:rotate-180 transition-all duration-300"
                     aria-hidden="true"
                   />
                 </Button>
 
                 {/* Mega Menu Dropdown */}
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 w-max invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 ease-in-out z-50">
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 w-max invisible opacity-0 translate-y-2 group-hover/services:visible group-hover/services:opacity-100 group-hover/services:translate-y-0 transition-all duration-200 ease-in-out z-50">
                   <div className="bg-brand-surface rounded-b-brand-lg shadow-xl border border-brand-border p-8 flex gap-12">
                     <MegaMenuColumns
                       pests={pests}
