@@ -306,9 +306,10 @@ const metaDict = {
   },
   og: {
     image: {
-      fallback: "/og-image.png",
+      fallback: "/og-image.jpg",
       width: 1200,
       height: 630,
+      type: "image/jpeg",
     },
   },
 };

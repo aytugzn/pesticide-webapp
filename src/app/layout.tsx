@@ -37,15 +37,23 @@ const getLayoutSettings = async () => {
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const settings = await getLayoutSettings();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl;
+  const cleanSiteUrl = siteUrl.replace(/\/$/, "");
+  const legacyDefaultOgImages = [
+    "/og-image.png",
+    `${cleanSiteUrl}/og-image.png`,
+    `${DICTIONARY.global.siteUrl.replace(/\/$/, "")}/og-image.png`,
+  ];
   const defaultOgImage =
-    settings.defaultOgImage || DICTIONARY.meta.og.image.fallback;
+    settings.defaultOgImage &&
+    !legacyDefaultOgImages.includes(settings.defaultOgImage)
+      ? settings.defaultOgImage
+      : DICTIONARY.meta.og.image.fallback;
   const title = DICTIONARY.meta.default.title;
   const description = DICTIONARY.meta.default.description;
 
   return {
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl,
-    ),
+    metadataBase: new URL(siteUrl),
     title,
     description,
     keywords: DICTIONARY.meta.default.keywords,
@@ -62,12 +70,15 @@ export const generateMetadata = async (): Promise<Metadata> => {
     openGraph: {
       title,
       description,
+      url: siteUrl,
+      siteName: DICTIONARY.global.brand,
       images: [
         {
           url: defaultOgImage,
           width: DICTIONARY.meta.og.image.width,
           height: DICTIONARY.meta.og.image.height,
           alt: DICTIONARY.meta.default.alt,
+          type: DICTIONARY.meta.og.image.type,
         },
       ],
       locale: DICTIONARY.meta.default.locale,

@@ -58,6 +58,7 @@ export const generateMetadata = async ({
   }
 
   const canonicalUrl = `/${regionSlug}/${pestSlug}`;
+  const ogImage = data.ogImage || DICTIONARY.meta.og.image.fallback;
 
   return {
     title: data.title || DICTIONARY.meta.default.title,
@@ -66,9 +67,16 @@ export const generateMetadata = async ({
       title: data.title || DICTIONARY.meta.default.title,
       description: data.metaDesc || DICTIONARY.meta.default.description,
       url: canonicalUrl,
-      images: data.ogImage
-        ? [data.ogImage]
-        : [DICTIONARY.meta.og.image.fallback],
+      siteName: DICTIONARY.global.brand,
+      images: [
+        {
+          url: ogImage,
+          width: DICTIONARY.meta.og.image.width,
+          height: DICTIONARY.meta.og.image.height,
+          alt: data.h1 || DICTIONARY.meta.default.alt,
+          type: DICTIONARY.meta.og.image.type,
+        },
+      ],
       locale: DICTIONARY.meta.default.locale,
       type: "website",
     },
@@ -76,6 +84,7 @@ export const generateMetadata = async ({
       card: "summary_large_image",
       title: data.title || DICTIONARY.meta.default.title,
       description: data.metaDesc || DICTIONARY.meta.default.description,
+      images: [ogImage],
     },
     alternates: {
       canonical: canonicalUrl,
