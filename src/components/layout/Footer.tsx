@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, Mail, MessageCircle, Clock } from "lucide-react";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { CopyrightText } from "@/components/ui/CopyrightText";

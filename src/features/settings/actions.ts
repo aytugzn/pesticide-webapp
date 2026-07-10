@@ -1,39 +1,10 @@
 import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
-import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
-import { cacheTag, updateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
-import { SETTINGS_ERRORS, type SettingsErrorCode, type GlobalData } from "./types";
+import { SETTINGS_ERRORS, type SettingsErrorCode } from "./types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-
-/**
- * Fetches globally shared data (pests, regions, settings).
- * - Next.js `"use cache"` inherently handles both cross-request caching AND intra-request deduplication.
- */
-export const getGlobalData = async (): Promise<GlobalData> => {
-  "use cache";
-  cacheTag("global-data");
-
-  try {
-    const [pestsSnap, regionsSnap, settingsSnap] = await Promise.all([
-      getAdminDb().collection("pests").where("isActive", "==", true).get(),
-      getAdminDb().collection("regions").where("isActive", "==", true).get(),
-      getAdminDb().collection("settings").doc("general").get(),
-    ]);
-
-    return {
-      pests: pestsSnap.docs.map((doc) => parsePestDoc(doc.data())),
-      regions: regionsSnap.docs.map((doc) => parseRegionDoc(doc.data())),
-      settings: parseSettingsDoc(settingsSnap.data()),
-    };
-  } catch (error: unknown) {
-    console.error("Failed to fetch global data", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
-    throw error;
-  }
-};
 
 /**
  * Server Action to fetch Google Places stats and update Firestore.

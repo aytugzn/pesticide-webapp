@@ -17,7 +17,7 @@ import {
 import type { SettingsDoc } from "@/types";
 import type { GoogleReviewDoc, HeroSlideDoc } from "@/features/home/types";
 import { getHomeData } from "@/features/home/actions";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 
 export const metadata: Metadata = {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { connection } from "next/server";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { getAdminCombinationsPage } from "@/features/combinations/actions";
 import { CombinationForm } from "@/features/combinations/components/admin/CombinationForm";
 import { CombinationsTable } from "@/features/combinations/components/admin/CombinationsTable";

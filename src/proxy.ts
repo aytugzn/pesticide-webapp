@@ -1,7 +1,7 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin-auth";
 import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 
 
@@ -22,7 +22,8 @@ const proxy = async (request: NextRequest) => {
   }
 
   try {
-    const decodedClaims = await getAdminAuth().verifySessionCookie(session, true);
+    const adminAuth = await getAdminAuth();
+    const decodedClaims = await adminAuth.verifySessionCookie(session, true);
     
     const allowedEmail = process.env.ADMIN_EMAIL || "";
     if (decodedClaims.email !== allowedEmail) {

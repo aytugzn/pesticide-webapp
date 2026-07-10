@@ -4,7 +4,7 @@ import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { ServiceHero } from "@/components/layout/ServiceHero";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { getAllActiveCombinations } from "@/features/combinations/actions";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { SeoContent } from "@/components/layout/SeoContent";

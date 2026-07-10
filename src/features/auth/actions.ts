@@ -2,7 +2,7 @@
 
 import "server-only";
 
-import { getAdminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin-auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_ERRORS, type AuthErrorCode } from "./types";
@@ -16,13 +16,14 @@ export const createSession = async (idToken: string): Promise<ActionResponse<voi
   const expiresIn = SESSION_DURATION * 1000;
 
   try {
-    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
+    const adminAuth = await getAdminAuth();
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
 
     if (!ALLOWED_EMAILS.includes(decodedToken.email ?? "")) {
       return { success: false, error: AUTH_ERRORS.UNAUTHORIZED_EMAIL };
     }
 
-    const sessionCookie = await getAdminAuth().createSessionCookie(idToken, {
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, {
       expiresIn,
     });
 

@@ -8,7 +8,7 @@ import { SeoContent } from "@/components/layout/SeoContent";
 import { SeoFaq } from "@/components/layout/SeoFaq";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { CtaSection } from "@/components/layout/CtaSection";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { getAllActiveCombinations } from "@/features/combinations/actions";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";

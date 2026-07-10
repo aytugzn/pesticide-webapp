@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { getAdminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin-auth";
 import { SESSION_COOKIE_NAME } from "@/constants/routes";
 
 export const requireAdmin = async (): Promise<boolean> => {
@@ -13,7 +13,8 @@ export const requireAdmin = async (): Promise<boolean> => {
   }
 
   try {
-    const decodedClaims = await getAdminAuth().verifySessionCookie(session, true);
+    const adminAuth = await getAdminAuth();
+    const decodedClaims = await adminAuth.verifySessionCookie(session, true);
     
     const allowedEmail = process.env.ADMIN_EMAIL || "";
     if (decodedClaims.email !== allowedEmail) {

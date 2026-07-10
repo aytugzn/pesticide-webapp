@@ -3,7 +3,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layout/PublicPageHeader";
 import { ContactPageSection } from "@/features/contact/components/ContactPageSection";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.meta.contact.title} | ${DICTIONARY.global.brand}`,

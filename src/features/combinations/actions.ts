@@ -12,7 +12,7 @@ import { COMBINATION_ERRORS, type AdminCombinationListFilter, type CombinationEr
 import { getCombinationCacheTag } from "./constants";
 import { bulkCombinationMutationSchema, saveCombinationSchema, toggleCombinationSchema, unarchiveCombinationSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { getErrorInfo } from "./actions/utils";
 
 const BULK_COMBINATION_BATCH_SIZE = 400;

@@ -6,7 +6,7 @@ import {
   getAllActiveCombinations,
 } from "@/features/combinations/actions";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
-import { getGlobalData } from "@/features/settings/actions";
+import { getGlobalData } from "@/features/settings/data";
 import { SeoContent } from "@/components/layout/SeoContent";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
