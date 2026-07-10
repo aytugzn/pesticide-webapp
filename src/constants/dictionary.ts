@@ -330,6 +330,8 @@ const pagesDict = {
     serviceHubDescriptionTemplate:
       "{region} bölgesinde aktif olarak sunduğumuz ilaçlama ve dezenfeksiyon hizmetlerini tek sayfada inceleyin.",
     serviceHubListTitleTemplate: "{region} Hizmetleri",
+    serviceHubViewAllTitleTemplate:
+      "{region} Bölgesindeki Tüm Hizmetleri Gör",
     serviceHubMetaDescriptionTemplate:
       "{region} için aktif ilaçlama ve dezenfeksiyon hizmetlerini inceleyin; ihtiyacınıza uygun DMR İlaçlama çözümüne hızlıca ulaşın.",
     pestTitleSuffix: " İlaçlama",
@@ -348,6 +350,8 @@ const pagesDict = {
     regionHubDescriptionTemplate:
       "{service} için İzmir'de aktif hizmet verilen bölgeleri ve her bölgeye özel uygulama sayfalarını inceleyin.",
     regionHubListTitleTemplate: "{service} Bölgeleri",
+    regionHubViewAllTitleTemplate:
+      "{service} Yapılan Tüm Bölgeleri Gör",
     regionHubMetaDescriptionTemplate:
       "{service} için hizmet verilen aktif bölgeleri inceleyin; bölgenize özel DMR İlaçlama sayfasına hızlıca ulaşın.",
     pestTitleSuffix: "İlaçlama",

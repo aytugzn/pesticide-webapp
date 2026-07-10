@@ -33,12 +33,12 @@ export const RelatedLinksSection = ({
 }: RelatedLinksSectionProps) => {
   if (!items || items.length === 0) return null;
 
-  const shouldShowViewAll = !showAllItems && !!viewAllHref && !!viewAllTitle && items.length > RELATED_LINKS_VISIBLE_ITEMS;
+  const shouldShowViewAll =
+    !showAllItems && !!viewAllHref && !!viewAllTitle && items.length > 0;
   const visibleItems = (() => {
     if (showAllItems) return items;
-    if (shouldShowViewAll) return items.slice(0, RELATED_LINKS_VISIBLE_ITEMS);
 
-    return items.slice(0, RELATED_LINKS_VISIBLE_ITEMS + 1);
+    return items.slice(0, RELATED_LINKS_VISIBLE_ITEMS);
   })();
 
   return (

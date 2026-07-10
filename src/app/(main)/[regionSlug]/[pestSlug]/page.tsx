@@ -56,8 +56,20 @@ const getRegionServicesListTitle = (regionName: string) =>
     regionName,
   );
 
+const getRegionServicesViewAllTitle = (regionName: string) =>
+  DICTIONARY.pages.regions.serviceHubViewAllTitleTemplate.replace(
+    "{region}",
+    regionName,
+  );
+
 const getPestRegionsListTitle = (serviceTitle: string) =>
   DICTIONARY.pages.services.regionHubListTitleTemplate.replace(
+    "{service}",
+    serviceTitle,
+  );
+
+const getPestRegionsViewAllTitle = (serviceTitle: string) =>
+  DICTIONARY.pages.services.regionHubViewAllTitleTemplate.replace(
     "{service}",
     serviceTitle,
   );
@@ -254,7 +266,7 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
             ? `${ROUTES.regionBase}/${regionSlug}${ROUTES.services}`
             : undefined
         }
-        viewAllTitle={DICTIONARY.navbar.columns.viewAllPests}
+        viewAllTitle={getRegionServicesViewAllTitle(regionName)}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
         viewAllIcon="bug"
       />
@@ -266,7 +278,7 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
             ? `${ROUTES.pestBase}/${pestSlug}${ROUTES.regions}`
             : undefined
         }
-        viewAllTitle={DICTIONARY.navbar.columns.viewAllRegions}
+        viewAllTitle={getPestRegionsViewAllTitle(serviceTitle)}
         viewAllDescription={DICTIONARY.navbar.columns.viewAllRegionsDesc}
         viewAllIcon="map-pin"
       />
