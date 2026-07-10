@@ -26,7 +26,7 @@ export const CombinationHero = ({
   const displayPest = pestName || pestSlug.replace(/-/g, " ");
   return (
     <section className="bg-brand-surface border-b border-brand-border">
-      <div className="max-w-4xl mx-auto px-6 py-16 sm:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <nav aria-label={DICTIONARY.global.breadcrumb} className="mb-6">
           <ol className="flex items-center gap-2 text-sm text-text-muted">
             <li>
