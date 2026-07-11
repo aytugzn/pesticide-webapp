@@ -28,8 +28,8 @@ export const ServiceHero = ({
   const displayPest = pestName || (pestSlug ? pestSlug.replace(/-/g, " ") : "");
 
   return (
-    <section className="bg-brand-surface border-b border-brand-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <section className="bg-surface-neutral">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         <nav aria-label={DICTIONARY.global.breadcrumb} className="mb-6">
           <ol className="flex items-center gap-2 text-sm text-text-muted">
             <li>
@@ -91,7 +91,7 @@ export const ServiceHero = ({
           </ol>
         </nav>
 
-        <h1 className="font-heading font-bold text-text-primary text-3xl sm:text-4xl lg:text-5xl leading-tight">
+        <h1 className="font-heading font-bold text-text-primary text-2xl sm:text-3xl lg:text-4xl leading-snug max-w-3xl text-balance">
           {h1}
         </h1>
 

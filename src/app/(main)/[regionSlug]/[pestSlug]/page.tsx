@@ -84,7 +84,7 @@ export const generateStaticParams = async () => {
   if (!combinations || combinations.length === 0) {
     throw new AppError(
       "No active combinations found. At least one active combination is required to build this route. Ensure Firestore quota is not exceeded and active combinations exist.",
-      "BUILD_ERROR"
+      "BUILD_ERROR",
     );
   }
 

@@ -26,7 +26,7 @@ export const ServiceCard = ({
         href={href}
         aria-label={ariaLabel}
         className={cn(
-          "group relative flex items-center gap-3 p-3 sm:p-4 rounded-lg bg-brand-surface-muted border border-brand-border-strong text-text-primary overflow-hidden transition-all duration-300 hover:border-brand-primary/60 hover:shadow-xl hover:shadow-brand-primary/10 hover:-translate-y-1",
+          "group relative flex items-center gap-3 p-3 sm:p-4 rounded-lg bg-brand-surface border border-brand-border text-text-primary overflow-hidden transition-all duration-300 hover:border-brand-primary/50 hover:bg-brand-surface-muted hover:shadow-xl hover:shadow-brand-primary/10 hover:-translate-y-1",
           CLICK_EFFECT,
           className
         )}

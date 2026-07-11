@@ -36,7 +36,10 @@ export const generateStaticParams = async () => {
   const { regions } = await getGlobalData();
 
   if (!regions || regions.length === 0) {
-    throw new AppError("No active regions found. At least one active region is required to build this route. Ensure Firestore quota is not exceeded and active regions exist.", "BUILD_ERROR");
+    throw new AppError(
+      "No active regions found. At least one active region is required to build this route. Ensure Firestore quota is not exceeded and active regions exist.",
+      "BUILD_ERROR",
+    );
   }
 
   return regions.map((region) => ({ regionSlug: region.slug }));
@@ -138,9 +141,7 @@ const RegionPage = async ({ params }: RegionPageProps) => {
         viewAllDescription={DICTIONARY.navbar.columns.viewAllPestsDesc}
         viewAllIcon="bug"
       />
-      {region.faq && region.faq.length > 0 && (
-        <SeoFaq faq={region.faq} />
-      )}
+      {region.faq && region.faq.length > 0 && <SeoFaq faq={region.faq} />}
       <CtaSection />
     </div>
   );

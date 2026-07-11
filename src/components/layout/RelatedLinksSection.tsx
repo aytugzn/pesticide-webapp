@@ -42,30 +42,35 @@ export const RelatedLinksSection = ({
   })();
 
   return (
-    <section className="bg-surface-neutral">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+    <section className="bg-surface-neutral relative overflow-x-clip">
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-32 rounded-full blur-3xl pointer-events-none z-0 opacity-5 bg-brand-primary"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-px bg-gradient-to-r from-transparent via-brand-primary/10 to-transparent"
+        aria-hidden="true"
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14 relative z-10">
         <h2 className="font-heading font-black text-text-primary text-3xl sm:text-4xl leading-tight mb-6 text-center sm:text-left">
           {title}
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {visibleItems.map((item) => {
             const IconComponent = item.icon === "map-pin" ? MapPin : Bug;
-            
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
                   "group flex min-h-36 flex-col rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
-                  CLICK_EFFECT
+                  CLICK_EFFECT,
                 )}
               >
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
-                    <IconComponent
-                      className="h-5 w-5"
-                      aria-hidden="true"
-                    />
+                    <IconComponent className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
                     {item.title}
@@ -84,7 +89,7 @@ export const RelatedLinksSection = ({
               href={viewAllHref}
               className={cn(
                 "group flex min-h-36 flex-col justify-between rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
-                CLICK_EFFECT
+                CLICK_EFFECT,
               )}
             >
               <div>

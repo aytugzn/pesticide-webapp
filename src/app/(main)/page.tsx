@@ -42,16 +42,13 @@ const HomePage = async () => {
   let slides: HeroSlideDoc[] = [];
   let customReviews: GoogleReviewDoc[] = [];
   let viewAllReviewsUrl: string = "#";
-  
+
   const pests = globalData.pests || [];
   const regions = globalData.regions || [];
   const settings = globalData.settings || DEFAULT_SETTINGS;
 
   if (!homeDataResponse.success) {
-    console.error(
-      "Failed to fetch home page data",
-      homeDataResponse.error,
-    );
+    console.error("Failed to fetch home page data", homeDataResponse.error);
   } else if (homeDataResponse.data) {
     const d = homeDataResponse.data;
     slides = d.slides;
@@ -89,7 +86,7 @@ const HomePage = async () => {
           facebookUrl={settings.facebookUrl}
         />
         <ServicesSection pests={pests} autoplayDelay={servicesAutoplayDelay} />
-        <WhyUsSection />
+        <WhyUsSection variant={"embedded"} />
         <GoogleReviewsSection
           autoplayDelay={reviewsAutoplayDelay}
           reviews={customReviews}

@@ -34,7 +34,10 @@ export const generateStaticParams = async () => {
   const { pests } = await getGlobalData();
 
   if (!pests || pests.length === 0) {
-    throw new AppError("No active pests found. At least one active pest is required to build this route. Ensure Firestore quota is not exceeded and active pests exist.", "BUILD_ERROR");
+    throw new AppError(
+      "No active pests found. At least one active pest is required to build this route. Ensure Firestore quota is not exceeded and active pests exist.",
+      "BUILD_ERROR",
+    );
   }
 
   return pests.map((pest) => ({ pestSlug: pest.slug }));
