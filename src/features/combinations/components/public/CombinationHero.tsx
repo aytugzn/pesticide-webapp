@@ -44,16 +44,13 @@ export const CombinationHero = ({
             `${displayRegion} ${displayPest} ${DICTIONARY.pages.services.pestTitleSuffix}`}
         </h1>
 
-        {/* Optional Image Slider (max 1 image) derived from Pest or Region */}
-        {sliderImages.length > 0 && (
-          <div className="mt-10 rounded-2xl overflow-hidden shadow-xl max-w-3xl aspect-video relative group">
-            <ImageSlider images={sliderImages} autoplayDelay={0} />
-            <div
-              className="absolute inset-0 border border-brand-surface/20 rounded-2xl pointer-events-none z-10 mix-blend-overlay"
-              aria-hidden="true"
-            />
-          </div>
-        )}
+        <div className="mt-10 rounded-2xl overflow-hidden shadow-xl max-w-3xl aspect-video relative group">
+          <ImageSlider images={sliderImages} autoplayDelay={0} />
+          <div
+            className="absolute inset-0 border border-brand-surface/20 rounded-2xl pointer-events-none z-10 mix-blend-overlay"
+            aria-hidden="true"
+          />
+        </div>
       </div>
     </section>
   );

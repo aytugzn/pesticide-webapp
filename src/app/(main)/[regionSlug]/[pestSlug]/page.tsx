@@ -230,7 +230,28 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
       ]
     : [];
 
+  const resolvedRegionImage = region
+    ? resolveAppImage({
+        image: region.image,
+        imageUrl: region.imageUrl,
+        fallbackAlt: regionName,
+        preset: "section",
+      })
+    : null;
+
   const sections = data.content ? parseHtmlIntoSections(data.content) : [];
+  const sectionVisuals =
+    sections.length > 1
+      ? {
+          0: resolvedRegionImage
+            ? {
+                id: "combo-region",
+                url: resolvedRegionImage.url,
+                altText: resolvedRegionImage.alt,
+              }
+            : null,
+        }
+      : undefined;
 
   return (
     <div className="flex-1 flex flex-col w-full">
@@ -263,7 +284,7 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
         regionName={regionName}
         pestName={pestName}
       />
-      <SeoContent sections={sections} />
+      <SeoContent sections={sections} sectionVisuals={sectionVisuals} />
       <RelatedLinksSection
         title={getRegionServicesListTitle(regionName)}
         items={regionServiceLinks}

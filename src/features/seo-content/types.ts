@@ -1,4 +1,4 @@
-import type { ActionResponse } from "@/types";
+import type { ActionResponse, AppImage } from "@/types";
 
 export type SeoGeneratedContent = {
   title: string;
@@ -15,6 +15,8 @@ export type SeoEntityInitialData = {
   slug: string;
   description: string;
   cardDescription: string;
+  image?: AppImage;
+  imageUrl?: string;
   title: string;
   h1: string;
   metaDesc: string;
@@ -54,6 +56,18 @@ export type SeoEntityDictionary = {
   h1Label: string;
   metaLabel: string;
   contentLabel: string;
+  imageUploadLabel: string;
+  imageUploadHelp: string;
+  imageAltLabel: string;
+  imageAltPlaceholder: string;
+  imageCurrent: string;
+  imageSelected: string;
+  imageRemove: string;
+  imageDefaultAltTemplate: string;
+  imageInvalidType: string;
+  imageTooLarge: string;
+  imageUploadError: string;
+  imageConfigError: string;
 };
 
 export type SeoEntityFormConfig<TError extends string> = {
@@ -70,6 +84,7 @@ export type SeoEntityFormConfig<TError extends string> = {
     slug: string,
     name: string,
     description: string | undefined,
+    image: AppImage | undefined,
     content: SeoGeneratedContent,
     isActive: boolean,
   ) => Promise<ActionResponse<void, TError>>;

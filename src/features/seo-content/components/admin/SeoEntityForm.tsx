@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -13,6 +13,9 @@ import { slugify } from "@/utils/slugify";
 import { Switch } from "@/components/ui/Switch";
 import { DICTIONARY } from "@/constants/dictionary";
 import { SeoEntityPreviewModal } from "./SeoEntityPreviewModal";
+import { uploadAdminImage } from "@/features/image-upload/actions";
+import type { ImageUploadErrorCode } from "@/features/image-upload/types";
+import type { AppImage } from "@/types";
 import type {
   SeoEntityFormConfig,
   SeoEntityInitialData,
@@ -22,6 +25,12 @@ import type {
 type Feedback = { type: "success" | "error"; message: string } | null;
 
 const PEST_SLUG_SUFFIX = "-ilaclama";
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 /**
  * Converts optional entity data into the complete controlled form shape.
@@ -33,6 +42,8 @@ const normalizeInitialData = (
   slug: initialData?.slug ?? "",
   description: initialData?.description ?? "",
   cardDescription: initialData?.cardDescription ?? "",
+  image: initialData?.image,
+  imageUrl: initialData?.imageUrl,
   isActive: initialData?.isActive ?? true,
   title: initialData?.title ?? "",
   h1: initialData?.h1 ?? "",
@@ -68,8 +79,12 @@ export const SeoEntityForm = <TError extends string>({
   onSuccess,
 }: SeoEntityFormConfig<TError>) => {
   const router = useRouter();
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const normalizedInitialData = normalizeInitialData(initialData);
   const [formData, setFormData] = useState(() => normalizedInitialData);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imageAlt, setImageAlt] = useState(normalizedInitialData.image?.alt ?? "");
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -90,6 +105,48 @@ export const SeoEntityForm = <TError extends string>({
     if (error === "AI_QUOTA_EXCEEDED" as TError) return d.errorQuotaExceeded;
 
     return d.errorDefault;
+  };
+
+  const getUploadErrorMessage = (error: ImageUploadErrorCode) => {
+    if (error === "INVALID_FILE_TYPE") return d.imageInvalidType;
+    if (error === "FILE_TOO_LARGE") return d.imageTooLarge;
+    if (error === "CONFIGURATION_FAILED") return d.imageConfigError;
+
+    return d.imageUploadError;
+  };
+
+  const getDefaultImageAlt = () =>
+    d.imageDefaultAltTemplate.replace("{name}", formData.name.trim());
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      event.target.value = "";
+      setFeedback({ type: "error", message: d.imageInvalidType });
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      event.target.value = "";
+      setFeedback({ type: "error", message: d.imageTooLarge });
+      return;
+    }
+
+    setSelectedImageFile(file);
+    setIsImageRemoved(false);
+    setFeedback(null);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImageFile(null);
+    setImageAlt("");
+    setIsImageRemoved(
+      Boolean(normalizedInitialData.image || normalizedInitialData.imageUrl),
+    );
+
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleGenerate = async () => {
@@ -228,6 +285,36 @@ export const SeoEntityForm = <TError extends string>({
         faq: formData.faq,
       };
 
+      const finalImageAlt = imageAlt.trim() || getDefaultImageAlt();
+      let imageToSave: AppImage | undefined;
+
+      if (selectedImageFile) {
+        const uploadData = new FormData();
+        uploadData.set("file", selectedImageFile);
+        uploadData.set("entity", entity);
+        uploadData.set("slug", formData.slug);
+        uploadData.set("alt", finalImageAlt);
+
+        const uploadResult = await uploadAdminImage(uploadData);
+        if (!uploadResult.success || !uploadResult.data) {
+          setFeedback({
+            type: "error",
+            message: getUploadErrorMessage(
+              uploadResult.success ? "UPLOAD_FAILED" : uploadResult.error,
+            ),
+          });
+          return;
+        }
+
+        imageToSave = uploadResult.data;
+      } else if (
+        !isImageRemoved &&
+        formData.image &&
+        finalImageAlt !== formData.image.alt
+      ) {
+        imageToSave = { ...formData.image, alt: finalImageAlt };
+      }
+
       if (mode === "edit" && update) {
         const res = await update(formData.slug, {
           name: formData.name,
@@ -238,6 +325,8 @@ export const SeoEntityForm = <TError extends string>({
           metaDesc: formData.metaDesc,
           content: formData.content,
           faq: formData.faq,
+          ...(isImageRemoved ? { image: null, imageUrl: null } : {}),
+          ...(imageToSave ? { image: imageToSave } : {}),
         });
 
         if (res.success) {
@@ -258,6 +347,7 @@ export const SeoEntityForm = <TError extends string>({
         formData.slug,
         formData.name,
         formData.description,
+        imageToSave,
         generatedContent,
         formData.isActive,
       );
@@ -267,6 +357,10 @@ export const SeoEntityForm = <TError extends string>({
 
         if (!initialData) {
           setFormData(normalizeInitialData());
+          setSelectedImageFile(null);
+          setImageAlt("");
+          setIsImageRemoved(false);
+          if (imageInputRef.current) imageInputRef.current.value = "";
         }
 
         router.refresh();
@@ -304,6 +398,10 @@ export const SeoEntityForm = <TError extends string>({
     formData.slug !== normalizedInitialData.slug ||
     formData.description !== normalizedInitialData.description ||
     formData.cardDescription !== normalizedInitialData.cardDescription ||
+    selectedImageFile !== null ||
+    isImageRemoved ||
+    (Boolean(formData.image) &&
+      imageAlt.trim() !== (formData.image?.alt ?? "")) ||
     formData.isActive !== normalizedInitialData.isActive ||
     formData.title !== normalizedInitialData.title ||
     formData.h1 !== normalizedInitialData.h1 ||
@@ -359,6 +457,51 @@ export const SeoEntityForm = <TError extends string>({
         onChange={(event) => updateField("description", event.target.value)}
         rows={2}
       />
+
+      <div className="space-y-3 rounded-xl border border-brand-border bg-surface-neutral p-4">
+        <Input
+          ref={imageInputRef}
+          id={`${entity}-image`}
+          type="file"
+          label={d.imageUploadLabel}
+          optionalText={d.imageUploadHelp}
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleImageChange}
+        />
+
+        {selectedImageFile && (
+          <p className="text-sm text-text-secondary">
+            {d.imageSelected.replace("{file}", selectedImageFile.name)}
+          </p>
+        )}
+
+        {!selectedImageFile &&
+          !isImageRemoved &&
+          (formData.image || formData.imageUrl) && (
+            <p className="text-sm text-text-secondary">{d.imageCurrent}</p>
+          )}
+
+        <Input
+          id={`${entity}-image-alt`}
+          label={d.imageAltLabel}
+          value={imageAlt}
+          onChange={(event) => setImageAlt(event.target.value)}
+          placeholder={d.imageAltPlaceholder}
+          disabled={!selectedImageFile && !formData.image}
+        />
+
+        {(selectedImageFile ||
+          (!isImageRemoved && (formData.image || formData.imageUrl))) && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRemoveImage}
+          >
+            {d.imageRemove}
+          </Button>
+        )}
+      </div>
 
       <div className="flex justify-stretch sm:justify-end">
         {mode === "create" && (
@@ -497,7 +640,14 @@ export const SeoEntityForm = <TError extends string>({
         entity={entity}
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
-        data={formData}
+        data={{
+          ...formData,
+          image:
+            !isImageRemoved && formData.image
+              ? { ...formData.image, alt: imageAlt.trim() || getDefaultImageAlt() }
+              : undefined,
+          imageUrl: isImageRemoved ? undefined : formData.imageUrl,
+        }}
       />
     </div>
   );

@@ -13,6 +13,7 @@ import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
+import { resolveAppImage } from "@/utils/cloudinary";
 
 type RegionPageProps = {
   params: Promise<{ regionSlug: string }>;
@@ -61,6 +62,15 @@ export const generateMetadata = async ({
     region?.description ||
     `${region?.name || DICTIONARY.global.city}${DICTIONARY.pages.regions.regionDescSuffix}`;
   const canonicalUrl = `${ROUTES.regionBase}/${regionSlug}`;
+  const resolvedOgImage = region
+    ? resolveAppImage({
+        image: region.image,
+        imageUrl: region.imageUrl,
+        fallbackAlt: region.h1 || title,
+        preset: "og",
+      })
+    : null;
+  const ogImage = resolvedOgImage?.url || DICTIONARY.meta.og.image.fallback;
 
   return {
     title,
@@ -73,10 +83,10 @@ export const generateMetadata = async ({
       siteName: DICTIONARY.global.brand,
       images: [
         {
-          url: DICTIONARY.meta.og.image.fallback,
+          url: ogImage,
           width: DICTIONARY.meta.og.image.width,
           height: DICTIONARY.meta.og.image.height,
-          alt: region?.h1 || title,
+          alt: resolvedOgImage?.alt || region?.h1 || title,
           type: DICTIONARY.meta.og.image.type,
         },
       ],
@@ -87,7 +97,7 @@ export const generateMetadata = async ({
       card: "summary_large_image",
       title,
       description,
-      images: [DICTIONARY.meta.og.image.fallback],
+      images: [ogImage],
     },
   };
 };
@@ -104,6 +114,12 @@ const RegionPage = async ({ params }: RegionPageProps) => {
   const pestDescriptions = new Map(
     pests.map((pest) => [pest.slug, pest.cardDescription]),
   );
+  const resolvedHeroImage = resolveAppImage({
+    image: region.image,
+    imageUrl: region.imageUrl,
+    fallbackAlt: region.h1 || region.name,
+    preset: "hero",
+  });
 
   const relatedLinks = activeCombinations
     .filter((combination) => combination.region === region.slug)
@@ -149,7 +165,17 @@ const RegionPage = async ({ params }: RegionPageProps) => {
           region.h1 ||
           `${region.name}${DICTIONARY.pages.regions.regionTitleSuffix}`
         }
-        sliderImages={[]}
+        sliderImages={
+          resolvedHeroImage
+            ? [
+                {
+                  id: "region-hero",
+                  url: resolvedHeroImage.url,
+                  altText: resolvedHeroImage.alt,
+                },
+              ]
+            : []
+        }
         type="region"
         regionSlug={region.slug}
         regionName={region.name}

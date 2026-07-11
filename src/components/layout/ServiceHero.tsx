@@ -60,15 +60,13 @@ export const ServiceHero = ({
           {h1}
         </h1>
 
-        {sliderImages.length > 0 && (
-          <div className="mt-10 rounded-2xl overflow-hidden shadow-xl max-w-3xl aspect-video relative group">
-            <ImageSlider images={sliderImages} autoplayDelay={0} />
-            <div
-              className="absolute inset-0 border border-brand-surface/20 rounded-2xl pointer-events-none z-10 mix-blend-overlay"
-              aria-hidden="true"
-            />
-          </div>
-        )}
+        <div className="mt-10 rounded-2xl overflow-hidden shadow-xl max-w-3xl aspect-video relative group">
+          <ImageSlider images={sliderImages} autoplayDelay={0} />
+          <div
+            className="absolute inset-0 border border-brand-surface/20 rounded-2xl pointer-events-none z-10 mix-blend-overlay"
+            aria-hidden="true"
+          />
+        </div>
       </div>
     </section>
   );

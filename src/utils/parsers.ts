@@ -29,36 +29,30 @@ export const parseAppImage = (data: unknown): AppImage | undefined => {
     source: "cloudinary",
     publicId,
     alt,
-    assetId:
-      typeof image.assetId === "string" && image.assetId.trim()
-        ? image.assetId.trim()
-        : undefined,
-    version:
-      typeof image.version === "number" &&
-      Number.isInteger(image.version) &&
-      image.version > 0
-        ? image.version
-        : undefined,
-    originalUrl:
-      typeof image.originalUrl === "string" && image.originalUrl.trim()
-        ? image.originalUrl.trim()
-        : undefined,
-    width:
-      typeof image.width === "number" &&
-      Number.isFinite(image.width) &&
-      image.width > 0
-        ? image.width
-        : undefined,
-    height:
-      typeof image.height === "number" &&
-      Number.isFinite(image.height) &&
-      image.height > 0
-        ? image.height
-        : undefined,
-    format:
-      typeof image.format === "string" && image.format.trim()
-        ? image.format.trim()
-        : undefined,
+    ...(typeof image.assetId === "string" && image.assetId.trim()
+      ? { assetId: image.assetId.trim() }
+      : {}),
+    ...(typeof image.version === "number" &&
+    Number.isInteger(image.version) &&
+    image.version > 0
+      ? { version: image.version }
+      : {}),
+    ...(typeof image.originalUrl === "string" && image.originalUrl.trim()
+      ? { originalUrl: image.originalUrl.trim() }
+      : {}),
+    ...(typeof image.width === "number" &&
+    Number.isFinite(image.width) &&
+    image.width > 0
+      ? { width: image.width }
+      : {}),
+    ...(typeof image.height === "number" &&
+    Number.isFinite(image.height) &&
+    image.height > 0
+      ? { height: image.height }
+      : {}),
+    ...(typeof image.format === "string" && image.format.trim()
+      ? { format: image.format.trim() }
+      : {}),
   };
 };
 
@@ -198,6 +192,8 @@ export const parseRegionDoc = (data: unknown): RegionDoc => {
     cardDescription: d.cardDescription
       ? String(d.cardDescription)
       : undefined,
+    image: parseAppImage(d.image),
+    imageUrl: d.imageUrl ? String(d.imageUrl) : undefined,
     isActive: Boolean(d.isActive ?? false),
     title: d.title ? String(d.title) : undefined,
     h1: d.h1 ? String(d.h1) : undefined,

@@ -4,12 +4,15 @@ import React from "react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getSectionIcons, type Section } from "@/utils/parseHtmlIntoSections";
 import { SanitizedHtml } from "@/components/ui/SanitizedHtml";
+import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
+import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 
 type SeoContentProps = {
   sections: Section[];
+  sectionVisuals?: Record<number, SliderImage | null>;
 };
 
-export const SeoContent = ({ sections }: SeoContentProps) => {
+export const SeoContent = ({ sections, sectionVisuals }: SeoContentProps) => {
   const sectionIcons = getSectionIcons(sections);
 
   return (
@@ -35,6 +38,8 @@ export const SeoContent = ({ sections }: SeoContentProps) => {
               Icon !== DICTIONARY.admin.ownerShortcut
                 ? (Icon as React.ElementType)
                 : null;
+            const hasSectionVisual = Object.hasOwn(sectionVisuals ?? {}, idx);
+            const sectionVisual = sectionVisuals?.[idx];
 
             return (
               <div
@@ -46,8 +51,19 @@ export const SeoContent = ({ sections }: SeoContentProps) => {
               >
                 {/* Visual Content Box */}
                 <div className="w-full lg:w-5/12">
-                  <div className="w-full h-full min-h-52 lg:min-h-full rounded-lg bg-brand-surface/30 border border-brand-border flex items-center justify-center p-8">
-                    {Icon === DICTIONARY.admin.ownerShortcut ? (
+                  <div
+                    className={cn(
+                      "w-full h-full min-h-52 lg:min-h-full rounded-lg bg-brand-surface/30 border border-brand-border flex items-center justify-center",
+                      hasSectionVisual ? "overflow-hidden" : "p-8",
+                    )}
+                  >
+                    {hasSectionVisual ? (
+                      sectionVisual ? (
+                        <ImageSlider images={[sectionVisual]} autoplayDelay={0} />
+                      ) : (
+                        <ImagePlaceholder />
+                      )
+                    ) : Icon === DICTIONARY.admin.ownerShortcut ? (
                       <div
                         className="w-56 h-56 bg-brand-primary opacity-10 mask-owner"
                         aria-hidden="true"

@@ -3,11 +3,11 @@
 import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { updateTag } from "next/cache";
 import { getGeminiModel, getGeminiApiKeys, buildPestPrompt } from "@/lib/gemini";
 import { extractAndParseJson, parsePestDoc } from "@/utils/parsers";
-import type { ActionResponse } from "@/types";
-import type { PestDoc } from "@/types";
+import type { ActionResponse, AppImage, PestDoc } from "@/types";
 import {
   PEST_ERRORS,
   type PestErrorCode,
@@ -196,7 +196,7 @@ export const savePest = async (
   slug: string,
   name: string,
   description: string | undefined,
-  imageUrl: string | undefined,
+  image: AppImage | undefined,
   content: GeneratedContent,
   isActive: boolean,
 ): Promise<ActionResponse<void, PestErrorCode>> => {
@@ -208,7 +208,7 @@ export const savePest = async (
     slug,
     name,
     description,
-    imageUrl,
+    image,
     content,
     isActive,
   });
@@ -218,7 +218,7 @@ export const savePest = async (
   }
 
   try {
-    const { slug, name, description, imageUrl, content, isActive } =
+    const { slug, name, description, image, content, isActive } =
       parsed.data;
 
     const docData = {
@@ -226,7 +226,7 @@ export const savePest = async (
       slug,
       description,
       cardDescription: content.cardDescription,
-      imageUrl,
+      image,
       title: content.title,
       h1: content.h1,
       metaDesc: content.metaDesc,
@@ -277,8 +277,19 @@ export const updatePest = async (
     const db = getAdminDb();
     const docRef = db.collection("pests").doc(parsedSlug.data);
 
+    const { image, imageUrl, ...contentData } = parsed.data;
     const updateData = {
-      ...parsed.data,
+      ...contentData,
+      ...(image === null
+        ? { image: FieldValue.delete() }
+        : image
+          ? { image }
+          : {}),
+      ...(imageUrl === null
+        ? { imageUrl: FieldValue.delete() }
+        : typeof imageUrl === "string"
+          ? { imageUrl }
+          : {}),
       updatedAt: Date.now(),
     };
 

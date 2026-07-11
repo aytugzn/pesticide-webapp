@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RESERVED_SLUGS } from "@/constants/routes";
+import { appImageSchema } from "@/features/image-upload/schemas";
 
 export const slugSchema = z
   .string()
@@ -33,6 +34,7 @@ export const savePestSchema = z.object({
   slug: slugSchema,
   name: z.string().trim().min(1).max(120),
   description: z.string().optional(),
+  image: appImageSchema.optional(),
   imageUrl: z.string().optional(),
   content: generatedContentSchema,
   isActive: z.boolean(),
@@ -42,7 +44,8 @@ export const updatePestSchema = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().optional(),
   cardDescription: z.string().trim().max(220).optional(),
-  imageUrl: z.string().optional(),
+  image: appImageSchema.nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
   title: z.string().trim().min(1).max(60),
   h1: z.string().trim().min(1).max(70),
   metaDesc: z.string().trim().min(1).max(160),

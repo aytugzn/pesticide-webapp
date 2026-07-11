@@ -3,11 +3,11 @@
 import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { updateTag } from "next/cache";
 import { getGeminiModel, getGeminiApiKeys, buildRegionPrompt } from "@/lib/gemini";
 import { extractAndParseJson, parseRegionDoc } from "@/utils/parsers";
-import type { ActionResponse } from "@/types";
-import type { RegionDoc } from "@/types";
+import type { ActionResponse, AppImage, RegionDoc } from "@/types";
 import {
   REGION_ERRORS,
   type RegionErrorCode,
@@ -196,6 +196,7 @@ export const saveRegion = async (
   slug: string,
   name: string,
   description: string | undefined,
+  image: AppImage | undefined,
   content: GeneratedContent,
   isActive: boolean,
 ): Promise<ActionResponse<void, RegionErrorCode>> => {
@@ -207,6 +208,7 @@ export const saveRegion = async (
     slug,
     name,
     description,
+    image,
     content,
     isActive,
   });
@@ -216,13 +218,14 @@ export const saveRegion = async (
   }
 
   try {
-    const { slug, name, description, content, isActive } = parsed.data;
+    const { slug, name, description, image, content, isActive } = parsed.data;
 
     const docData = {
       name,
       slug,
       description,
       cardDescription: content.cardDescription,
+      image,
       title: content.title,
       h1: content.h1,
       metaDesc: content.metaDesc,
@@ -273,8 +276,19 @@ export const updateRegion = async (
     const db = getAdminDb();
     const docRef = db.collection("regions").doc(parsedSlug.data);
 
+    const { image, imageUrl, ...contentData } = parsed.data;
     const updateData = {
-      ...parsed.data,
+      ...contentData,
+      ...(image === null
+        ? { image: FieldValue.delete() }
+        : image
+          ? { image }
+          : {}),
+      ...(imageUrl === null
+        ? { imageUrl: FieldValue.delete() }
+        : typeof imageUrl === "string"
+          ? { imageUrl }
+          : {}),
       updatedAt: Date.now(),
     };
 

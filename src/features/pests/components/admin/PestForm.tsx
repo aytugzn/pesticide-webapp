@@ -20,9 +20,7 @@ export const PestForm = ({ mode = "create", initialData, onSuccess }: PestFormPr
       initialData={initialData}
       checkExists={checkPestExists}
       generateContent={generatePestContent}
-      save={(slug, name, description, content, isActive) =>
-        savePest(slug, name, description, undefined, content, isActive)
-      }
+      save={savePest}
       update={(slug, payload) => updatePest(slug, payload as unknown as import("../../types").UpdatePestInput)}
       onSuccess={onSuccess}
     />

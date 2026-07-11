@@ -86,6 +86,10 @@ Projenin yerel ortamda çalıştırılması için aşağıdaki komutları kullan
    # GOOGLE_PLACE_ID= (Kullanılmıyor)
    NEXT_PUBLIC_SITE_URL=
    NEXT_PUBLIC_DEVELOPER_NAME=
+   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+   CLOUDINARY_CLOUD_NAME=
+   CLOUDINARY_API_KEY=
+   CLOUDINARY_API_SECRET=
    ```
 
 3. Geliştirme sunucusunu başlatın:

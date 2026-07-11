@@ -9,6 +9,8 @@ import { CtaSection } from "@/components/layout/CtaSection";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { ServiceHero } from "@/components/layout/ServiceHero";
+import { resolveAppImage } from "@/utils/cloudinary";
+import type { AppImage } from "@/types";
 
 export type SeoEntityPreviewModalProps = {
   entity: "pest" | "region";
@@ -22,6 +24,7 @@ export type SeoEntityPreviewModalProps = {
     metaDesc: string;
     content: string;
     faq: { question: string; answer: string }[];
+    image?: AppImage;
     imageUrl?: string;
   };
 };
@@ -40,10 +43,21 @@ export const SeoEntityPreviewModal = ({
 
   const sections = data.content ? parseHtmlIntoSections(data.content) : [];
   
-  const sliderImages =
-    entity === "pest" && data.imageUrl
-      ? [{ id: "pest-hero", url: data.imageUrl, altText: data.h1 || data.name }]
-      : [];
+  const resolvedImage = resolveAppImage({
+    image: data.image,
+    imageUrl: data.imageUrl,
+    fallbackAlt: data.h1 || data.name,
+    preset: "hero",
+  });
+  const sliderImages = resolvedImage
+    ? [
+        {
+          id: `${entity}-hero`,
+          url: resolvedImage.url,
+          altText: resolvedImage.alt,
+        },
+      ]
+    : [];
 
   const h1Text =
     data.h1 ||
