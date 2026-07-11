@@ -16,6 +16,7 @@ import { CombinationHero } from "@/features/combinations/components/public/Combi
 import { SeoFaq } from "@/components/layout/SeoFaq";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
+import { resolveAppImage } from "@/utils/cloudinary";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
@@ -163,7 +164,6 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
   // Use the pest's image as priority
   const region = globalData.regions?.find((r) => r.slug === regionSlug);
   const pest = globalData.pests?.find((p) => p.slug === pestSlug);
-  const imageUrl = pest?.imageUrl;
 
   const regionName = data.regionName || region?.name || "";
   const pestName = data.pestName || pest?.name || "";
@@ -212,12 +212,20 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
       icon: "map-pin" as const,
     }));
 
-  const sliderImages = imageUrl
+  const resolvedHeroImage = pest
+    ? resolveAppImage({
+        image: pest.image,
+        imageUrl: pest.imageUrl,
+        fallbackAlt: data.h1 || DICTIONARY.meta.default.alt,
+        preset: "hero",
+      })
+    : null;
+  const sliderImages = resolvedHeroImage
     ? [
         {
           id: "combo-hero",
-          url: imageUrl,
-          altText: data.h1 || DICTIONARY.meta.default.alt,
+          url: resolvedHeroImage.url,
+          altText: resolvedHeroImage.alt,
         },
       ]
     : [];

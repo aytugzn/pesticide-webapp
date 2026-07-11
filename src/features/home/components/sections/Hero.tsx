@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/Button";
 import { ScrollButton } from "@/components/ui/ScrollButton";
 import { Phone, MessageCircle, PhoneCall } from "lucide-react";
 import { GoogleStats } from "../GoogleStats";
-import { ImageSlider } from "@/components/ui/ImageSlider";
+import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { HeroSlideDoc, GoogleStatsDoc } from "@/features/home/types";
+import { resolveAppImage } from "@/utils/cloudinary";
 
 export const Hero = ({
   slides,
@@ -24,6 +25,25 @@ export const Hero = ({
   instagramUrl?: string;
   facebookUrl?: string;
 }) => {
+  const sliderImages = slides.reduce<SliderImage[]>((resolvedSlides, slide) => {
+    const resolvedImage = resolveAppImage({
+      image: slide.image,
+      imageUrl: slide.imageUrl,
+      fallbackAlt: slide.altText || DICTIONARY.meta.default.alt,
+      preset: "hero",
+    });
+
+    if (resolvedImage) {
+      resolvedSlides.push({
+        id: slide.id || resolvedImage.url,
+        url: resolvedImage.url,
+        altText: resolvedImage.alt,
+      });
+    }
+
+    return resolvedSlides;
+  }, []);
+
   return (
     <section className="relative w-full pt-4 pb-16 md:pb-24 md:pt-16" aria-labelledby="hero-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -113,11 +133,7 @@ export const Hero = ({
           {/* Right Column: Slider */}
           <div className="w-full aspect-square md:aspect-landscape lg:aspect-square xl:aspect-landscape rounded-3xl overflow-hidden shadow-2xl relative group">
             <ImageSlider
-              images={slides.map((slide) => ({
-                id: slide.id || slide.imageUrl,
-                url: slide.imageUrl,
-                altText: slide.altText,
-              }))}
+              images={sliderImages}
               autoplayDelay={autoplayDelay}
             />
           </div>

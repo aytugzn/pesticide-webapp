@@ -1,6 +1,9 @@
+import type { AppImage } from "@/types";
+
 export type HeroSlideDoc = { 
   id?: string; 
-  imageUrl: string; 
+  image?: AppImage;
+  imageUrl?: string;
   altText?: string; 
   order: number; 
 };

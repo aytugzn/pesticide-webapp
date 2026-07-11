@@ -1,7 +1,66 @@
-import type { PestDoc, RegionDoc, SettingsDoc, CombinationDoc } from "@/types";
+import type {
+  AppImage,
+  PestDoc,
+  RegionDoc,
+  SettingsDoc,
+  CombinationDoc,
+} from "@/types";
 import type { HeroSlideDoc, GoogleReviewDoc } from "@/features/home/types";
 import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
+
+/**
+ * Parses a future object-based Cloudinary image reference from Firestore data.
+ *
+ * @param data - Raw image reference
+ * @returns A validated AppImage, or undefined when required fields are invalid
+ */
+export const parseAppImage = (data: unknown): AppImage | undefined => {
+  if (!data || typeof data !== "object") return undefined;
+
+  const image = data as Record<string, unknown>;
+  const publicId =
+    typeof image.publicId === "string" ? image.publicId.trim() : "";
+  const alt = typeof image.alt === "string" ? image.alt.trim() : "";
+
+  if (image.source !== "cloudinary" || !publicId || !alt) return undefined;
+
+  return {
+    source: "cloudinary",
+    publicId,
+    alt,
+    assetId:
+      typeof image.assetId === "string" && image.assetId.trim()
+        ? image.assetId.trim()
+        : undefined,
+    version:
+      typeof image.version === "number" &&
+      Number.isInteger(image.version) &&
+      image.version > 0
+        ? image.version
+        : undefined,
+    originalUrl:
+      typeof image.originalUrl === "string" && image.originalUrl.trim()
+        ? image.originalUrl.trim()
+        : undefined,
+    width:
+      typeof image.width === "number" &&
+      Number.isFinite(image.width) &&
+      image.width > 0
+        ? image.width
+        : undefined,
+    height:
+      typeof image.height === "number" &&
+      Number.isFinite(image.height) &&
+      image.height > 0
+        ? image.height
+        : undefined,
+    format:
+      typeof image.format === "string" && image.format.trim()
+        ? image.format.trim()
+        : undefined,
+  };
+};
 
 /**
  * Parses and validates raw Firestore data into a SettingsDoc.
@@ -95,6 +154,7 @@ export const parsePestDoc = (data: unknown): PestDoc => {
     cardDescription: d.cardDescription
       ? String(d.cardDescription)
       : undefined,
+    image: parseAppImage(d.image),
     imageUrl: d.imageUrl ? String(d.imageUrl) : undefined,
     isActive: Boolean(d.isActive ?? false),
     title: d.title ? String(d.title) : undefined,
@@ -207,13 +267,18 @@ export const parseHeroSlideDoc = (
   if (!data || typeof data !== "object") return null;
 
   const d = data as Record<string, unknown>;
-  const imageUrl = typeof d.imageUrl === "string" ? d.imageUrl : "";
-  if (!imageUrl) return null;
+  const image = parseAppImage(d.image);
+  const imageUrl = typeof d.imageUrl === "string" ? d.imageUrl.trim() : "";
+  if (!image && !imageUrl) return null;
 
   return {
     id: typeof d.id === "string" ? d.id : undefined,
-    imageUrl,
-    altText: typeof d.altText === "string" ? d.altText : undefined,
+    image,
+    imageUrl: imageUrl || undefined,
+    altText:
+      typeof d.altText === "string" && d.altText.trim()
+        ? d.altText.trim()
+        : image?.alt,
     order: typeof d.order === "number" ? d.order : fallbackOrder,
   };
 };

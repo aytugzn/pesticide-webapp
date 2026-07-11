@@ -10,6 +10,7 @@ import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { getGlobalData } from "@/features/settings/data";
 import { getAllActiveCombinations } from "@/features/combinations/data";
+import { resolveAppImage } from "@/utils/cloudinary";
 
 type PestRegionsHubPageProps = {
   params: Promise<{ pestSlug: string }>;
@@ -104,7 +105,13 @@ export const generateMetadata = async ({
   const title = `${getPestRegionsHubTitle(serviceTitle)} | ${DICTIONARY.global.brand}`;
   const description = getPestRegionsHubMetaDescription(serviceTitle);
   const canonicalUrl = `${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`;
-  const ogImage = pest.imageUrl || DICTIONARY.meta.og.image.fallback;
+  const resolvedOgImage = resolveAppImage({
+    image: pest.image,
+    imageUrl: pest.imageUrl,
+    fallbackAlt: pest.h1 || title,
+    preset: "og",
+  });
+  const ogImage = resolvedOgImage?.url || DICTIONARY.meta.og.image.fallback;
 
   return {
     title,
@@ -120,7 +127,7 @@ export const generateMetadata = async ({
       images: [
         {
           url: ogImage,
-          alt: pest.h1 || title,
+          alt: resolvedOgImage?.alt || pest.h1 || title,
         },
       ],
       locale: DICTIONARY.meta.default.locale,

@@ -13,6 +13,7 @@ import { getAllActiveCombinations } from "@/features/combinations/data";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
+import { resolveAppImage } from "@/utils/cloudinary";
 
 type PestPageProps = {
   params: Promise<{ pestSlug: string }>;
@@ -59,7 +60,15 @@ export const generateMetadata = async ({
     pest?.description ||
     DICTIONARY.pages.services.defaultPestDesc;
   const canonicalUrl = `${ROUTES.pestBase}/${pestSlug}`;
-  const ogImage = pest?.imageUrl || DICTIONARY.meta.og.image.fallback;
+  const resolvedOgImage = pest
+    ? resolveAppImage({
+        image: pest.image,
+        imageUrl: pest.imageUrl,
+        fallbackAlt: pest.h1 || title,
+        preset: "og",
+      })
+    : null;
+  const ogImage = resolvedOgImage?.url || DICTIONARY.meta.og.image.fallback;
 
   return {
     title,
@@ -73,7 +82,7 @@ export const generateMetadata = async ({
       images: [
         {
           url: ogImage,
-          alt: pest?.h1 || title,
+          alt: resolvedOgImage?.alt || pest?.h1 || title,
         },
       ],
       locale: DICTIONARY.meta.default.locale,
@@ -101,6 +110,12 @@ const PestPage = async ({ params }: PestPageProps) => {
     regions.map((region) => [region.slug, region.cardDescription]),
   );
   const serviceTitle = `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`;
+  const resolvedHeroImage = resolveAppImage({
+    image: pest.image,
+    imageUrl: pest.imageUrl,
+    fallbackAlt: pest.h1 || pest.name,
+    preset: "hero",
+  });
 
   const relatedLinks = activeCombinations
     .filter((combination) => combination.pest === pest.slug)
@@ -144,12 +159,12 @@ const PestPage = async ({ params }: PestPageProps) => {
           pest.h1 || `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`
         }
         sliderImages={
-          pest.imageUrl
+          resolvedHeroImage
             ? [
                 {
                   id: "pest-hero",
-                  url: pest.imageUrl,
-                  altText: pest.h1 || pest.name,
+                  url: resolvedHeroImage.url,
+                  altText: resolvedHeroImage.alt,
                 },
               ]
             : []

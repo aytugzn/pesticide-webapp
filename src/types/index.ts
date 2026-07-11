@@ -1,4 +1,16 @@
-export type PestDoc = { name: string; slug: string; description?: string; cardDescription?: string; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
+export type AppImage = {
+  source: "cloudinary";
+  publicId: string;
+  alt: string;
+  assetId?: string;
+  version?: number;
+  originalUrl?: string;
+  width?: number;
+  height?: number;
+  format?: string;
+};
+
+export type PestDoc = { name: string; slug: string; description?: string; cardDescription?: string; image?: AppImage; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
 export type RegionDoc = { name: string; slug: string; description?: string; cardDescription?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
 
 export type SettingsDoc = {
