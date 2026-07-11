@@ -2,7 +2,7 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parsePestDoc, parseRegionDoc, parseSettingsDoc } from "@/utils/parsers";
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import type { GlobalData } from "./types";
 
 /**
@@ -12,6 +12,7 @@ import type { GlobalData } from "./types";
  */
 export const getGlobalData = async (): Promise<GlobalData> => {
   "use cache";
+  cacheLife("max");
   cacheTag("global-data");
 
   try {

@@ -4,7 +4,6 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { randomUUID } from "node:crypto";
-import { updateTag } from "next/cache";
 import type { ActionResponse, CombinationDoc } from "@/types";
 import { 
   COMBINATION_ERRORS, 
@@ -16,7 +15,6 @@ import {
   type BulkProgressItem 
 } from "../types";
 import { saveCombinationSchema } from "../schemas";
-import { getCombinationCacheTag } from "../constants";
 import { AppError } from "@/lib/exceptions";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getErrorInfo } from "./utils";
@@ -26,7 +24,7 @@ const JOB_STALE_TIMEOUT_MS = 120_000;
 
 /**
  * Saves a bulk-generated combination to Firestore as an active public page
- * and invalidates the affected cache tags.
+ * without publishing cached public content.
  *
  * @param regionSlug - The region slug
  * @param pestSlug - The pest slug
@@ -97,9 +95,6 @@ export const saveCombinationSilently = async (
     }
 
     await docRef.create(docData);
-
-    updateTag(getCombinationCacheTag(parsedRegionSlug, parsedPestSlug));
-    updateTag("all-combinations");
 
     return { success: true };
   } catch (error: unknown) {

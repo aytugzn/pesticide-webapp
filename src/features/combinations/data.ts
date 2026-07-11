@@ -1,6 +1,6 @@
 import "server-only";
 
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { getGlobalData } from "@/features/settings/data";
 import { parseCombinationDoc } from "@/utils/parsers";
@@ -38,6 +38,7 @@ export const getCombination = async (
   pestSlug: string,
 ): Promise<CombinationDoc | null> => {
   "use cache";
+  cacheLife("max");
   cacheTag(getCombinationCacheTag(regionSlug, pestSlug));
   cacheTag("global-data");
 
@@ -80,6 +81,7 @@ export const getCombination = async (
  */
 export const getAllActiveCombinations = async (): Promise<ActivePublicCombination[]> => {
   "use cache";
+  cacheLife("max");
   cacheTag("all-combinations");
   cacheTag("global-data");
 

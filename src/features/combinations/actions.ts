@@ -123,8 +123,7 @@ export const getCombination = async (regionSlug: string, pestSlug: string): Prom
 
 
 /**
- * Saves a combination to Firestore and invalidates the relevant cache tag.
- * Uses updateTag for read-your-writes semantics per Next.js 16 standards.
+ * Saves a combination to Firestore without publishing cached public content.
  *
  * @param regionSlug - The region slug
  * @param pestSlug - The pest slug
@@ -196,10 +195,6 @@ export const saveCombination = async (
 
     await docRef.create(docData);
 
-    // Invalidate cache with read-your-writes semantics
-    updateTag(getCombinationCacheTag(parsedRegionSlug, parsedPestSlug));
-    updateTag("all-combinations");
-
     return { success: true };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
@@ -269,9 +264,6 @@ export const updateCombination = async (
       faq: parsedContent.faq,
       updatedAt: Date.now(),
     });
-
-    // We only need to update the specific combination tag since isActive and slugs do not change.
-    updateTag(getCombinationCacheTag(parsedRegion, parsedPest));
 
     return { success: true };
   } catch (error: unknown) {

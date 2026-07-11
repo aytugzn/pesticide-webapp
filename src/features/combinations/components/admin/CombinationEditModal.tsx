@@ -38,13 +38,14 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
   const d = DICTIONARY.admin.combinations;
   const { showToast } = useCombinationAdminToast();
 
-  const [formData, setFormData] = useState<GeneratedContent>({
+  const initialFormData: GeneratedContent = {
     title: row.title || "",
     h1: row.h1 || "",
     metaDesc: row.metaDesc || "",
     content: row.content || "",
     faq: row.faq || [],
-  });
+  };
+  const [formData, setFormData] = useState<GeneratedContent>(initialFormData);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -84,8 +85,16 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
     formData.h1.trim() !== "" &&
     formData.metaDesc.trim() !== "" &&
     formData.content.replace(/<[^>]*>?/gm, "").trim() !== "";
+  const isDirty =
+    formData.title !== initialFormData.title ||
+    formData.h1 !== initialFormData.h1 ||
+    formData.metaDesc !== initialFormData.metaDesc ||
+    formData.content !== initialFormData.content ||
+    JSON.stringify(formData.faq) !== JSON.stringify(initialFormData.faq);
 
   const handleSave = async () => {
+    if (!isDirty || !isFormValid) return;
+
     setIsSaving(true);
     setFeedback(null);
 
@@ -257,7 +266,7 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
           <Button
             variant="primary"
             onClick={handleSave}
-            disabled={isPending || !isFormValid}
+            disabled={isPending || !isFormValid || !isDirty}
             className="w-full sm:w-auto"
           >
             {isSaving ? (

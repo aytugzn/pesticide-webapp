@@ -241,7 +241,6 @@ export const saveRegion = async (
       .doc(slug)
       .create(cleanDocData);
 
-    updateTag("global-data");
     return { success: true };
   } catch (error: unknown) {
     console.error("Failed to save region", {
@@ -285,7 +284,6 @@ export const updateRegion = async (
 
     await docRef.update(cleanUpdateData);
 
-    updateTag("global-data");
     return { success: true };
   } catch (error: unknown) {
     console.error("Failed to update region", { slug, error: error instanceof Error ? error.message : String(error) });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { DICTIONARY } from "@/constants/dictionary";
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { parseSettingsDoc } from "@/utils/parsers";
 import { getAbsoluteUrl } from "@/utils/getAbsoluteUrl";
 import "./globals.css";
@@ -21,6 +21,7 @@ const montserrat = Montserrat({
 
 const getLayoutSettings = async () => {
   "use cache";
+  cacheLife("max");
   cacheTag("layout-settings");
 
   try {

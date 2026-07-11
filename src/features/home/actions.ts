@@ -3,11 +3,12 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { HOME_ERRORS, type HomeData, type HomeErrorCode, type HeroSlideDoc, type GoogleReviewDoc } from "./types";
 import type { ActionResponse } from "@/types";
-import { cacheTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { parseHeroSlideDoc, parseGoogleReviewDoc } from "@/utils/parsers";
 
 export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorCode>> => {
   "use cache";
+  cacheLife("max");
   cacheTag("home-data");
 
   try {
