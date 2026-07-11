@@ -42,7 +42,11 @@ export const LoginForm = () => {
         if (result.error === AUTH_ERRORS.UNAUTHORIZED_EMAIL) {
           await signOut(getFirebaseAuth());
         }
-        setError(DICTIONARY.auth.login.error);
+        setError(
+          result.error === AUTH_ERRORS.RATE_LIMITED
+            ? DICTIONARY.auth.login.rateLimitError
+            : DICTIONARY.auth.login.error
+        );
         return;
       }
 

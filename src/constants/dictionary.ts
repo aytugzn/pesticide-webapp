@@ -35,6 +35,8 @@ const authDict = {
     button: "Google ile Giriş Yap",
     loadingButton: "Giriş yapılıyor...",
     error: "Giriş yapılamadı. Lütfen tekrar deneyin.",
+    rateLimitError:
+      "Çok fazla giriş denemesi yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.",
     page: {
       badge: "Yönetim Paneli",
       brand: "DMR İlaçlama",

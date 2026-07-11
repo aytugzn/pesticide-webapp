@@ -3,7 +3,12 @@
 import "server-only";
 
 import { getAdminAuth } from "@/lib/firebase-admin-auth";
+import {
+  createRateLimitHash,
+  limitLoginSessionCreation,
+} from "@/lib/rateLimit";
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_ERRORS, type AuthErrorCode } from "./types";
 import type { ActionResponse } from "@/types";
@@ -12,6 +17,7 @@ import { ROUTES, SESSION_COOKIE_NAME } from "@/constants/routes";
 const ALLOWED_EMAILS = [process.env.ADMIN_EMAIL || ""];
 const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 days
 const AUTH_SESSION_STAGES = {
+  rateLimit: "rateLimit",
   getAdminAuth: "getAdminAuth",
   verifyIdToken: "verifyIdToken",
   emailWhitelist: "emailWhitelist",
@@ -57,11 +63,42 @@ const getErrorCode = (error: unknown): string | undefined => {
   return undefined;
 };
 
+/**
+ * Reads the best available request IP from proxy headers for server-side rate limiting.
+ */
+const getRequestIp = async (): Promise<string> => {
+  const headersList = await headers();
+  const forwardedIp = headersList.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = headersList.get("x-real-ip")?.trim();
+  const cloudflareIp = headersList.get("cf-connecting-ip")?.trim();
+
+  return forwardedIp || realIp || cloudflareIp || "unknown";
+};
+
+/**
+ * Applies the admin login/session creation rate limit before any Firebase Admin auth work.
+ */
+const enforceSessionCreationRateLimit = async (): Promise<boolean> => {
+  const requestIp = await getRequestIp();
+  const ipHash = createRateLimitHash(requestIp);
+
+  if (!ipHash) return true;
+
+  return limitLoginSessionCreation(`admin-login:ip:${ipHash}`);
+};
+
 export const createSession = async (idToken: string): Promise<ActionResponse<void, AuthErrorCode>> => {
   const expiresIn = SESSION_DURATION * 1000;
-  let stage: AuthSessionStage = AUTH_SESSION_STAGES.getAdminAuth;
+  let stage: AuthSessionStage = AUTH_SESSION_STAGES.rateLimit;
 
   try {
+    stage = AUTH_SESSION_STAGES.rateLimit;
+    const isSessionCreationAllowed = await enforceSessionCreationRateLimit();
+
+    if (!isSessionCreationAllowed) {
+      return { success: false, error: AUTH_ERRORS.RATE_LIMITED };
+    }
+
     stage = AUTH_SESSION_STAGES.getAdminAuth;
     const adminAuth = await getAdminAuth();
 
