@@ -77,10 +77,7 @@ export const ReviewCard = ({
   if (hasReviewUrl && isClone) {
     return (
       <div
-        onClick={() =>
-          window.open(review.reviewUrl, "_blank", "noopener,noreferrer")
-        }
-        className={`cursor-pointer ${containerClasses}`}
+        className={containerClasses}
         aria-hidden="true"
       >
         {content}

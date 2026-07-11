@@ -55,68 +55,71 @@ export const RelatedLinksSection = ({
         <h2 className="font-heading font-black text-text-primary text-3xl sm:text-4xl leading-tight mb-6 text-center sm:text-left">
           {title}
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {visibleItems.map((item) => {
             const IconComponent = item.icon === "map-pin" ? MapPin : Bug;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "group flex min-h-36 flex-col rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
-                  CLICK_EFFECT,
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
-                    <IconComponent className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
-                    {item.title}
-                  </h3>
-                </div>
-                {item.description && (
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                    {item.description}
-                  </p>
-                )}
-              </Link>
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "group flex h-full min-h-36 flex-col rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
+                    CLICK_EFFECT,
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
+                      <IconComponent className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
+                      {item.title}
+                    </h3>
+                  </div>
+                  {item.description && (
+                    <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                      {item.description}
+                    </p>
+                  )}
+                </Link>
+              </li>
             );
           })}
           {shouldShowViewAll && (
-            <Link
-              href={viewAllHref}
-              className={cn(
-                "group flex min-h-36 flex-col justify-between rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
-                CLICK_EFFECT,
-              )}
-            >
-              <div>
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
-                    {viewAllIcon === "map-pin" ? (
-                      <MapPin className="h-5 w-5" aria-hidden="true" />
-                    ) : (
-                      <Bug className="h-5 w-5" aria-hidden="true" />
-                    )}
-                  </span>
-                  <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
-                    {viewAllTitle}
-                  </h3>
-                </div>
-                {viewAllDescription && (
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                    {viewAllDescription}
-                  </p>
+            <li>
+              <Link
+                href={viewAllHref}
+                className={cn(
+                  "group flex h-full min-h-36 flex-col justify-between rounded-lg border border-brand-border bg-brand-surface p-4 transition-all hover:border-brand-primary/50 hover:bg-brand-surface-muted",
+                  CLICK_EFFECT,
                 )}
-              </div>
-              <span className="mt-4 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary transition-transform group-hover:translate-x-1">
-                <ArrowRight className="h-5 w-5" aria-hidden="true" />
-              </span>
-            </Link>
+              >
+                <div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary">
+                      {viewAllIcon === "map-pin" ? (
+                        <MapPin className="h-5 w-5" aria-hidden="true" />
+                      ) : (
+                        <Bug className="h-5 w-5" aria-hidden="true" />
+                      )}
+                    </span>
+                    <h3 className="font-heading text-lg font-bold leading-snug text-text-primary transition-colors group-hover:text-brand-primary">
+                      {viewAllTitle}
+                    </h3>
+                  </div>
+                  {viewAllDescription && (
+                    <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                      {viewAllDescription}
+                    </p>
+                  )}
+                </div>
+                <span className="mt-4 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary-light text-brand-primary transition-transform group-hover:translate-x-1">
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                </span>
+              </Link>
+            </li>
           )}
-        </div>
+        </ul>
       </div>
     </section>
   );

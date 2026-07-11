@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { ROUTES } from "@/constants/routes";
-import { DICTIONARY } from "@/constants/dictionary";
 import type { CombinationDoc, PestDoc, RegionDoc } from "@/types";
+import { getAbsoluteUrl } from "@/utils/getAbsoluteUrl";
 
 import { cacheTag } from "next/cache";
 
@@ -13,18 +13,16 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   cacheTag("global-data");
   cacheTag("all-combinations");
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? DICTIONARY.global.siteUrl;
-
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${baseUrl}${ROUTES.home}`, priority: 1.0, changeFrequency: "weekly" },
-    { url: `${baseUrl}${ROUTES.services}`, priority: 0.9, changeFrequency: "monthly" },
-    { url: `${baseUrl}${ROUTES.about}`, priority: 0.7, changeFrequency: "monthly" },
-    { url: `${baseUrl}${ROUTES.contact}`, priority: 0.8, changeFrequency: "monthly" },
-    { url: `${baseUrl}${ROUTES.regions}`, priority: 0.8, changeFrequency: "monthly" },
-    { url: `${baseUrl}${ROUTES.certificates}`, priority: 0.5, changeFrequency: "yearly" },
-    { url: `${baseUrl}${ROUTES.privacy}`, priority: 0.2, changeFrequency: "yearly" },
-    { url: `${baseUrl}${ROUTES.terms}`, priority: 0.2, changeFrequency: "yearly" },
-    { url: `${baseUrl}${ROUTES.kvkk}`, priority: 0.2, changeFrequency: "yearly" },
+    { url: getAbsoluteUrl(ROUTES.home), priority: 1.0, changeFrequency: "weekly" },
+    { url: getAbsoluteUrl(ROUTES.services), priority: 0.9, changeFrequency: "monthly" },
+    { url: getAbsoluteUrl(ROUTES.about), priority: 0.7, changeFrequency: "monthly" },
+    { url: getAbsoluteUrl(ROUTES.contact), priority: 0.8, changeFrequency: "monthly" },
+    { url: getAbsoluteUrl(ROUTES.regions), priority: 0.8, changeFrequency: "monthly" },
+    { url: getAbsoluteUrl(ROUTES.certificates), priority: 0.5, changeFrequency: "yearly" },
+    { url: getAbsoluteUrl(ROUTES.privacy), priority: 0.2, changeFrequency: "yearly" },
+    { url: getAbsoluteUrl(ROUTES.terms), priority: 0.2, changeFrequency: "yearly" },
+    { url: getAbsoluteUrl(ROUTES.kvkk), priority: 0.2, changeFrequency: "yearly" },
   ];
 
   let regionPages: MetadataRoute.Sitemap = [];
@@ -44,14 +42,14 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
     regionPages = regionsSnap.docs.map((doc) => {
       const { slug } = doc.data() as RegionDoc;
       activeRegions.add(slug);
-      return { url: `${baseUrl}${ROUTES.regionBase}/${slug}`, priority: 0.8, changeFrequency: "monthly" };
+      return { url: getAbsoluteUrl(`${ROUTES.regionBase}/${slug}`), priority: 0.8, changeFrequency: "monthly" };
     });
 
     const activePests = new Set<string>();
     pestPages = pestsSnap.docs.map((doc) => {
       const { slug } = doc.data() as PestDoc;
       activePests.add(slug);
-      return { url: `${baseUrl}${ROUTES.pestBase}/${slug}`, priority: 0.8, changeFrequency: "monthly" };
+      return { url: getAbsoluteUrl(`${ROUTES.pestBase}/${slug}`), priority: 0.8, changeFrequency: "monthly" };
     });
 
     const visibleCombinations = combinationsSnap.docs
@@ -67,20 +65,20 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
 
     const regionHubSlugs = Array.from(new Set(visibleCombinations.map((data) => data.region)));
     regionServiceHubPages = regionHubSlugs.map((slug) => ({
-      url: `${baseUrl}${ROUTES.regionBase}/${slug}${ROUTES.services}`,
+      url: getAbsoluteUrl(`${ROUTES.regionBase}/${slug}${ROUTES.services}`),
       priority: 0.8,
       changeFrequency: "monthly",
     }));
 
     const pestHubSlugs = Array.from(new Set(visibleCombinations.map((data) => data.pest)));
     pestRegionHubPages = pestHubSlugs.map((slug) => ({
-      url: `${baseUrl}${ROUTES.pestBase}/${slug}${ROUTES.regions}`,
+      url: getAbsoluteUrl(`${ROUTES.pestBase}/${slug}${ROUTES.regions}`),
       priority: 0.8,
       changeFrequency: "monthly",
     }));
 
     combinationPages = visibleCombinations.map((data) => {
-      return { url: `${baseUrl}/${data.region}/${data.pest}`, priority: 0.9, changeFrequency: "monthly" };
+      return { url: getAbsoluteUrl(`/${data.region}/${data.pest}`), priority: 0.9, changeFrequency: "monthly" };
     });
   } catch (error: unknown) {
     console.error("Failed to generate sitemap", { error: error instanceof Error ? error.message : "Unknown error" });

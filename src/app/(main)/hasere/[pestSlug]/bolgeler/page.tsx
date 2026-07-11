@@ -101,12 +101,36 @@ export const generateMetadata = async ({
   }
 
   const serviceTitle = getServiceTitle(pest.name);
+  const title = `${getPestRegionsHubTitle(serviceTitle)} | ${DICTIONARY.global.brand}`;
+  const description = getPestRegionsHubMetaDescription(serviceTitle);
+  const canonicalUrl = `${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`;
+  const ogImage = pest.imageUrl || DICTIONARY.meta.og.image.fallback;
 
   return {
-    title: `${getPestRegionsHubTitle(serviceTitle)} | ${DICTIONARY.global.brand}`,
-    description: getPestRegionsHubMetaDescription(serviceTitle),
+    title,
+    description,
     alternates: {
-      canonical: `${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`,
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: DICTIONARY.global.brand,
+      images: [
+        {
+          url: ogImage,
+          alt: pest.h1 || title,
+        },
+      ],
+      locale: DICTIONARY.meta.default.locale,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
     },
   };
 };

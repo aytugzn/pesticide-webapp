@@ -68,9 +68,6 @@ export const generateMetadata = async (): Promise<Metadata> => {
       },
     },
     openGraph: {
-      title,
-      description,
-      url: siteUrl,
       siteName: DICTIONARY.global.brand,
       images: [
         {
@@ -86,8 +83,6 @@ export const generateMetadata = async (): Promise<Metadata> => {
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
       images: [defaultOgImage],
     },
   };

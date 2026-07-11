@@ -101,11 +101,38 @@ export const generateMetadata = async ({
     };
   }
 
+  const title = `${getRegionServicesHubTitle(region.name)} | ${DICTIONARY.global.brand}`;
+  const description = getRegionServicesHubMetaDescription(region.name);
+  const canonicalUrl = `${ROUTES.regionBase}/${region.slug}${ROUTES.services}`;
+
   return {
-    title: `${getRegionServicesHubTitle(region.name)} | ${DICTIONARY.global.brand}`,
-    description: getRegionServicesHubMetaDescription(region.name),
+    title,
+    description,
     alternates: {
-      canonical: `${ROUTES.regionBase}/${region.slug}${ROUTES.services}`,
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: DICTIONARY.global.brand,
+      images: [
+        {
+          url: DICTIONARY.meta.og.image.fallback,
+          width: DICTIONARY.meta.og.image.width,
+          height: DICTIONARY.meta.og.image.height,
+          alt: title,
+          type: DICTIONARY.meta.og.image.type,
+        },
+      ],
+      locale: DICTIONARY.meta.default.locale,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [DICTIONARY.meta.og.image.fallback],
     },
   };
 };

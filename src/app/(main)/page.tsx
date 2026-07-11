@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { Hero } from "@/features/home/components/sections/Hero";
@@ -20,10 +20,34 @@ import { getHomeData } from "@/features/home/actions";
 import { getGlobalData } from "@/features/settings/data";
 import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 
-export const metadata: Metadata = {
-  title: DICTIONARY.meta.default.title,
-  description: DICTIONARY.meta.default.description,
-  alternates: { canonical: ROUTES.home },
+export const generateMetadata = async (
+  _: Record<string, never>,
+  parent: ResolvingMetadata,
+): Promise<Metadata> => {
+  const parentMetadata = await parent;
+  const title = DICTIONARY.meta.default.title;
+  const description = DICTIONARY.meta.default.description;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: ROUTES.home },
+    openGraph: {
+      title,
+      description,
+      url: ROUTES.home,
+      siteName: DICTIONARY.global.brand,
+      images: parentMetadata.openGraph?.images,
+      locale: DICTIONARY.meta.default.locale,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: parentMetadata.twitter?.images,
+    },
+  };
 };
 
 const DEFAULT_SETTINGS: SettingsDoc = {

@@ -49,18 +49,42 @@ export const generateMetadata = async ({
   const { pestSlug } = await params;
   const { pests } = await getGlobalData();
   const pest = pests.find((item) => item.slug === pestSlug);
+  const title =
+    pest?.title ||
+    (pest
+      ? `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix} | ${DICTIONARY.global.brand}`
+      : DICTIONARY.global.brand);
+  const description =
+    pest?.metaDesc ||
+    pest?.description ||
+    DICTIONARY.pages.services.defaultPestDesc;
+  const canonicalUrl = `${ROUTES.pestBase}/${pestSlug}`;
+  const ogImage = pest?.imageUrl || DICTIONARY.meta.og.image.fallback;
 
   return {
-    title:
-      pest?.title ||
-      (pest
-        ? `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix} | ${DICTIONARY.global.brand}`
-        : DICTIONARY.global.brand),
-    description:
-      pest?.metaDesc ||
-      pest?.description ||
-      DICTIONARY.pages.services.defaultPestDesc,
-    alternates: { canonical: `${ROUTES.pestBase}/${pestSlug}` },
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: DICTIONARY.global.brand,
+      images: [
+        {
+          url: ogImage,
+          alt: pest?.h1 || title,
+        },
+      ],
+      locale: DICTIONARY.meta.default.locale,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 };
 

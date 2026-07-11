@@ -51,18 +51,44 @@ export const generateMetadata = async ({
   const { regionSlug } = await params;
   const { regions } = await getGlobalData();
   const region = regions.find((item) => item.slug === regionSlug);
+  const title =
+    region?.title ||
+    (region
+      ? `${region.name}${DICTIONARY.pages.regions.regionTitleSuffix} | ${DICTIONARY.global.brand}`
+      : DICTIONARY.global.brand);
+  const description =
+    region?.metaDesc ||
+    region?.description ||
+    `${region?.name || DICTIONARY.global.city}${DICTIONARY.pages.regions.regionDescSuffix}`;
+  const canonicalUrl = `${ROUTES.regionBase}/${regionSlug}`;
 
   return {
-    title:
-      region?.title ||
-      (region
-        ? `${region.name}${DICTIONARY.pages.regions.regionTitleSuffix} | ${DICTIONARY.global.brand}`
-        : DICTIONARY.global.brand),
-    description:
-      region?.metaDesc ||
-      region?.description ||
-      `${region?.name || DICTIONARY.global.city}${DICTIONARY.pages.regions.regionDescSuffix}`,
-    alternates: { canonical: `${ROUTES.regionBase}/${regionSlug}` },
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: DICTIONARY.global.brand,
+      images: [
+        {
+          url: DICTIONARY.meta.og.image.fallback,
+          width: DICTIONARY.meta.og.image.width,
+          height: DICTIONARY.meta.og.image.height,
+          alt: region?.h1 || title,
+          type: DICTIONARY.meta.og.image.type,
+        },
+      ],
+      locale: DICTIONARY.meta.default.locale,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [DICTIONARY.meta.og.image.fallback],
+    },
   };
 };
 

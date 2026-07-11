@@ -61,7 +61,8 @@ export const CombinationHero = ({
         </nav>
 
         <h1 className="font-heading font-bold text-text-primary text-2xl sm:text-3xl lg:text-4xl leading-snug max-w-3xl text-balance">
-          {data.h1}
+          {data.h1 ||
+            `${displayRegion} ${displayPest} ${DICTIONARY.pages.services.pestTitleSuffix}`}
         </h1>
 
         {/* Optional Image Slider (max 1 image) derived from Pest or Region */}

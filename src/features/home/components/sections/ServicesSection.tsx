@@ -62,24 +62,29 @@ export const ServicesSection = ({ pests, autoplayDelay }: ServicesSectionProps) 
               description={DICTIONARY.home.services.description}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               {displayPests.map((pest) => (
-                <ServiceCard
-                  key={pest.slug}
-                  href={`${ROUTES.pestBase}/${pest.slug}`}
-                  title={`${pest.name} ${DICTIONARY.home.services.pestTitleSuffix}`}
-                />
+                <li key={pest.slug}>
+                  <ServiceCard
+                    href={`${ROUTES.pestBase}/${pest.slug}`}
+                    title={`${pest.name} ${DICTIONARY.home.services.pestTitleSuffix}`}
+                    className="h-full"
+                  />
+                </li>
               ))}
 
               {/* View All Button: Derived from the same component */}
               {hasMore && (
-                <ServiceCard
-                  variant="viewAll"
-                  href={ROUTES.services}
-                  title={DICTIONARY.home.services.viewAllServices}
-                />
+                <li>
+                  <ServiceCard
+                    variant="viewAll"
+                    href={ROUTES.services}
+                    title={DICTIONARY.home.services.viewAllServices}
+                    className="h-full"
+                  />
+                </li>
               )}
-            </div>
+            </ul>
 
           </div>
         </div>
