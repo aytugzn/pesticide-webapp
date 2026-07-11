@@ -2,14 +2,17 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CheckListItem } from "@/components/ui/CheckListItem";
+import { cn } from "@/utils/cn";
 
 type WhyUsSectionProps = {
   /** Can be a single static URL or an array of images from CMS */
   images?: string | SliderImage[] | null;
+  variant?: "default" | "embedded";
 }
 
 export const WhyUsSection = ({
   images = "/ilaclama.png",
+  variant = "default",
 }: WhyUsSectionProps) => {
   const data = DICTIONARY.home.whyUs;
 
@@ -28,7 +31,15 @@ export const WhyUsSection = ({
       : [];
 
   return (
-    <section className="bg-brand-surface border-y border-brand-border py-16 md:py-24" id="why-us" aria-labelledby="why-us-heading">
+    <section
+      className={cn(
+        "py-16 md:py-24",
+        variant === "default" && "bg-brand-surface border-y border-brand-border",
+        variant === "embedded" && "py-20 md:py-28",
+      )}
+      id="why-us"
+      aria-labelledby="why-us-heading"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
           {/* Left: Text & Image Content */}

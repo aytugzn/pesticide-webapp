@@ -159,6 +159,8 @@ const homeDict = {
       facebookTitle: "Facebook",
       facebookDesc: "Sosyal medya üzerinden de bizimle iletişimde kalın.",
       processTitle: "Talep sonrası süreç",
+      processTitlePrefix: "Talep sonrası",
+      processTitleHighlight: "süreç",
       processDescription:
         "Form gönderildikten sonra ekibimiz ihtiyacı netleştirir ve size en uygun servis planını oluşturur.",
       processSteps: [
@@ -362,11 +364,137 @@ const pagesDict = {
     heading: "Hakkımızda",
     eyebrow: "Hakkımızda",
     headerDesc: "DMR İlaçlama, İzmir'de ev, apartman, site ve işletmeler için güvenli, planlı ve takip edilebilir ilaçlama hizmeti sunar. Amacımız yalnızca uygulama yapmak değil, doğru tespit ve doğru yönlendirme ile müşterinin içini rahatlatmaktır.",
+    approach: {
+      eyebrow: "Yaklaşımımız",
+      title: "Her alanı kendi ihtiyacına göre değerlendiriyoruz",
+      titlePrefix: "Her alanı kendi ihtiyacına göre",
+      titleHighlight: "değerlendiriyoruz",
+      description:
+        "Haşere türü, alanın kullanım şekli ve çevresel koşullar uygulama kararını doğrudan etkiler. Bu yüzden talepleri önce dinler, ihtiyacı netleştirir ve alan için uygun yönlendirmeyi yaparız.",
+      cards: [
+        {
+          title: "Alanı Anlama",
+          description:
+            "Konut, iş yeri, ortak alan veya açık alan fark etmeksizin kullanım biçimini ve risk noktalarını dikkate alırız.",
+        },
+        {
+          title: "Doğru Yöntem Seçimi",
+          description:
+            "Tek tip çözüm yerine haşere türüne, yoğunluğa ve alan koşullarına göre uygulanabilir bir plan oluştururuz.",
+        },
+        {
+          title: "Net Bilgilendirme",
+          description:
+            "Uygulama öncesi ve sonrasında dikkat edilmesi gerekenleri sade, anlaşılır ve uygulanabilir şekilde paylaşırız.",
+        },
+      ],
+    },
+    principles: {
+      title: "Çalışma Prensiplerimiz",
+      titlePrefix: "Çalışma",
+      titleHighlight: "Prensiplerimiz",
+      items: [
+        "Güvenli uygulama adımlarını önceliklendirmek",
+        "Alan ihtiyacına göre doğru yöntemi seçmek",
+        "Süreç boyunca şeffaf bilgilendirme yapmak",
+        "Taleplere zamanında ve anlaşılır dönüş sağlamak",
+        "Uygulama sonrası yönlendirmeyi ihmal etmemek",
+      ],
+    },
+    audience: {
+      title: "Kimlere Hizmet Veriyoruz?",
+      titlePrefix: "Kimlere hizmet",
+      titleHighlight: "veriyoruz?",
+      description:
+        "İzmir genelinde farklı kullanım alanlarının ihtiyaçlarına göre keşif, planlama ve uygulama sürecini şekillendiriyoruz.",
+      items: [
+        "Konutlar",
+        "Apartman ve site ortak alanları",
+        "İş yerleri",
+        "Depo ve üretim alanları",
+        "Bahçe, yazlık ve açık alanlar",
+      ],
+    },
+    process: {
+      title: "DMR ile Çalışma Süreci",
+      titlePrefix: "DMR ile çalışma",
+      titleHighlight: "süreci",
+      steps: [
+        {
+          title: "Talebi Alırız",
+          description:
+            "Bölge, alan tipi ve karşılaşılan haşere türü hakkında temel bilgileri toplarız.",
+        },
+        {
+          title: "Ön Değerlendirme Yaparız",
+          description:
+            "Aktarılan bilgilere göre ihtiyacı netleştirir ve uygun yönlendirme için süreci planlarız.",
+        },
+        {
+          title: "Uygulama Planını Netleştiririz",
+          description:
+            "Alan koşullarına göre zamanlama, hazırlık ve uygulama detaylarını paylaşırız.",
+        },
+        {
+          title: "Bilgilendirme ile Tamamlarız",
+          description:
+            "Uygulama sonrasında dikkat edilmesi gereken noktaları anlaşılır şekilde aktarırız.",
+        },
+      ],
+    },
   },
   contact: {
     heading: "İletişim",
     eyebrow: "Bize Ulaşın",
     headerDesc: "Keşif, randevu, fiyat bilgisi veya acil yönlendirme için telefon, WhatsApp, e-posta ve iletişim formu üzerinden bize ulaşabilirsiniz.",
+    quickActions: {
+      title: "Hızlı Ulaşım",
+      titlePrefix: "Hızlı",
+      titleHighlight: "Ulaşım",
+      description:
+        "Talebinizi doğrudan iletmek için telefonla arayabilir veya WhatsApp üzerinden kısa bilgi paylaşabilirsiniz.",
+      callButton: "Telefonla Ara",
+      whatsappButton: "WhatsApp'tan Yaz",
+      callbackButton: "Biz Sizi Arayalım",
+      callbackDescription: "Formu doldurun, ekibimiz talebiniz için dönüş yapsın.",
+    },
+    otherChannels: {
+      titlePrefix: "Diğer iletişim",
+      titleHighlight: "kanalları",
+      description:
+        "E-posta, adres ve sosyal medya kanallarından da DMR İlaçlama'ya ulaşabilirsiniz.",
+    },
+    requestInfo: {
+      title: "Talep oluştururken paylaşabilirsiniz",
+      titlePrefix: "Talep oluştururken",
+      titleHighlight: "paylaşabilirsiniz",
+      description:
+        "Bu bilgiler ekibin ihtiyacı daha hızlı anlamasına ve size daha doğru yönlendirme yapmasına yardımcı olur.",
+      items: [
+        "İlçe veya mahalle bilgisi",
+        "Gözlemlediğiniz haşere türü",
+        "Alan tipi ve kullanım şekli",
+        "Talebin aciliyet durumu",
+        "Varsa WhatsApp üzerinden fotoğraf",
+      ],
+    },
+    serviceAreas: {
+      title: "Hizmet Verilen Bölgeler",
+      titlePrefix: "Hizmet verilen",
+      titleHighlight: "bölgeler",
+      description:
+        "Aktif hizmet bölgelerinden bazılarını aşağıda görebilir, tüm bölgeleri ayrı sayfada inceleyebilirsiniz.",
+      allRegionsLink: "Tüm Hizmet Bölgelerini Gör",
+      empty: "Aktif hizmet bölgesi bilgisi şu anda listelenemiyor.",
+    },
+    workingHours: {
+      title: "Çalışma Saatleri",
+      description: "Güncel ulaşılabilirlik bilgisini buradan takip edebilirsiniz.",
+    },
+    directions: {
+      label: "Haritada Aç",
+      aria: "Adresi haritada aç",
+    },
   },
   privacy: {
     heading: "Gizlilik Politikası",

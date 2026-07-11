@@ -85,7 +85,7 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
   return (
     <div
       className={cn(
-        "w-full max-w-2xl mx-auto bg-brand-surface rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl border border-brand-border relative overflow-hidden",
+        "w-full max-w-2xl mx-auto bg-brand-surface rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl border border-brand-border relative overflow-visible",
         className,
       )}
     >
