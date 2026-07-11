@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
@@ -22,7 +23,11 @@ export const ImageSlider = ({
   images,
   autoplayDelay = 5000,
 }: ImageSliderProps) => {
-  const isSingleImage = images?.length === 1;
+  const [failedImageKeys, setFailedImageKeys] = useState<string[]>([]);
+  const visibleImages = images.filter(
+    (image) => !failedImageKeys.includes(`${image.id}:${image.url}`),
+  );
+  const isSingleImage = visibleImages.length === 1;
 
   const [emblaRef] = useEmblaCarousel(
     {
@@ -34,14 +39,14 @@ export const ImageSlider = ({
       : [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })],
   );
 
-  if (!images || images.length === 0) {
+  if (visibleImages.length === 0) {
     return <ImagePlaceholder />;
   }
 
   return (
     <div className="overflow-hidden w-full h-full relative" ref={emblaRef}>
       <div className="flex h-full">
-        {images.map((img, index) => (
+        {visibleImages.map((img, index) => (
           <div
             className="flex-none w-full min-w-0 h-full relative"
             key={img.id}
@@ -54,6 +59,14 @@ export const ImageSlider = ({
               priority={index === 0}
               className="object-cover"
               sizes={HERO_IMAGE_SIZES}
+              onError={() => {
+                const failedImageKey = `${img.id}:${img.url}`;
+                setFailedImageKeys((current) =>
+                  current.includes(failedImageKey)
+                    ? current
+                    : [...current, failedImageKey],
+                );
+              }}
             />
             {/* Subtle Gradient Overlay for text readability if needed later */}
             <div

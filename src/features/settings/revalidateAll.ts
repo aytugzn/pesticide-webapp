@@ -5,12 +5,19 @@ import "server-only";
 import { updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { AUTH_ERRORS } from "@/features/auth/types";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { SETTINGS_ERRORS, type SettingsErrorCode } from "./types";
 
-export const revalidateAll = async (): Promise<ActionResponse<void, string>> => {
-    if (!(await requireAdmin())) {
-        return { success: false, error: AUTH_ERRORS.UNAUTHORIZED };
-    }
+/** Verifies Firestore availability before invalidating public cache tags. */
+export const revalidateAll = async (): Promise<
+  ActionResponse<void, SettingsErrorCode>
+> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
+  }
+
+  try {
+    await getAdminDb().collection("settings").doc("general").get();
 
     updateTag("global-data");
     updateTag("home-data");
@@ -18,4 +25,10 @@ export const revalidateAll = async (): Promise<ActionResponse<void, string>> => 
     updateTag("all-combinations");
 
     return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to revalidate public site", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
+  }
 };

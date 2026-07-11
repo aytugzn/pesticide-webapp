@@ -182,7 +182,7 @@ const PestRegionsHubPage = async ({ params }: PestRegionsHubPageProps) => {
           { name: DICTIONARY.global.home, url: ROUTES.home },
           { name: DICTIONARY.pages.services.heading, url: ROUTES.services },
           { name: pest.name, url: `${ROUTES.pestBase}/${pest.slug}` },
-          { name: title, url: canonicalUrl },
+          { name: DICTIONARY.pages.regions.heading, url: canonicalUrl },
         ]}
       />
       <ServiceJsonLd
@@ -195,6 +195,12 @@ const PestRegionsHubPage = async ({ params }: PestRegionsHubPageProps) => {
         eyebrow={DICTIONARY.pages.services.regionHubEyebrow}
         title={title}
         description={description}
+        breadcrumbs={[
+          { name: DICTIONARY.global.home, url: ROUTES.home },
+          { name: DICTIONARY.pages.services.heading, url: ROUTES.services },
+          { name: pest.name, url: `${ROUTES.pestBase}/${pest.slug}` },
+          { name: DICTIONARY.pages.regions.heading },
+        ]}
       />
       <RelatedLinksSection
         title={getPestRegionsListTitle(serviceTitle)}

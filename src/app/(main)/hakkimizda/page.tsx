@@ -212,7 +212,7 @@ const AboutProcessSection = () => {
           align="center"
         />
 
-        <ol className="mx-auto grid max-w-6xl grid-cols-1 gap-0 md:grid-cols-4">
+        <ol className="mx-auto grid max-w-6xl grid-cols-1 gap-0 pl-4 md:grid-cols-4 md:pl-0">
           {aboutDict.process.steps.map((step, index) => (
             <AboutProcessStep
               key={step.title}

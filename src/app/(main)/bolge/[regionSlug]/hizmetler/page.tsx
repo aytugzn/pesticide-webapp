@@ -185,7 +185,7 @@ const RegionServicesHubPage = async ({
           { name: DICTIONARY.global.home, url: ROUTES.home },
           { name: DICTIONARY.pages.regions.heading, url: ROUTES.regions },
           { name: region.name, url: `${ROUTES.regionBase}/${region.slug}` },
-          { name: title, url: canonicalUrl },
+          { name: DICTIONARY.pages.services.heading, url: canonicalUrl },
         ]}
       />
       <ServiceJsonLd
@@ -198,6 +198,12 @@ const RegionServicesHubPage = async ({
         eyebrow={DICTIONARY.pages.regions.serviceHubEyebrow}
         title={title}
         description={description}
+        breadcrumbs={[
+          { name: DICTIONARY.global.home, url: ROUTES.home },
+          { name: DICTIONARY.pages.regions.heading, url: ROUTES.regions },
+          { name: region.name, url: `${ROUTES.regionBase}/${region.slug}` },
+          { name: DICTIONARY.pages.services.heading },
+        ]}
       />
       <RelatedLinksSection
         title={getRegionServicesListTitle(region.name)}

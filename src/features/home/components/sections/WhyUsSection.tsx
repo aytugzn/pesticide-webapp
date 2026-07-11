@@ -11,7 +11,7 @@ type WhyUsSectionProps = {
 }
 
 export const WhyUsSection = ({
-  images = "/ilaclama.png",
+  images = null,
   variant = "default",
 }: WhyUsSectionProps) => {
   const data = DICTIONARY.home.whyUs;
@@ -53,7 +53,7 @@ export const WhyUsSection = ({
             />
 
             {/* Image Frame */}
-            <div className="w-full aspect-video rounded-lg overflow-hidden shadow-xl shadow-brand-primary/5 relative mt-auto hidden lg:block group border border-brand-border">
+            <div className="relative mt-8 aspect-video w-full overflow-hidden rounded-lg border border-brand-border shadow-xl shadow-brand-primary/5 group lg:mt-auto">
               <ImageSlider images={sliderImages} />
               <div
                 className="absolute inset-0 border border-brand-surface/20 rounded-lg pointer-events-none z-10 mix-blend-overlay"

@@ -6,21 +6,32 @@ import { RefreshCw } from "lucide-react";
 import { revalidateAll } from "@/features/settings/revalidateAll";
 import { cn } from "@/utils/cn";
 import { DICTIONARY } from "@/constants/dictionary";
+import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
 
 export const GlobalRevalidateButton = () => {
   const [isRevalidating, setIsRevalidating] = useState(false);
+  const { showToast } = useCombinationAdminToast();
 
   const handleRevalidate = async () => {
     setIsRevalidating(true);
     try {
       const res = await revalidateAll();
       if (res.success) {
-        alert(DICTIONARY.admin.settings.revalidateSuccess);
+        showToast({
+          variant: "success",
+          message: DICTIONARY.admin.settings.revalidateSuccess,
+        });
       } else {
-        alert(DICTIONARY.admin.settings.revalidateError);
+        showToast({
+          variant: "error",
+          message: DICTIONARY.admin.settings.revalidateError,
+        });
       }
     } catch {
-      alert(DICTIONARY.admin.settings.revalidateError);
+      showToast({
+        variant: "error",
+        message: DICTIONARY.admin.settings.revalidateError,
+      });
     } finally {
       setIsRevalidating(false);
     }

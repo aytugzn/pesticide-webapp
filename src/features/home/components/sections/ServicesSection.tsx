@@ -31,8 +31,8 @@ export const ServicesSection = ({ pests, autoplayDelay }: ServicesSectionProps) 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           
-          {/* Left Column: Slider (Takes 5 columns) - Hidden on mobile/tablet */}
-          <div className="hidden lg:block w-full lg:col-span-5 aspect-portrait rounded-3xl overflow-hidden shadow-2xl relative lg:sticky lg:top-32 group">
+          {/* Left Column: Slider (Takes 5 columns) */}
+          <div className="relative aspect-video w-full overflow-hidden rounded-3xl shadow-2xl group md:aspect-landscape lg:sticky lg:top-32 lg:col-span-5 lg:aspect-portrait">
              {slides.length > 0 ? (
                <>
                  <ImageSlider 

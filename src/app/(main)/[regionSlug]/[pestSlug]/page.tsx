@@ -232,9 +232,7 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
           { name: DICTIONARY.pages.regions.heading, url: ROUTES.regions },
           { name: regionName, url: `${ROUTES.regionBase}/${regionSlug}` },
           {
-            name:
-              data.h1 ||
-              `${regionName} ${pestName} ${DICTIONARY.pages.services.pestTitleSuffix}`,
+            name: pestName,
             url: `/${regionSlug}/${pestSlug}`,
           },
         ]}
