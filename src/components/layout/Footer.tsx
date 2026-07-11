@@ -6,7 +6,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { CopyrightText } from "@/components/ui/CopyrightText";
 import { InstagramIcon, FacebookIcon } from "@/components/ui/Icons";
-import logoImg from "@/../public/dmr_logo.svg";
+import logoImg from "@/../public/logo-wordmark.svg";
 import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 
 const CORPORATE_LINKS = [

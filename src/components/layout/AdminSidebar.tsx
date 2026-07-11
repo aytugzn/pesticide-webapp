@@ -20,7 +20,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { GlobalRevalidateButton } from "@/features/settings/components/admin/GlobalRevalidateButton";
-import logoImg from "@/../public/dmr_logo.svg";
+import logoImg from "@/../public/logo-wordmark.svg";
 
 type AdminSidebarProps = {
   isOpen: boolean;
@@ -94,8 +94,6 @@ const SidebarHeader = ({ onClose }: { onClose: () => void }) => (
       <Image
         src={logoImg}
         alt={DICTIONARY.global.logo.alt}
-        width={100}
-        height={28}
         className="w-full h-auto object-contain"
         priority
       />

@@ -11,7 +11,7 @@ import { NavbarActions } from "./NavbarActions";
 import { NavbarContactStrip } from "./NavbarContactStrip";
 import { MegaMenuColumns } from "./MegaMenuColumns";
 import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
-import logoImg from "@/../public/dmr.svg";
+import logoImg from "@/../public/logo-wordmark.svg";
 import { getGlobalData } from "@/features/settings/data";
 
 export const Navbar = async () => {
@@ -38,7 +38,7 @@ export const Navbar = async () => {
             <div className="flex-shrink-0 flex items-center">
               <Link
                 href={ROUTES.home}
-                className="relative block h-10 lg:h-12 aspect-[4/1]"
+                className="relative block h-10 w-40 lg:h-12 lg:w-48"
               >
                 <Image
                   src={logoImg}

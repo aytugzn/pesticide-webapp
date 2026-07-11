@@ -4,7 +4,7 @@ import { Star, BadgeCheck } from "lucide-react";
 import Image from "next/image";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ScrollButton } from "@/components/ui/ScrollButton";
-import logoImg from "@/../public/dmr.svg";
+import logoImg from "@/../public/logo.svg";
 import type { GoogleStatsDoc } from "@/features/home/types";
 
 import { InstagramIcon, FacebookIcon } from "@/components/ui/Icons";

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import logoImg from "@/../public/dmr_logo.svg";
+import logoImg from "@/../public/logo-wordmark.svg";
 
 export const metadata: Metadata = {
   title: DICTIONARY.auth.login.page.metadataTitle,
@@ -35,8 +35,6 @@ const LoginPage = () => (
           <Image
             src={logoImg}
             alt={DICTIONARY.global.logo.alt}
-            width={300}
-            height={100}
             className="w-full h-auto object-contain"
             priority
           />
