@@ -11,7 +11,7 @@ import { NavbarActions } from "./NavbarActions";
 import { NavbarContactStrip } from "./NavbarContactStrip";
 import { MegaMenuColumns } from "./MegaMenuColumns";
 import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
-import logoImg from "@/../public/logo-wordmark.svg";
+import logoImg from "@/../public/logo.svg";
 import { getGlobalData } from "@/features/settings/data";
 
 export const Navbar = async () => {
