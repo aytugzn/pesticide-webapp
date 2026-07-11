@@ -17,6 +17,7 @@ import { SeoFaq } from "@/components/layout/SeoFaq";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
+import { Bug, MapPin } from "lucide-react";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
@@ -212,23 +213,14 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
       icon: "map-pin" as const,
     }));
 
-  const resolvedHeroImage = pest
+  const resolvedPestImage = pest
     ? resolveAppImage({
         image: pest.image,
         imageUrl: pest.imageUrl,
         fallbackAlt: data.h1 || DICTIONARY.meta.default.alt,
-        preset: "hero",
+        preset: "section",
       })
     : null;
-  const sliderImages = resolvedHeroImage
-    ? [
-        {
-          id: "combo-hero",
-          url: resolvedHeroImage.url,
-          altText: resolvedHeroImage.alt,
-        },
-      ]
-    : [];
 
   const resolvedRegionImage = region
     ? resolveAppImage({
@@ -240,18 +232,33 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
     : null;
 
   const sections = data.content ? parseHtmlIntoSections(data.content) : [];
-  const sectionVisuals =
-    sections.length > 1
-      ? {
-          0: resolvedRegionImage
-            ? {
-                id: "combo-region",
-                url: resolvedRegionImage.url,
-                altText: resolvedRegionImage.alt,
-              }
-            : null,
-        }
-      : undefined;
+  const sectionVisuals: Record<
+    number,
+    { id: string; url: string; altText: string }
+  > = {};
+  const sectionFallbackIcons: Record<number, typeof Bug> = {};
+
+  if (sections.length > 1) {
+    sectionFallbackIcons[0] = Bug;
+    if (resolvedPestImage) {
+      sectionVisuals[0] = {
+        id: "combo-pest",
+        url: resolvedPestImage.url,
+        altText: resolvedPestImage.alt,
+      };
+    }
+  }
+
+  if (sections.length > 2) {
+    sectionFallbackIcons[1] = MapPin;
+    if (resolvedRegionImage) {
+      sectionVisuals[1] = {
+        id: "combo-region",
+        url: resolvedRegionImage.url,
+        altText: resolvedRegionImage.alt,
+      };
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col w-full">
@@ -278,13 +285,16 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
       />
       <CombinationHero
         data={data}
-        sliderImages={sliderImages}
         regionSlug={regionSlug}
         pestSlug={pestSlug}
         regionName={regionName}
         pestName={pestName}
       />
-      <SeoContent sections={sections} sectionVisuals={sectionVisuals} />
+      <SeoContent
+        sections={sections}
+        sectionVisuals={sectionVisuals}
+        sectionFallbackIcons={sectionFallbackIcons}
+      />
       <RelatedLinksSection
         title={getRegionServicesListTitle(regionName)}
         items={regionServiceLinks}

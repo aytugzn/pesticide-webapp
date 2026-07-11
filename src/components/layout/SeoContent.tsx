@@ -5,14 +5,18 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { getSectionIcons, type Section } from "@/utils/parseHtmlIntoSections";
 import { SanitizedHtml } from "@/components/ui/SanitizedHtml";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
-import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 
 type SeoContentProps = {
   sections: Section[];
-  sectionVisuals?: Record<number, SliderImage | null>;
+  sectionVisuals?: Record<number, SliderImage>;
+  sectionFallbackIcons?: Record<number, React.ElementType>;
 };
 
-export const SeoContent = ({ sections, sectionVisuals }: SeoContentProps) => {
+export const SeoContent = ({
+  sections,
+  sectionVisuals,
+  sectionFallbackIcons,
+}: SeoContentProps) => {
   const sectionIcons = getSectionIcons(sections);
 
   return (
@@ -40,6 +44,9 @@ export const SeoContent = ({ sections, sectionVisuals }: SeoContentProps) => {
                 : null;
             const hasSectionVisual = Object.hasOwn(sectionVisuals ?? {}, idx);
             const sectionVisual = sectionVisuals?.[idx];
+            const ManagedFallbackIcon = sectionFallbackIcons?.[idx];
+            const hasManagedVisual =
+              hasSectionVisual || Boolean(ManagedFallbackIcon);
 
             return (
               <div
@@ -57,12 +64,14 @@ export const SeoContent = ({ sections, sectionVisuals }: SeoContentProps) => {
                       hasSectionVisual ? "overflow-hidden" : "p-8",
                     )}
                   >
-                    {hasSectionVisual ? (
-                      sectionVisual ? (
-                        <ImageSlider images={[sectionVisual]} autoplayDelay={0} />
-                      ) : (
-                        <ImagePlaceholder />
-                      )
+                    {sectionVisual ? (
+                      <ImageSlider images={[sectionVisual]} autoplayDelay={0} />
+                    ) : hasManagedVisual && ManagedFallbackIcon ? (
+                      <ManagedFallbackIcon
+                        className="h-32 w-32 text-brand-primary opacity-10"
+                        strokeWidth={1}
+                        aria-hidden="true"
+                      />
                     ) : Icon === DICTIONARY.admin.ownerShortcut ? (
                       <div
                         className="w-56 h-56 bg-brand-primary opacity-10 mask-owner"

@@ -2,6 +2,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { SERVICES_SECTION_MAX_ITEMS } from "@/constants/ui";
 import type { PestDoc } from "@/types";
+import type { AppImage } from "@/types";
 import { ServiceCard } from "@/components/ui/ServiceCard";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
@@ -10,34 +11,38 @@ import { resolveAppImage } from "@/utils/cloudinary";
 
 type ServicesSectionProps = {
   pests: PestDoc[];
+  image?: AppImage;
   autoplayDelay?: number;
 }
 
-export const ServicesSection = ({ pests, autoplayDelay }: ServicesSectionProps) => {
+export const ServicesSection = ({
+  pests,
+  image,
+  autoplayDelay,
+}: ServicesSectionProps) => {
   const displayPests = pests.slice(0, SERVICES_SECTION_MAX_ITEMS);
   const hasMore = pests.length > SERVICES_SECTION_MAX_ITEMS;
 
-  const sliderImages = displayPests.reduce<SliderImage[]>(
-    (resolvedImages, pest) => {
-      const resolvedImage = resolveAppImage({
-        image: pest.image,
-        imageUrl: pest.imageUrl,
-        fallbackAlt: pest.name,
-        preset: "section",
-      });
-
-      if (resolvedImage) {
-        resolvedImages.push({
-          id: pest.slug,
+  const resolvedImage = resolveAppImage({
+    image,
+    fallbackAlt: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+    preset: "section",
+  });
+  const sliderImages: SliderImage[] = resolvedImage
+    ? [
+        {
+          id: "services-image",
           url: resolvedImage.url,
           altText: resolvedImage.alt,
-        });
-      }
-
-      return resolvedImages;
-    },
-    [],
-  );
+        },
+      ]
+    : [
+        {
+          id: "backup-services",
+          url: "/backup/services.webp",
+          altText: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+        },
+      ];
   return (
     <section className="py-24 md:py-32 relative" id="services" aria-labelledby="services-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

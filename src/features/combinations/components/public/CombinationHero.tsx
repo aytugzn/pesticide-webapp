@@ -1,12 +1,10 @@
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import type { CombinationDoc } from "@/types";
 
 type CombinationHeroProps = {
   data: CombinationDoc;
-  sliderImages: SliderImage[];
   regionSlug: string;
   pestSlug: string;
   regionName?: string;
@@ -15,7 +13,6 @@ type CombinationHeroProps = {
 
 export const CombinationHero = ({
   data,
-  sliderImages,
   regionSlug,
   pestSlug,
   regionName,
@@ -44,13 +41,6 @@ export const CombinationHero = ({
             `${displayRegion} ${displayPest} ${DICTIONARY.pages.services.pestTitleSuffix}`}
         </h1>
 
-        <div className="mt-10 rounded-2xl overflow-hidden shadow-xl max-w-3xl aspect-video relative group">
-          <ImageSlider images={sliderImages} autoplayDelay={0} />
-          <div
-            className="absolute inset-0 border border-brand-surface/20 rounded-2xl pointer-events-none z-10 mix-blend-overlay"
-            aria-hidden="true"
-          />
-        </div>
       </div>
     </section>
   );

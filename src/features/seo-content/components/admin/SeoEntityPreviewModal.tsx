@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Bug, MapPin, X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { SeoContent } from "@/components/layout/SeoContent";
@@ -47,17 +47,22 @@ export const SeoEntityPreviewModal = ({
     image: data.image,
     imageUrl: data.imageUrl,
     fallbackAlt: data.h1 || data.name,
-    preset: "hero",
+    preset: "section",
   });
-  const sliderImages = resolvedImage
-    ? [
-        {
-          id: `${entity}-hero`,
-          url: resolvedImage.url,
-          altText: resolvedImage.alt,
-        },
-      ]
-    : [];
+  const sectionVisuals =
+    sections.length > 1 && resolvedImage
+      ? {
+          0: {
+            id: `${entity}-section`,
+            url: resolvedImage.url,
+            altText: resolvedImage.alt,
+          },
+        }
+      : undefined;
+  const sectionFallbackIcons =
+    sections.length > 1
+      ? { 0: entity === "pest" ? Bug : MapPin }
+      : undefined;
 
   const h1Text =
     data.h1 ||
@@ -92,14 +97,17 @@ export const SeoEntityPreviewModal = ({
         <div className="flex-1 flex flex-col w-full">
           <ServiceHero
             h1={h1Text}
-            sliderImages={sliderImages}
             type={entity}
             pestSlug={entity === "pest" ? data.slug : undefined}
             pestName={entity === "pest" ? data.name : undefined}
             regionSlug={entity === "region" ? data.slug : undefined}
             regionName={entity === "region" ? data.name : undefined}
           />
-          <SeoContent sections={sections} />
+          <SeoContent
+            sections={sections}
+            sectionVisuals={sectionVisuals}
+            sectionFallbackIcons={sectionFallbackIcons}
+          />
           <SeoFaq faq={data.faq || []} />
           <CtaSection />
         </div>

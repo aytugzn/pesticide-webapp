@@ -591,6 +591,12 @@ const sharedSeoEntityTableDict = {
 
 const adminDict = {
   ownerShortcut: "DMR",
+  imageUpload: {
+    choose: "Görsel Seç",
+    replace: "Görseli Değiştir",
+    remove: "Görseli Kaldır",
+    selectedFile: "{name} · {size}",
+  },
   preview: {
     button: "Önizle",
     title: "Önizleme",
@@ -658,7 +664,9 @@ const adminDict = {
     formName: "Haşere Adı",
     formNamePlaceholder: "Örn: Hamamböceği",
     imageDefaultAltTemplate: "{name} ilaçlama hizmeti görseli",
-    formSlugPlaceholder: "Otomatik oluşturulur (-ilaclama eklenir)",
+    formSlugPlaceholder: "Otomatik oluşturulur",
+    slugSuffixLabel: 'URL sonuna "-ilaclama" ekle',
+    slugSuffixEditHelp: "Mevcut kayıtların URL slug değeri düzenleme sırasında değiştirilmez.",
     formImage: "Resim URL (Opsiyonel)",
     empty: "Kayıtlı haşere bulunamadı.",
     errorDuplicate: "Bu haşere zaten kullanımda. Lütfen farklı bir isim girin.",
@@ -895,6 +903,32 @@ const adminDict = {
     revalidating: "Güncelleniyor...",
     revalidateSuccess: "Site başarıyla güncellendi.",
     revalidateError: "Güncelleme başarısız.",
+    siteImages: {
+      title: "Site Görselleri",
+      description:
+        "Ana sayfa Hero, Neden DMR ve Hizmetler görsellerini yönetin. Kaydetme işlemi canlı site cache'ini yayınlamaz.",
+      heroTitle: "Hero Slider Görselleri",
+      heroItemTitle: "Hero Görseli {number}",
+      heroHelp: "JPEG, PNG veya WebP; her görsel en fazla 5 MB.",
+      heroAltDefault:
+        "DMR İlaçlama profesyonel haşere kontrol hizmeti görseli",
+      addHero: "Hero Görseli Ekle",
+      removeHero: "Hero Görselini Kaldır",
+      whyUsTitle: "Neden DMR Görseli",
+      whyUsHelp: "JPEG, PNG veya WebP; en fazla 5 MB.",
+      whyUsAltDefault:
+        "DMR İlaçlama uzman ekip ve profesyonel uygulama görseli",
+      servicesTitle: "Hizmetler Görseli",
+      servicesHelp: "JPEG, PNG veya WebP; en fazla 5 MB.",
+      servicesAltDefault: "DMR İlaçlama hizmetleri görseli",
+      altLabel: "Görsel Alternatif Metni",
+      altPlaceholder: "Görseli kısa ve açıklayıcı biçimde tanımlayın",
+      save: "Site Görsellerini Kaydet",
+      saving: "Görseller Kaydediliyor...",
+      success: "Site görselleri kaydedildi. Canlıya almak için Canlı Siteyi Güncelle butonunu kullanın.",
+      error: "Site görselleri kaydedilemedi.",
+      incompleteHero: "Eklenen Hero alanı için bir görsel seçin veya alanı kaldırın.",
+    },
     table: {
       field: "Alan",
       value: "Değer",

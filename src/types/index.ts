@@ -19,6 +19,8 @@ export type SettingsDoc = {
   address?: string;
   workingHours?: string;
   defaultOgImage?: string;
+  whyUsImage?: AppImage;
+  servicesImage?: AppImage;
   heroAutoplayDelay?: number;
   servicesAutoplayDelay?: number;
   reviewsAutoplayDelay?: number;

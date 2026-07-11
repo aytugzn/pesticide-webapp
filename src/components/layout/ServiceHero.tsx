@@ -1,11 +1,9 @@
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
-import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Breadcrumb, type BreadcrumbItem } from "@/components/layout/Breadcrumb";
 
 type ServiceHeroProps = {
   h1: string;
-  sliderImages: SliderImage[];
   type: "region" | "pest" | "combination";
   regionSlug?: string;
   regionName?: string;
@@ -15,7 +13,6 @@ type ServiceHeroProps = {
 
 export const ServiceHero = ({
   h1,
-  sliderImages,
   type,
   regionSlug,
   regionName,
@@ -60,13 +57,6 @@ export const ServiceHero = ({
           {h1}
         </h1>
 
-        <div className="mt-10 rounded-2xl overflow-hidden shadow-xl max-w-3xl aspect-video relative group">
-          <ImageSlider images={sliderImages} autoplayDelay={0} />
-          <div
-            className="absolute inset-0 border border-brand-surface/20 rounded-2xl pointer-events-none z-10 mix-blend-overlay"
-            aria-hidden="true"
-          />
-        </div>
       </div>
     </section>
   );

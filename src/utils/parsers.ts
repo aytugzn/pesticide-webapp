@@ -75,6 +75,8 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
       typeof d.workingHours === "string" ? d.workingHours : undefined,
     defaultOgImage:
       typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
+    whyUsImage: parseAppImage(d.whyUsImage),
+    servicesImage: parseAppImage(d.servicesImage),
     heroAutoplayDelay:
       typeof d.heroAutoplayDelay === "number" ? d.heroAutoplayDelay : undefined,
     servicesAutoplayDelay:

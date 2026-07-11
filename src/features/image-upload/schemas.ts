@@ -12,11 +12,29 @@ export const appImageSchema = z.object({
   format: z.string().trim().min(1).optional(),
 });
 
-export const imageUploadInputSchema = z.object({
-  entity: z.enum(["pest", "region"]),
-  slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/),
-  alt: z.string().trim().min(1).max(200),
-});
+const imageAltSchema = z.string().trim().min(1).max(200);
+const imageSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .regex(/^[a-z0-9-]+$/);
+
+export const imageUploadInputSchema = z.discriminatedUnion("target", [
+  z.object({
+    target: z.literal("pest"),
+    slug: imageSlugSchema,
+    alt: imageAltSchema,
+  }),
+  z.object({
+    target: z.literal("region"),
+    slug: imageSlugSchema,
+    alt: imageAltSchema,
+  }),
+  z.object({ target: z.literal("site-hero"), alt: imageAltSchema }),
+  z.object({ target: z.literal("site-why-us"), alt: imageAltSchema }),
+  z.object({ target: z.literal("site-services"), alt: imageAltSchema }),
+]);
 
 export const cloudinaryUploadResponseSchema = z.object({
   public_id: z.string().trim().min(1),

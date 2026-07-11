@@ -31,6 +31,8 @@ export type SeoEntityDictionary = {
   formNamePlaceholder: string;
   formSlug: string;
   formSlugPlaceholder: string;
+  slugSuffixLabel?: string;
+  slugSuffixEditHelp?: string;
   formDesc: string;
   isActive: string;
   errorRequired: string;

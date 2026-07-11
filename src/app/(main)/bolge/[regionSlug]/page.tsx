@@ -14,6 +14,7 @@ import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
+import { MapPin } from "lucide-react";
 
 type RegionPageProps = {
   params: Promise<{ regionSlug: string }>;
@@ -114,12 +115,23 @@ const RegionPage = async ({ params }: RegionPageProps) => {
   const pestDescriptions = new Map(
     pests.map((pest) => [pest.slug, pest.cardDescription]),
   );
-  const resolvedHeroImage = resolveAppImage({
+  const resolvedSectionImage = resolveAppImage({
     image: region.image,
     imageUrl: region.imageUrl,
     fallbackAlt: region.h1 || region.name,
-    preset: "hero",
+    preset: "section",
   });
+  const sectionVisuals =
+    sections.length > 1 && resolvedSectionImage
+      ? {
+          0: {
+            id: "region-section",
+            url: resolvedSectionImage.url,
+            altText: resolvedSectionImage.alt,
+          },
+        }
+      : undefined;
+  const sectionFallbackIcons = sections.length > 1 ? { 0: MapPin } : undefined;
 
   const relatedLinks = activeCombinations
     .filter((combination) => combination.region === region.slug)
@@ -165,22 +177,17 @@ const RegionPage = async ({ params }: RegionPageProps) => {
           region.h1 ||
           `${region.name}${DICTIONARY.pages.regions.regionTitleSuffix}`
         }
-        sliderImages={
-          resolvedHeroImage
-            ? [
-                {
-                  id: "region-hero",
-                  url: resolvedHeroImage.url,
-                  altText: resolvedHeroImage.alt,
-                },
-              ]
-            : []
-        }
         type="region"
         regionSlug={region.slug}
         regionName={region.name}
       />
-      {region.content && <SeoContent sections={sections} />}
+      {region.content && (
+        <SeoContent
+          sections={sections}
+          sectionVisuals={sectionVisuals}
+          sectionFallbackIcons={sectionFallbackIcons}
+        />
+      )}
       <RelatedLinksSection
         title={DICTIONARY.pages.services.heading}
         items={relatedLinks}

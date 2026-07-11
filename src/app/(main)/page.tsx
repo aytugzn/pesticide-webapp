@@ -109,8 +109,12 @@ const HomePage = async () => {
           instagramUrl={settings.instagramUrl}
           facebookUrl={settings.facebookUrl}
         />
-        <ServicesSection pests={pests} autoplayDelay={servicesAutoplayDelay} />
-        <WhyUsSection variant={"embedded"} />
+        <ServicesSection
+          pests={pests}
+          image={settings.servicesImage}
+          autoplayDelay={servicesAutoplayDelay}
+        />
+        <WhyUsSection image={settings.whyUsImage} variant={"embedded"} />
         <GoogleReviewsSection
           autoplayDelay={reviewsAutoplayDelay}
           reviews={customReviews}

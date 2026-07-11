@@ -71,7 +71,7 @@ export const uploadAdminImage = async (
   }
 
   const parsedInput = imageUploadInputSchema.safeParse({
-    entity: formData.get("entity"),
+    target: formData.get("target"),
     slug: formData.get("slug"),
     alt: formData.get("alt"),
   });
@@ -109,8 +109,17 @@ export const uploadAdminImage = async (
     };
   }
 
-  const { entity, slug, alt } = parsedInput.data;
-  const folder = entity === "pest" ? `dmr/pests/${slug}` : `dmr/regions/${slug}`;
+  const { target, alt } = parsedInput.data;
+  const folder =
+    target === "pest"
+      ? `dmr/pests/${parsedInput.data.slug}`
+      : target === "region"
+        ? `dmr/regions/${parsedInput.data.slug}`
+        : target === "site-hero"
+          ? "dmr/site/hero"
+          : target === "site-why-us"
+            ? "dmr/site/why-us"
+            : "dmr/site/services";
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = createHash("sha1")
     .update(`folder=${folder}&timestamp=${timestamp}${apiSecret}`)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -14,8 +14,10 @@ import { Switch } from "@/components/ui/Switch";
 import { DICTIONARY } from "@/constants/dictionary";
 import { SeoEntityPreviewModal } from "./SeoEntityPreviewModal";
 import { uploadAdminImage } from "@/features/image-upload/actions";
+import { AdminImageUploadField } from "@/features/image-upload/components/admin/AdminImageUploadField";
 import type { ImageUploadErrorCode } from "@/features/image-upload/types";
 import type { AppImage } from "@/types";
+import { resolveAppImage } from "@/utils/cloudinary";
 import type {
   SeoEntityFormConfig,
   SeoEntityInitialData,
@@ -25,12 +27,6 @@ import type {
 type Feedback = { type: "success" | "error"; message: string } | null;
 
 const PEST_SLUG_SUFFIX = "-ilaclama";
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
 
 /**
  * Converts optional entity data into the complete controlled form shape.
@@ -58,13 +54,21 @@ const normalizeInitialData = (
 const createEntitySlug = (
   entity: SeoEntityFormConfig<string>["entity"],
   name: string,
+  appendPestSuffix: boolean,
 ) => {
   const baseSlug = slugify(name);
 
   if (entity !== "pest" || !baseSlug) return baseSlug;
-  if (baseSlug.endsWith(PEST_SLUG_SUFFIX)) return baseSlug;
+  if (appendPestSuffix) {
+    if (baseSlug.endsWith(PEST_SLUG_SUFFIX)) return baseSlug;
+    return `${baseSlug}${PEST_SLUG_SUFFIX}`;
+  }
 
-  return `${baseSlug}${PEST_SLUG_SUFFIX}`;
+  const slugWithoutSuffix = baseSlug.endsWith(PEST_SLUG_SUFFIX)
+    ? baseSlug.slice(0, -PEST_SLUG_SUFFIX.length)
+    : baseSlug;
+
+  return slugWithoutSuffix || baseSlug;
 };
 
 export const SeoEntityForm = <TError extends string>({
@@ -79,9 +83,13 @@ export const SeoEntityForm = <TError extends string>({
   onSuccess,
 }: SeoEntityFormConfig<TError>) => {
   const router = useRouter();
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const normalizedInitialData = normalizeInitialData(initialData);
   const [formData, setFormData] = useState(() => normalizedInitialData);
+  const [appendPestSuffix, setAppendPestSuffix] = useState(
+    entity === "pest" &&
+      (mode === "create" ||
+        normalizedInitialData.slug.endsWith(PEST_SLUG_SUFFIX)),
+  );
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageAlt, setImageAlt] = useState(normalizedInitialData.image?.alt ?? "");
   const [isImageRemoved, setIsImageRemoved] = useState(false);
@@ -118,27 +126,6 @@ export const SeoEntityForm = <TError extends string>({
   const getDefaultImageAlt = () =>
     d.imageDefaultAltTemplate.replace("{name}", formData.name.trim());
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      event.target.value = "";
-      setFeedback({ type: "error", message: d.imageInvalidType });
-      return;
-    }
-
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      event.target.value = "";
-      setFeedback({ type: "error", message: d.imageTooLarge });
-      return;
-    }
-
-    setSelectedImageFile(file);
-    setIsImageRemoved(false);
-    setFeedback(null);
-  };
-
   const handleRemoveImage = () => {
     setSelectedImageFile(null);
     setImageAlt("");
@@ -146,7 +133,6 @@ export const SeoEntityForm = <TError extends string>({
       Boolean(normalizedInitialData.image || normalizedInitialData.imageUrl),
     );
 
-    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleGenerate = async () => {
@@ -291,7 +277,7 @@ export const SeoEntityForm = <TError extends string>({
       if (selectedImageFile) {
         const uploadData = new FormData();
         uploadData.set("file", selectedImageFile);
-        uploadData.set("entity", entity);
+        uploadData.set("target", entity);
         uploadData.set("slug", formData.slug);
         uploadData.set("alt", finalImageAlt);
 
@@ -360,7 +346,6 @@ export const SeoEntityForm = <TError extends string>({
           setSelectedImageFile(null);
           setImageAlt("");
           setIsImageRemoved(false);
-          if (imageInputRef.current) imageInputRef.current.value = "";
         }
 
         router.refresh();
@@ -416,6 +401,22 @@ export const SeoEntityForm = <TError extends string>({
     formData.h1.trim() !== "" &&
     formData.metaDesc.trim() !== "" &&
     formData.content.replace(/<[^>]*>?/gm, "").trim() !== "";
+  const resolvedCurrentImage =
+    !isImageRemoved && !selectedImageFile
+      ? resolveAppImage({
+          image: formData.image,
+          imageUrl: formData.imageUrl,
+          fallbackAlt: formData.h1 || formData.name,
+          preset: "thumbnail",
+        })
+      : null;
+  const currentImage = resolvedCurrentImage
+    ? {
+        id: `${entity}-current-image`,
+        url: resolvedCurrentImage.url,
+        altText: resolvedCurrentImage.alt,
+      }
+    : null;
 
   return (
     <div className="bg-brand-surface border border-brand-border rounded-brand-lg p-4 space-y-5 overflow-x-hidden sm:p-6 sm:space-y-6">
@@ -433,7 +434,10 @@ export const SeoEntityForm = <TError extends string>({
             setFormData((prev) => ({
               ...prev,
               name: newName,
-              slug: !initialData ? createEntitySlug(entity, newName) : prev.slug,
+              slug:
+                mode === "create"
+                  ? createEntitySlug(entity, newName, appendPestSuffix)
+                  : prev.slug,
             }));
           }}
           placeholder={d.formNamePlaceholder}
@@ -450,6 +454,29 @@ export const SeoEntityForm = <TError extends string>({
         />
       </div>
 
+      {entity === "pest" && d.slugSuffixLabel && (
+        <div className="space-y-1">
+          <Switch
+            id="pest-slug-suffix"
+            label={d.slugSuffixLabel}
+            checked={appendPestSuffix}
+            disabled={mode === "edit"}
+            onChange={(checked) => {
+              setAppendPestSuffix(checked);
+              if (mode === "create") {
+                setFormData((current) => ({
+                  ...current,
+                  slug: createEntitySlug(entity, current.name, checked),
+                }));
+              }
+            }}
+          />
+          {mode === "edit" && d.slugSuffixEditHelp && (
+            <p className="text-xs text-text-muted">{d.slugSuffixEditHelp}</p>
+          )}
+        </div>
+      )}
+
       <Textarea
         id={`${entity}-desc`}
         label={d.formDesc}
@@ -458,50 +485,33 @@ export const SeoEntityForm = <TError extends string>({
         rows={2}
       />
 
-      <div className="space-y-3 rounded-xl border border-brand-border bg-surface-neutral p-4">
-        <Input
-          ref={imageInputRef}
-          id={`${entity}-image`}
-          type="file"
-          label={d.imageUploadLabel}
-          optionalText={d.imageUploadHelp}
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleImageChange}
-        />
-
-        {selectedImageFile && (
-          <p className="text-sm text-text-secondary">
-            {d.imageSelected.replace("{file}", selectedImageFile.name)}
-          </p>
-        )}
-
-        {!selectedImageFile &&
-          !isImageRemoved &&
-          (formData.image || formData.imageUrl) && (
-            <p className="text-sm text-text-secondary">{d.imageCurrent}</p>
-          )}
-
-        <Input
-          id={`${entity}-image-alt`}
-          label={d.imageAltLabel}
-          value={imageAlt}
-          onChange={(event) => setImageAlt(event.target.value)}
-          placeholder={d.imageAltPlaceholder}
-          disabled={!selectedImageFile && !formData.image}
-        />
-
-        {(selectedImageFile ||
-          (!isImageRemoved && (formData.image || formData.imageUrl))) && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleRemoveImage}
-          >
-            {d.imageRemove}
-          </Button>
-        )}
-      </div>
+      <AdminImageUploadField
+        id={`${entity}-image`}
+        label={d.imageUploadLabel}
+        helpText={d.imageUploadHelp}
+        currentImage={currentImage}
+        selectedFile={selectedImageFile}
+        alt={imageAlt}
+        altLabel={d.imageAltLabel}
+        altPlaceholder={d.imageAltPlaceholder}
+        altDisabled={!selectedImageFile && !formData.image}
+        onFileSelect={(file) => {
+          setSelectedImageFile(file);
+          setIsImageRemoved(false);
+          setFeedback(null);
+        }}
+        onAltChange={setImageAlt}
+        onRemove={handleRemoveImage}
+        onValidationError={(error) =>
+          setFeedback({
+            type: "error",
+            message:
+              error === "INVALID_FILE_TYPE"
+                ? d.imageInvalidType
+                : d.imageTooLarge,
+          })
+        }
+      />
 
       <div className="flex justify-stretch sm:justify-end">
         {mode === "create" && (

@@ -3,32 +3,40 @@ import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CheckListItem } from "@/components/ui/CheckListItem";
 import { cn } from "@/utils/cn";
+import type { AppImage } from "@/types";
+import { resolveAppImage } from "@/utils/cloudinary";
 
 type WhyUsSectionProps = {
-  /** Can be a single static URL or an array of images from CMS */
-  images?: string | SliderImage[] | null;
+  image?: AppImage | null;
   variant?: "default" | "embedded";
 }
 
 export const WhyUsSection = ({
-  images = null,
+  image = null,
   variant = "default",
 }: WhyUsSectionProps) => {
   const data = DICTIONARY.home.whyUs;
 
-  // Robustly handle images whether it's a single static string, an array from admin, or empty
-  const sliderImages: SliderImage[] = Array.isArray(images)
-    ? images
-    : typeof images === "string" && images.trim() !== ""
-      ? [
-          {
-            id: "why-us-img",
-            url: images,
-            altText: data.title,
-            title: data.title,
-          },
-        ]
-      : [];
+  const resolvedImage = resolveAppImage({
+    image,
+    fallbackAlt: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+    preset: "section",
+  });
+  const sliderImages: SliderImage[] = resolvedImage
+    ? [
+        {
+          id: "why-us-image",
+          url: resolvedImage.url,
+          altText: resolvedImage.alt,
+        },
+      ]
+    : [
+        {
+          id: "backup-why-us",
+          url: "/backup/why-us.webp",
+          altText: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+        },
+      ];
 
   return (
     <section

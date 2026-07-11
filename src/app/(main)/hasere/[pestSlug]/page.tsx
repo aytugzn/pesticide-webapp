@@ -14,6 +14,7 @@ import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
+import { Bug } from "lucide-react";
 
 type PestPageProps = {
   params: Promise<{ pestSlug: string }>;
@@ -110,12 +111,23 @@ const PestPage = async ({ params }: PestPageProps) => {
     regions.map((region) => [region.slug, region.cardDescription]),
   );
   const serviceTitle = `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`;
-  const resolvedHeroImage = resolveAppImage({
+  const resolvedSectionImage = resolveAppImage({
     image: pest.image,
     imageUrl: pest.imageUrl,
     fallbackAlt: pest.h1 || pest.name,
-    preset: "hero",
+    preset: "section",
   });
+  const sectionVisuals =
+    sections.length > 1 && resolvedSectionImage
+      ? {
+          0: {
+            id: "pest-section",
+            url: resolvedSectionImage.url,
+            altText: resolvedSectionImage.alt,
+          },
+        }
+      : undefined;
+  const sectionFallbackIcons = sections.length > 1 ? { 0: Bug } : undefined;
 
   const relatedLinks = activeCombinations
     .filter((combination) => combination.pest === pest.slug)
@@ -158,22 +170,17 @@ const PestPage = async ({ params }: PestPageProps) => {
         h1={
           pest.h1 || `${pest.name} ${DICTIONARY.pages.services.pestTitleSuffix}`
         }
-        sliderImages={
-          resolvedHeroImage
-            ? [
-                {
-                  id: "pest-hero",
-                  url: resolvedHeroImage.url,
-                  altText: resolvedHeroImage.alt,
-                },
-              ]
-            : []
-        }
         type="pest"
         pestSlug={pest.slug}
         pestName={pest.name}
       />
-      {pest.content && <SeoContent sections={sections} />}
+      {pest.content && (
+        <SeoContent
+          sections={sections}
+          sectionVisuals={sectionVisuals}
+          sectionFallbackIcons={sectionFallbackIcons}
+        />
+      )}
       <RelatedLinksSection
         title={DICTIONARY.pages.regions.heading}
         items={relatedLinks}

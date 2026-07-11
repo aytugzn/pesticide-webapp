@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Bug, MapPin, X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { SeoContent } from "@/components/layout/SeoContent";
@@ -42,6 +42,10 @@ export const CombinationPreviewModal = ({
   if (!isOpen) return null;
 
   const sections = data.content ? parseHtmlIntoSections(data.content) : [];
+  const sectionFallbackIcons: Record<number, typeof Bug> = {};
+
+  if (sections.length > 1) sectionFallbackIcons[0] = Bug;
+  if (sections.length > 2) sectionFallbackIcons[1] = MapPin;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-brand-surface overflow-hidden">
@@ -76,13 +80,15 @@ export const CombinationPreviewModal = ({
               region: data.regionSlug,
               pest: data.pestSlug,
             }}
-            sliderImages={[]}
             regionSlug={data.regionSlug}
             pestSlug={data.pestSlug}
             regionName={data.regionName}
             pestName={data.pestName}
           />
-          <SeoContent sections={sections} />
+          <SeoContent
+            sections={sections}
+            sectionFallbackIcons={sectionFallbackIcons}
+          />
           <SeoFaq faq={data.faq || []} />
           <CtaSection />
         </div>

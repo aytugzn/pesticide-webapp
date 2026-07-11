@@ -8,6 +8,24 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { HeroSlideDoc, GoogleStatsDoc } from "@/features/home/types";
 import { resolveAppImage } from "@/utils/cloudinary";
 
+const BACKUP_HERO_SLIDES: SliderImage[] = [
+  {
+    id: "backup-hero-1",
+    url: "/backup/hero/hero-1.webp",
+    altText: DICTIONARY.admin.settings.siteImages.heroAltDefault,
+  },
+  {
+    id: "backup-hero-2",
+    url: "/backup/hero/hero-2.webp",
+    altText: DICTIONARY.admin.settings.siteImages.heroAltDefault,
+  },
+  {
+    id: "backup-hero-3",
+    url: "/backup/hero/hero-3.webp",
+    altText: DICTIONARY.admin.settings.siteImages.heroAltDefault,
+  },
+];
+
 export const Hero = ({
   slides,
   telUrl,
@@ -43,6 +61,8 @@ export const Hero = ({
 
     return resolvedSlides;
   }, []);
+  const displayImages =
+    sliderImages.length > 0 ? sliderImages : BACKUP_HERO_SLIDES;
 
   return (
     <section className="relative w-full pt-4 pb-16 md:pb-24 md:pt-16" aria-labelledby="hero-heading">
@@ -133,7 +153,7 @@ export const Hero = ({
           {/* Right Column: Slider */}
           <div className="w-full aspect-square md:aspect-landscape lg:aspect-square xl:aspect-landscape rounded-3xl overflow-hidden shadow-2xl relative group">
             <ImageSlider
-              images={sliderImages}
+              images={displayImages}
               autoplayDelay={autoplayDelay}
             />
           </div>
