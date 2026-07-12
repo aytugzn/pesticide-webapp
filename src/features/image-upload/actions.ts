@@ -57,6 +57,27 @@ const hasValidImageSignature = async (file: File): Promise<boolean> => {
 };
 
 /**
+ * Resolves the destination Cloudinary folder for an upload target.
+ */
+const CLOUDINARY_ASSET_ROOT = "sites/default";
+
+const resolveUploadFolder = (target: string, slug?: string): string => {
+  switch (target) {
+    case "pest":
+      return `${CLOUDINARY_ASSET_ROOT}/entities/pests/${slug}`;
+    case "region":
+      return `${CLOUDINARY_ASSET_ROOT}/entities/regions/${slug}`;
+    case "site-hero":
+      return `${CLOUDINARY_ASSET_ROOT}/home/hero`;
+    case "site-why-us":
+      return `${CLOUDINARY_ASSET_ROOT}/shared/why-us`;
+    case "site-services":
+    default:
+      return `${CLOUDINARY_ASSET_ROOT}/home/services`;
+  }
+};
+
+/**
  * Uploads one validated admin-selected image to the entity's Cloudinary folder.
  * The Cloudinary secret remains server-only and the action does not invalidate caches.
  *
@@ -110,25 +131,19 @@ export const uploadAdminImage = async (
   }
 
   const { target, alt } = parsedInput.data;
-  const folder =
-    target === "pest"
-      ? `dmr/pests/${parsedInput.data.slug}`
-      : target === "region"
-        ? `dmr/regions/${parsedInput.data.slug}`
-        : target === "site-hero"
-          ? "dmr/site/hero"
-          : target === "site-why-us"
-            ? "dmr/site/why-us"
-            : "dmr/site/services";
+  const slug = "slug" in parsedInput.data ? parsedInput.data.slug : undefined;
+  const folder = resolveUploadFolder(target, slug);
+  const transformation = "c_limit,h_2048,w_2048";
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = createHash("sha1")
-    .update(`folder=${folder}&timestamp=${timestamp}${apiSecret}`)
+    .update(`folder=${folder}&timestamp=${timestamp}&transformation=${transformation}${apiSecret}`)
     .digest("hex");
   const uploadData = new FormData();
   uploadData.set("file", file);
   uploadData.set("api_key", apiKey);
   uploadData.set("timestamp", String(timestamp));
   uploadData.set("folder", folder);
+  uploadData.set("transformation", transformation);
   uploadData.set("signature", signature);
 
   try {

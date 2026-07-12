@@ -1,0 +1,1 @@
+export const SITE_IMAGE_GROUP_MAX_IMAGES = 6;

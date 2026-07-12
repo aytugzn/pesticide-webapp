@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { appImageSchema } from "@/features/image-upload/schemas";
+import { SITE_IMAGE_GROUP_MAX_IMAGES } from "./constants";
 
 const managedSlideSchema = z
   .object({
@@ -14,7 +15,7 @@ const managedSlideSchema = z
   });
 
 export const saveSiteImagesSchema = z.object({
-  heroSlides: z.array(managedSlideSchema).max(10),
-  whyUsSlides: z.array(managedSlideSchema).max(10),
-  servicesSlides: z.array(managedSlideSchema).max(10),
+  heroSlides: z.array(managedSlideSchema).max(SITE_IMAGE_GROUP_MAX_IMAGES),
+  whyUsSlides: z.array(managedSlideSchema).max(SITE_IMAGE_GROUP_MAX_IMAGES),
+  servicesSlides: z.array(managedSlideSchema).max(SITE_IMAGE_GROUP_MAX_IMAGES),
 });

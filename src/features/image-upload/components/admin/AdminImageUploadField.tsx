@@ -123,10 +123,10 @@ export const AdminImageUploadField = ({
   };
 
   return (
-    <section className="space-y-4 rounded-brand-lg border border-brand-border bg-surface-neutral p-4">
-      <header className="space-y-1">
-        <h3 className="text-sm font-bold text-text-primary">{label}</h3>
-        <p className="text-xs text-text-muted">{helpText}</p>
+    <section className="space-y-4 rounded-brand-lg border border-brand-border bg-surface-neutral p-4 min-w-0">
+      <header className="space-y-1 min-w-0">
+        <h3 className="truncate text-sm font-bold text-text-primary">{label}</h3>
+        <p className="truncate text-xs text-text-muted">{helpText}</p>
       </header>
 
       <div className="flex flex-col gap-4">
@@ -175,15 +175,15 @@ export const AdminImageUploadField = ({
           tabIndex={-1}
         />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
           {selectedFile ? (
-            <p className="rounded-brand-md border border-brand-border bg-brand-surface px-3 py-2 text-xs text-text-secondary">
+            <p className="truncate rounded-brand-md border border-brand-border bg-brand-surface px-3 py-2 text-xs text-text-secondary min-w-0 flex-1">
               {d.selectedFile
                 .replace("{name}", selectedFile.name)
                 .replace("{size}", formatFileSize(selectedFile.size))}
             </p>
           ) : (
-            <div />
+            <div className="min-w-0 flex-1" />
           )}
 
           <div className="flex flex-col gap-2 sm:flex-row sm:self-auto">

@@ -5,6 +5,16 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { AppError } from "./exceptions";
 
+const CONTACT_RATE_LIMIT = {
+  requests: 3,
+  window: "10 m",
+} as const;
+
+const LOGIN_RATE_LIMIT = {
+  requests: 10,
+  window: "10 m",
+} as const;
+
 const isValidUpstashUrl = (val: string | undefined): boolean => {
   if (!val) return false;
   const trimmed = val.trim();
@@ -33,7 +43,7 @@ const getContactRatelimit = () => {
     try {
       contactRatelimit = new Ratelimit({
         redis: new Redis({ url: url!.trim(), token: token!.trim() }),
-        limiter: Ratelimit.slidingWindow(3, "10 m"),
+        limiter: Ratelimit.slidingWindow(CONTACT_RATE_LIMIT.requests, CONTACT_RATE_LIMIT.window),
         analytics: true,
       });
     } catch {
@@ -56,7 +66,7 @@ const getLoginSessionRatelimit = () => {
     try {
       loginSessionRatelimit = new Ratelimit({
         redis: new Redis({ url: url!.trim(), token: token!.trim() }),
-        limiter: Ratelimit.slidingWindow(10, "10 m"),
+        limiter: Ratelimit.slidingWindow(LOGIN_RATE_LIMIT.requests, LOGIN_RATE_LIMIT.window),
         analytics: true,
       });
     } catch {

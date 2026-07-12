@@ -939,6 +939,8 @@ const adminDict = {
       incompleteHero: "Eklenen Hero alanı için bir görsel seçin veya alanı kaldırın.",
       incompleteWhyUs: "Eklenen Neden DMR alanı için bir görsel seçin veya alanı kaldırın.",
       incompleteServices: "Eklenen Hizmetler alanı için bir görsel seçin veya alanı kaldırın.",
+      limitReached: "En fazla {max} görsel eklenebilir.",
+      limitCount: "{current} / {max} görsel",
       compactCard: {
         edit: "Düzenle",
         collapse: "Daralt",

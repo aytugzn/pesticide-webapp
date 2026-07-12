@@ -10,6 +10,7 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { uploadAdminImage } from "@/features/image-upload/actions";
 import { AdminImageUploadField } from "@/features/image-upload/components/admin/AdminImageUploadField";
 import { saveSiteImages } from "@/features/settings/actions";
+import { SITE_IMAGE_GROUP_MAX_IMAGES } from "@/features/settings/constants";
 import type { HeroSlideDoc } from "@/features/home/types";
 import type { AppImage } from "@/types";
 import { resolveAppImage } from "@/utils/cloudinary";
@@ -32,6 +33,13 @@ type SiteImagesFormProps = {
 type Feedback = { type: "success" | "error"; message: string } | null;
 type SiteUploadTarget = "site-hero" | "site-why-us" | "site-services";
 
+/**
+ * Creates draft state objects for image arrays.
+ * Extracts correct ID, image, and alt text for both HeroSlideDocs and raw AppImages.
+ * @param slides - The initial array of slides or images
+ * @param prefix - Prefix for draft keys
+ * @returns Array of initialized slide drafts
+ */
 const createSlideDrafts = (
   slides: Array<HeroSlideDoc | AppImage>,
   prefix: string,
@@ -54,6 +62,14 @@ const createSlideDrafts = (
     };
   });
 
+/**
+ * Creates a JSON snapshot of the form drafts for dirty checking.
+ * Only tracks essential fields like id, image, alt, and selected file metadata.
+ * @param heroDrafts - Hero section drafts
+ * @param whyUsDrafts - Why Us section drafts
+ * @param servicesDrafts - Services section drafts
+ * @returns Serialized JSON string of the form state
+ */
 const createFormSnapshot = (
   heroDrafts: SlideDraft[],
   whyUsDrafts: SlideDraft[],
@@ -148,7 +164,7 @@ const CompactSlideCard = ({
   }, [draft.selectedFile, thumbUrl]);
 
   return (
-    <div className="flex items-center gap-4 rounded-brand-md border border-brand-border bg-surface-neutral p-3 transition-colors hover:border-brand-primary/50">
+    <div className="flex items-center gap-4 rounded-brand-md border border-brand-border bg-surface-neutral p-3 transition-colors hover:border-brand-primary/50 min-w-0">
       <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-brand-border/50 bg-brand-surface sm:h-16 sm:w-16">
         {thumbUrl ? (
           <Image
@@ -164,17 +180,17 @@ const CompactSlideCard = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <h4 className="truncate text-sm font-semibold text-text-primary">
             {title}
           </h4>
           {isPending && (
-            <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-xs font-bold text-brand-primary">
+            <span className="shrink-0 rounded-full bg-brand-primary/10 px-2 py-0.5 text-xs font-bold text-brand-primary">
               {d.badgeNew}
             </span>
           )}
           {!hasImage && (
-            <span className="rounded-full bg-error-surface px-2 py-0.5 text-xs font-bold text-error-text">
+            <span className="shrink-0 rounded-full bg-error-surface px-2 py-0.5 text-xs font-bold text-error-text">
               {d.badgeMissing}
             </span>
           )}
@@ -229,6 +245,42 @@ const CompactSlideCard = ({
   );
 };
 
+/**
+ * Checks if all drafts in a section have an image, imageUrl, or selected file.
+ * @param drafts - Drafts to check
+ * @returns True if all drafts are complete
+ */
+const checkComplete = (drafts: SlideDraft[]) =>
+  drafts.every(
+    (draft) => Boolean(draft.image || draft.imageUrl || draft.selectedFile),
+  );
+
+/**
+ * Resolves the optimal thumbnail URL for an image draft.
+ * @param id - Image ID
+ * @param image - AppImage object if present
+ * @param imageUrl - External image URL if present
+ * @param fallbackAlt - Fallback alt text
+ * @returns Resolved thumbnail object or null
+ */
+const getCurrentImage = (
+  id: string,
+  image?: AppImage,
+  imageUrl?: string,
+  fallbackAlt = "",
+) => {
+  const resolved = resolveAppImage({
+    image,
+    imageUrl,
+    fallbackAlt,
+    preset: "thumbnail",
+  });
+
+  return resolved
+    ? { id, url: resolved.url, altText: resolved.alt }
+    : null;
+};
+
 export const SiteImagesForm = ({
   initialHeroSlides,
   initialWhyUsSlides = [],
@@ -266,35 +318,12 @@ export const SiteImagesForm = ({
   );
   const isDirty = currentSnapshot !== initialSnapshot;
 
-  const checkComplete = (drafts: SlideDraft[]) =>
-    drafts.every(
-      (draft) => Boolean(draft.image || draft.imageUrl || draft.selectedFile),
-    );
-
   const heroDraftsComplete = checkComplete(heroDrafts);
   const whyUsDraftsComplete = checkComplete(whyUsDrafts);
   const servicesDraftsComplete = checkComplete(servicesDrafts);
 
   const allComplete =
     heroDraftsComplete && whyUsDraftsComplete && servicesDraftsComplete;
-
-  const getCurrentImage = (
-    id: string,
-    image?: AppImage,
-    imageUrl?: string,
-    fallbackAlt = "",
-  ) => {
-    const resolved = resolveAppImage({
-      image,
-      imageUrl,
-      fallbackAlt,
-      preset: "thumbnail",
-    });
-
-    return resolved
-      ? { id, url: resolved.url, altText: resolved.alt }
-      : null;
-  };
 
   const uploadFile = async (
     target: SiteUploadTarget,
@@ -403,7 +432,7 @@ export const SiteImagesForm = ({
   };
 
   return (
-    <section className="space-y-12 rounded-brand-lg border border-brand-border bg-brand-surface p-4 sm:p-6">
+    <section className="flex flex-col gap-8 rounded-brand-lg border border-brand-border bg-brand-surface p-4 sm:p-6 min-w-0">
       <header className="space-y-2 border-b border-brand-border pb-4">
         <h2 className="font-heading text-xl font-bold text-text-primary">
           {d.title}
@@ -416,13 +445,20 @@ export const SiteImagesForm = ({
       {/* Hero Section */}
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="font-heading text-lg font-bold text-text-primary">
-            {d.heroTitle}
-          </h3>
+          <div className="flex items-center gap-4">
+            <h3 className="font-heading text-lg font-bold text-text-primary">
+              {d.heroTitle}
+            </h3>
+            <span className="rounded-full bg-brand-surface-muted px-3 py-1 text-xs font-medium text-text-secondary">
+              {d.limitCount.replace("{current}", String(heroDrafts.length)).replace("{max}", String(SITE_IMAGE_GROUP_MAX_IMAGES))}
+            </span>
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
+            disabled={heroDrafts.length >= SITE_IMAGE_GROUP_MAX_IMAGES}
+            title={heroDrafts.length >= SITE_IMAGE_GROUP_MAX_IMAGES ? d.limitReached.replace("{max}", String(SITE_IMAGE_GROUP_MAX_IMAGES)) : undefined}
             onClick={() => {
               const nextKey = `new-hero-${newHeroIndex}`;
               setNewHeroIndex((current) => current + 1);
@@ -438,9 +474,9 @@ export const SiteImagesForm = ({
           </Button>
         </div>
 
-        <div className="grid max-h-96 gap-3 overflow-y-auto pr-2 pb-2">
+        <div className="grid gap-3 min-w-0">
           {heroDrafts.map((draft, index) => {
-            const title = d.heroItemTitle.replace("{number}", String(index + 1));
+              const title = d.heroItemTitle.replace("{number}", String(index + 1));
             const isExpanded = expandedKey === draft.key;
 
             if (!isExpanded) {
@@ -478,10 +514,10 @@ export const SiteImagesForm = ({
             }
 
             return (
-              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-text-primary text-sm">{title} - {d.compactCard.editing}</h4>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setExpandedKey(null)}>
+              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">{title} - {d.compactCard.editing}</h4>
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setExpandedKey(null)}>
                     {d.compactCard.collapse}
                   </Button>
                 </div>
@@ -518,15 +554,16 @@ export const SiteImagesForm = ({
                       ),
                     )
                   }
-                  onRemove={() =>
+                  onRemove={() => {
                     setHeroDrafts((current) =>
                       current.map((item) =>
                         item.key === draft.key
                           ? { ...item, image: undefined, imageUrl: undefined, selectedFile: null }
                           : item,
                       ),
-                    )
-                  }
+                    );
+                    setExpandedKey(null);
+                  }}
                   onRemoveCard={() => {
                     setHeroDrafts((current) =>
                       current.filter((item) => item.key !== draft.key),
@@ -553,13 +590,20 @@ export const SiteImagesForm = ({
       {/* Services Section */}
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="font-heading text-lg font-bold text-text-primary">
-            {d.servicesTitle}
-          </h3>
+          <div className="flex items-center gap-4">
+            <h3 className="font-heading text-lg font-bold text-text-primary">
+              {d.servicesTitle}
+            </h3>
+            <span className="rounded-full bg-brand-surface-muted px-3 py-1 text-xs font-medium text-text-secondary">
+              {d.limitCount.replace("{current}", String(servicesDrafts.length)).replace("{max}", String(SITE_IMAGE_GROUP_MAX_IMAGES))}
+            </span>
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
+            disabled={servicesDrafts.length >= SITE_IMAGE_GROUP_MAX_IMAGES}
+            title={servicesDrafts.length >= SITE_IMAGE_GROUP_MAX_IMAGES ? d.limitReached.replace("{max}", String(SITE_IMAGE_GROUP_MAX_IMAGES)) : undefined}
             onClick={() => {
               const nextKey = `new-services-${newServicesIndex}`;
               setNewServicesIndex((current) => current + 1);
@@ -575,9 +619,9 @@ export const SiteImagesForm = ({
           </Button>
         </div>
 
-        <div className="grid max-h-96 gap-3 overflow-y-auto pr-2 pb-2">
+        <div className="grid gap-3 min-w-0">
           {servicesDrafts.map((draft, index) => {
-            const title = d.servicesItemTitle.replace("{number}", String(index + 1));
+              const title = d.servicesItemTitle.replace("{number}", String(index + 1));
             const isExpanded = expandedKey === draft.key;
 
             if (!isExpanded) {
@@ -615,10 +659,10 @@ export const SiteImagesForm = ({
             }
 
             return (
-              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-text-primary text-sm">{title} - {d.compactCard.editing}</h4>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setExpandedKey(null)}>
+              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">{title} - {d.compactCard.editing}</h4>
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setExpandedKey(null)}>
                     {d.compactCard.collapse}
                   </Button>
                 </div>
@@ -655,15 +699,16 @@ export const SiteImagesForm = ({
                       ),
                     )
                   }
-                  onRemove={() =>
+                  onRemove={() => {
                     setServicesDrafts((current) =>
                       current.map((item) =>
                         item.key === draft.key
                           ? { ...item, image: undefined, imageUrl: undefined, selectedFile: null }
                           : item,
                       ),
-                    )
-                  }
+                    );
+                    setExpandedKey(null);
+                  }}
                   onRemoveCard={() => {
                     setServicesDrafts((current) =>
                       current.filter((item) => item.key !== draft.key),
@@ -690,13 +735,20 @@ export const SiteImagesForm = ({
       {/* Why Us Section */}
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="font-heading text-lg font-bold text-text-primary">
-            {d.whyUsTitle}
-          </h3>
+          <div className="flex items-center gap-4">
+            <h3 className="font-heading text-lg font-bold text-text-primary">
+              {d.whyUsTitle}
+            </h3>
+            <span className="rounded-full bg-brand-surface-muted px-3 py-1 text-xs font-medium text-text-secondary">
+              {d.limitCount.replace("{current}", String(whyUsDrafts.length)).replace("{max}", String(SITE_IMAGE_GROUP_MAX_IMAGES))}
+            </span>
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
+            disabled={whyUsDrafts.length >= SITE_IMAGE_GROUP_MAX_IMAGES}
+            title={whyUsDrafts.length >= SITE_IMAGE_GROUP_MAX_IMAGES ? d.limitReached.replace("{max}", String(SITE_IMAGE_GROUP_MAX_IMAGES)) : undefined}
             onClick={() => {
               const nextKey = `new-why-us-${newWhyUsIndex}`;
               setNewWhyUsIndex((current) => current + 1);
@@ -712,9 +764,9 @@ export const SiteImagesForm = ({
           </Button>
         </div>
 
-        <div className="grid max-h-96 gap-3 overflow-y-auto pr-2 pb-2">
+        <div className="grid gap-3 min-w-0">
           {whyUsDrafts.map((draft, index) => {
-            const title = d.whyUsItemTitle.replace("{number}", String(index + 1));
+              const title = d.whyUsItemTitle.replace("{number}", String(index + 1));
             const isExpanded = expandedKey === draft.key;
 
             if (!isExpanded) {
@@ -752,10 +804,10 @@ export const SiteImagesForm = ({
             }
 
             return (
-              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-text-primary text-sm">{title} - {d.compactCard.editing}</h4>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setExpandedKey(null)}>
+              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">{title} - {d.compactCard.editing}</h4>
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setExpandedKey(null)}>
                     {d.compactCard.collapse}
                   </Button>
                 </div>
@@ -792,15 +844,16 @@ export const SiteImagesForm = ({
                       ),
                     )
                   }
-                  onRemove={() =>
+                  onRemove={() => {
                     setWhyUsDrafts((current) =>
                       current.map((item) =>
                         item.key === draft.key
                           ? { ...item, image: undefined, imageUrl: undefined, selectedFile: null }
                           : item,
                       ),
-                    )
-                  }
+                    );
+                    setExpandedKey(null);
+                  }}
                   onRemoveCard={() => {
                     setWhyUsDrafts((current) =>
                       current.filter((item) => item.key !== draft.key),

@@ -138,7 +138,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
   };
 
   const sidebarClasses = cn(
-    "fixed inset-y-0 left-0 z-50 w-64 bg-brand-surface border-r border-brand-border transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0",
+    "fixed inset-y-0 left-0 z-50 w-64 bg-brand-surface border-r border-brand-border transform transition-transform duration-300 ease-in-out shrink-0 md:translate-x-0 md:sticky md:top-0 md:h-screen",
     isOpen ? "translate-x-0" : "-translate-x-full",
   );
 
