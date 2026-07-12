@@ -11,38 +11,67 @@ import { resolveAppImage } from "@/utils/cloudinary";
 
 type ServicesSectionProps = {
   pests: PestDoc[];
-  image?: AppImage;
+  slides?: AppImage[];
+  legacyImage?: AppImage;
   autoplayDelay?: number;
 }
 
 export const ServicesSection = ({
   pests,
-  image,
+  slides,
+  legacyImage,
   autoplayDelay,
 }: ServicesSectionProps) => {
   const displayPests = pests.slice(0, SERVICES_SECTION_MAX_ITEMS);
   const hasMore = pests.length > SERVICES_SECTION_MAX_ITEMS;
 
-  const resolvedImage = resolveAppImage({
-    image,
-    fallbackAlt: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
-    preset: "section",
-  });
-  const sliderImages: SliderImage[] = resolvedImage
-    ? [
+  let sliderImages: SliderImage[] = [];
+
+  if (slides && slides.length > 0) {
+    sliderImages = slides
+      .map((img, index) => {
+        const resolved = resolveAppImage({
+          image: img,
+          fallbackAlt: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+          preset: "section",
+        });
+        return resolved
+          ? {
+              id: img.assetId || img.publicId || `services-${index}`,
+              url: resolved.url,
+              altText: resolved.alt,
+            }
+          : null;
+      })
+      .filter((img) => img !== null) as SliderImage[];
+  }
+
+  if (sliderImages.length === 0 && legacyImage) {
+    const resolvedImage = resolveAppImage({
+      image: legacyImage,
+      fallbackAlt: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+      preset: "section",
+    });
+    if (resolvedImage) {
+      sliderImages = [
         {
-          id: "services-image",
+          id: "services-legacy",
           url: resolvedImage.url,
           altText: resolvedImage.alt,
         },
-      ]
-    : [
-        {
-          id: "backup-services",
-          url: "/backup/services.webp",
-          altText: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
-        },
       ];
+    }
+  }
+
+  if (sliderImages.length === 0) {
+    sliderImages = [
+      {
+        id: "backup-services",
+        url: "/backup/services.webp",
+        altText: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+      },
+    ];
+  }
   return (
     <section className="py-24 md:py-32 relative" id="services" aria-labelledby="services-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

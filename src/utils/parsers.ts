@@ -76,7 +76,17 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
     defaultOgImage:
       typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
     whyUsImage: parseAppImage(d.whyUsImage),
+    whyUsSlides: Array.isArray(d.whyUsSlides)
+      ? d.whyUsSlides
+          .map(parseAppImage)
+          .filter((img): img is AppImage => img !== undefined)
+      : undefined,
     servicesImage: parseAppImage(d.servicesImage),
+    servicesSlides: Array.isArray(d.servicesSlides)
+      ? d.servicesSlides
+          .map(parseAppImage)
+          .filter((img): img is AppImage => img !== undefined)
+      : undefined,
     heroAutoplayDelay:
       typeof d.heroAutoplayDelay === "number" ? d.heroAutoplayDelay : undefined,
     servicesAutoplayDelay:

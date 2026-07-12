@@ -48,22 +48,33 @@ export const metadata: Metadata = {
   },
 };
 
-const AboutPage = () => (
-  <>
-    <PublicPageHeader
-      eyebrow={DICTIONARY.pages.about.eyebrow}
-      title={DICTIONARY.pages.about.heading}
-      description={DICTIONARY.pages.about.headerDesc}
-    />
-    <AlternatingSections>
-      <WhyUsSection variant="embedded" />
-      <AboutApproachSection />
-      <AboutPrinciplesSection />
-      <AboutAudienceSection />
-      <AboutProcessSection />
-    </AlternatingSections>
-  </>
-);
+import { getGlobalData } from "@/features/settings/data";
+
+const AboutPage = async () => {
+  const globalData = await getGlobalData();
+  const settings = globalData.settings;
+
+  return (
+    <>
+      <PublicPageHeader
+        eyebrow={DICTIONARY.pages.about.eyebrow}
+        title={DICTIONARY.pages.about.heading}
+        description={DICTIONARY.pages.about.headerDesc}
+      />
+      <AlternatingSections>
+        <WhyUsSection
+          slides={settings?.whyUsSlides}
+          legacyImage={settings?.whyUsImage}
+          variant="embedded"
+        />
+        <AboutApproachSection />
+        <AboutPrinciplesSection />
+        <AboutAudienceSection />
+        <AboutProcessSection />
+      </AlternatingSections>
+    </>
+  );
+};
 
 const PROCESS_STEP_ICONS = [
   ClipboardList,

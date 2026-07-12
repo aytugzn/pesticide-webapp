@@ -7,36 +7,65 @@ import type { AppImage } from "@/types";
 import { resolveAppImage } from "@/utils/cloudinary";
 
 type WhyUsSectionProps = {
-  image?: AppImage | null;
+  slides?: AppImage[];
+  legacyImage?: AppImage | null;
   variant?: "default" | "embedded";
 }
 
 export const WhyUsSection = ({
-  image = null,
+  slides,
+  legacyImage = null,
   variant = "default",
 }: WhyUsSectionProps) => {
   const data = DICTIONARY.home.whyUs;
 
-  const resolvedImage = resolveAppImage({
-    image,
-    fallbackAlt: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
-    preset: "section",
-  });
-  const sliderImages: SliderImage[] = resolvedImage
-    ? [
+  let sliderImages: SliderImage[] = [];
+
+  if (slides && slides.length > 0) {
+    sliderImages = slides
+      .map((img, index) => {
+        const resolved = resolveAppImage({
+          image: img,
+          fallbackAlt: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+          preset: "section",
+        });
+        return resolved
+          ? {
+              id: img.assetId || img.publicId || `why-us-${index}`,
+              url: resolved.url,
+              altText: resolved.alt,
+            }
+          : null;
+      })
+      .filter((img) => img !== null) as SliderImage[];
+  }
+
+  if (sliderImages.length === 0 && legacyImage) {
+    const resolvedImage = resolveAppImage({
+      image: legacyImage,
+      fallbackAlt: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+      preset: "section",
+    });
+    if (resolvedImage) {
+      sliderImages = [
         {
-          id: "why-us-image",
+          id: "why-us-legacy",
           url: resolvedImage.url,
           altText: resolvedImage.alt,
         },
-      ]
-    : [
-        {
-          id: "backup-why-us",
-          url: "/backup/why-us.webp",
-          altText: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
-        },
       ];
+    }
+  }
+
+  if (sliderImages.length === 0) {
+    sliderImages = [
+      {
+        id: "backup-why-us",
+        url: "/backup/why-us.webp",
+        altText: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+      },
+    ];
+  }
 
   return (
     <section

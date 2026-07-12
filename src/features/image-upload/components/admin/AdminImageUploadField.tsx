@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, type ChangeEvent, type KeyboardEvent } from "react";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Input } from "@/components/ui/Input";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { ImageUploadErrorCode } from "@/features/image-upload/types";
+import { cn } from "@/utils/cn";
 
 type ClientImageValidationError = Extract<
   ImageUploadErrorCode,
@@ -25,7 +26,9 @@ type AdminImageUploadFieldProps = {
   altDisabled?: boolean;
   onFileSelect: (file: File) => void;
   onAltChange: (alt: string) => void;
-  onRemove: () => void;
+  onRemove?: () => void;
+  onRemoveCard?: () => void;
+  removeCardLabel?: string;
   onValidationError: (error: ClientImageValidationError) => void;
 };
 
@@ -63,9 +66,13 @@ export const AdminImageUploadField = ({
   onFileSelect,
   onAltChange,
   onRemove,
+  onRemoveCard,
+  removeCardLabel,
   onValidationError,
 }: AdminImageUploadFieldProps) => {
   const d = DICTIONARY.admin.imageUpload;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const selectedPreviewUrl = useMemo(
     () => (selectedFile ? URL.createObjectURL(selectedFile) : null),
     [selectedFile],
@@ -104,6 +111,17 @@ export const AdminImageUploadField = ({
     onFileSelect(file);
   };
 
+  const handleCardClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      fileInputRef.current?.click();
+    }
+  };
+
   return (
     <section className="space-y-4 rounded-brand-lg border border-brand-border bg-surface-neutral p-4">
       <header className="space-y-1">
@@ -111,53 +129,89 @@ export const AdminImageUploadField = ({
         <p className="text-xs text-text-muted">{helpText}</p>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
-        <div className="relative min-h-52 overflow-hidden rounded-brand-md border border-brand-border bg-brand-surface">
-          <ImageSlider images={previewImage ? [previewImage] : []} autoplayDelay={0} />
-          {!hasImage && (
-            <ImagePlus
-              className="pointer-events-none absolute right-3 top-3 h-5 w-5 text-text-muted"
-              aria-hidden="true"
-            />
+      <div className="flex flex-col gap-4">
+        {/* Clickable Card */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={handleCardClick}
+          onKeyDown={handleCardKeyDown}
+          aria-label={hasImage ? d.replaceHint : d.dropHint}
+          className={cn(
+            "group relative flex min-h-52 md:min-h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-brand-md border-2 border-dashed border-brand-border bg-brand-surface transition-colors hover:border-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2",
+            hasImage && "border-solid",
+          )}
+        >
+          {previewImage ? (
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
+              <ImageSlider images={[previewImage]} autoplayDelay={0} />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 text-text-muted">
+              <ImagePlus className="h-8 w-8" aria-hidden="true" />
+              <span className="text-sm font-medium">{d.dropHint}</span>
+              <span className="text-xs">{d.formatHint}</span>
+            </div>
+          )}
+
+          {/* Hover overlay hint for replacing */}
+          {hasImage && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <div className="flex items-center gap-2 rounded-full bg-surface-neutral px-4 py-2 text-sm font-medium text-text-primary shadow-sm">
+                <Upload className="h-4 w-4" aria-hidden="true" />
+                {d.replaceHint}
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="flex flex-col justify-center gap-3">
-          <input
-            id={id}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
-            onChange={handleFileChange}
-          />
+        <input
+          ref={fileInputRef}
+          id={id}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="sr-only"
+          onChange={handleFileChange}
+          tabIndex={-1}
+        />
 
-          <label
-            htmlFor={id}
-            className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-brand-md bg-brand-primary px-4 text-sm font-medium text-brand-surface transition-colors hover:bg-brand-primary-hover"
-          >
-            <Upload className="h-4 w-4" aria-hidden="true" />
-            {hasImage ? d.replace : d.choose}
-          </label>
-
-          {selectedFile && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {selectedFile ? (
             <p className="rounded-brand-md border border-brand-border bg-brand-surface px-3 py-2 text-xs text-text-secondary">
               {d.selectedFile
                 .replace("{name}", selectedFile.name)
                 .replace("{size}", formatFileSize(selectedFile.size))}
             </p>
+          ) : (
+            <div />
           )}
 
-          {hasImage && (
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              onClick={onRemove}
-            >
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-              {d.remove}
-            </Button>
-          )}
+          <div className="flex flex-col gap-2 sm:flex-row sm:self-auto">
+            {hasImage && onRemove && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRemove}
+                className="self-start sm:self-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                {d.remove}
+              </Button>
+            )}
+            {onRemoveCard && (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={onRemoveCard}
+                className="self-start sm:self-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                {removeCardLabel || d.remove}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

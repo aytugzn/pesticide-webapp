@@ -111,10 +111,15 @@ const HomePage = async () => {
         />
         <ServicesSection
           pests={pests}
-          image={settings.servicesImage}
+          slides={settings.servicesSlides}
+          legacyImage={settings.servicesImage}
           autoplayDelay={servicesAutoplayDelay}
         />
-        <WhyUsSection image={settings.whyUsImage} variant={"embedded"} />
+        <WhyUsSection
+          slides={settings.whyUsSlides}
+          legacyImage={settings.whyUsImage}
+          variant={"embedded"}
+        />
         <GoogleReviewsSection
           autoplayDelay={reviewsAutoplayDelay}
           reviews={customReviews}

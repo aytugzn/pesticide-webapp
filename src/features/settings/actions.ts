@@ -3,7 +3,6 @@
 import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
 import { updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import {
@@ -126,18 +125,24 @@ export const saveSiteImages = async (
     }));
     const generalUpdate: Record<string, unknown> = {};
 
-    if (parsed.data.whyUsImage !== undefined) {
-      generalUpdate.whyUsImage =
-        parsed.data.whyUsImage === null
-          ? FieldValue.delete()
-          : parsed.data.whyUsImage;
+    if (parsed.data.whyUsSlides !== undefined) {
+      generalUpdate.whyUsSlides = parsed.data.whyUsSlides.map((slide, index) => ({
+        ...(slide.id ? { id: slide.id } : {}),
+        ...(slide.image ? { image: slide.image } : {}),
+        ...(slide.imageUrl ? { imageUrl: slide.imageUrl } : {}),
+        ...(slide.altText ? { altText: slide.altText } : {}),
+        order: index,
+      }));
     }
 
-    if (parsed.data.servicesImage !== undefined) {
-      generalUpdate.servicesImage =
-        parsed.data.servicesImage === null
-          ? FieldValue.delete()
-          : parsed.data.servicesImage;
+    if (parsed.data.servicesSlides !== undefined) {
+      generalUpdate.servicesSlides = parsed.data.servicesSlides.map((slide, index) => ({
+        ...(slide.id ? { id: slide.id } : {}),
+        ...(slide.image ? { image: slide.image } : {}),
+        ...(slide.imageUrl ? { imageUrl: slide.imageUrl } : {}),
+        ...(slide.altText ? { altText: slide.altText } : {}),
+        order: index,
+      }));
     }
 
     batch.set(

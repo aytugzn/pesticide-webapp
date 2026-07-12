@@ -49,12 +49,12 @@ const AdminSettingsPage = async () => {
       <SiteImagesForm
         key={JSON.stringify({
           heroSlides,
-          whyUsImage: settings.whyUsImage,
-          servicesImage: settings.servicesImage,
+          whyUsSlides: settings.whyUsSlides ?? (settings.whyUsImage ? [settings.whyUsImage] : []),
+          servicesSlides: settings.servicesSlides ?? (settings.servicesImage ? [settings.servicesImage] : []),
         })}
         initialHeroSlides={heroSlides}
-        initialWhyUsImage={settings.whyUsImage}
-        initialServicesImage={settings.servicesImage}
+        initialWhyUsSlides={settings.whyUsSlides ?? (settings.whyUsImage ? [settings.whyUsImage] : [])}
+        initialServicesSlides={settings.servicesSlides ?? (settings.servicesImage ? [settings.servicesImage] : [])}
       />
     </AdminListPage>
   );
