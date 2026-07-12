@@ -22,10 +22,8 @@ export const requireAdmin = async (): Promise<boolean> => {
     }
 
     return true;
-  } catch (error: unknown) {
-    console.error("Admin verification failed in requireAdmin helper", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Admin verification failed in requireAdmin helper");
     return false;
   }
 };

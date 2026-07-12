@@ -13,26 +13,12 @@ import {
 } from "@/utils/phone";
 import { sendTelegramContactRequest } from "@/lib/telegram";
 import { getAdminDb } from "@/lib/firebase-admin";
-import { limitContactSubmission } from "@/lib/rateLimit";
-import { createHmac } from "crypto";
+import {
+  createRateLimitHash,
+  limitContactSubmission,
+} from "@/lib/rateLimit";
 import type { ContactRequestDoc, ActionResponse } from "@/types";
 import { CONTACT_ERRORS, type ContactErrorCode } from "../types";
-import { AppError } from "@/lib/exceptions";
-
-const createRateLimitHash = (value: string): string | null => {
-  const secret = process.env.RATE_LIMIT_SECRET;
-
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      console.error("CRITICAL ERROR: RATE_LIMIT_SECRET is missing in production. Failing closed.");
-      throw new AppError("Missing RATE_LIMIT_SECRET", "CONFIG_ERROR");
-    }
-    console.warn("RATE_LIMIT_SECRET missing in development. Hash generation disabled.");
-    return null;
-  }
-
-  return createHmac("sha256", secret).update(value).digest("hex");
-};
 
 
 const uiDict = DICTIONARY.home.contact;
@@ -167,10 +153,8 @@ export const sendContactForm = async (formData: FormData): Promise<ActionRespons
 
   try {
     await docRef.set(requestData);
-  } catch (error: unknown) {
-    console.error("Failed to save contact request", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to save contact request");
     return { success: false, error: CONTACT_ERRORS.SAVE_FAILED };
   }
 
@@ -185,10 +169,8 @@ export const sendContactForm = async (formData: FormData): Promise<ActionRespons
     // Mark as failed but still return success to the user
     try {
       await docRef.set({ notificationStatus: "failed" }, { merge: true });
-    } catch (e: unknown) {
-      console.error("Failed to update notificationStatus to failed", {
-        message: e instanceof Error ? e.message : "Unknown error",
-      });
+    } catch {
+      console.error("Failed to update contact notification status");
     }
 
     return { success: true };
@@ -203,10 +185,8 @@ export const sendContactForm = async (formData: FormData): Promise<ActionRespons
       },
       { merge: true },
     );
-  } catch (error: unknown) {
-    console.error("Failed to save contact request", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to save contact notification metadata");
   }
 
   return { success: true };

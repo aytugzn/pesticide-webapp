@@ -28,41 +28,6 @@ const AUTH_SESSION_STAGES = {
 type AuthSessionStage =
   (typeof AUTH_SESSION_STAGES)[keyof typeof AUTH_SESSION_STAGES];
 
-const getSafeAuthDebugContext = () => {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-  return {
-    envExists: {
-      FIREBASE_PROJECT_ID: Boolean(process.env.FIREBASE_PROJECT_ID),
-      FIREBASE_CLIENT_EMAIL: Boolean(process.env.FIREBASE_CLIENT_EMAIL),
-      FIREBASE_PRIVATE_KEY: Boolean(privateKey),
-      ADMIN_EMAIL: Boolean(process.env.ADMIN_EMAIL),
-    },
-    projectMatch:
-      process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID ===
-      process.env.FIREBASE_PROJECT_ID,
-    privateKeyShape: {
-      hasBeginMarker: Boolean(privateKey?.includes("BEGIN PRIVATE KEY")),
-      hasEndMarker: Boolean(privateKey?.includes("END PRIVATE KEY")),
-      containsEscapedNewline: Boolean(privateKey?.includes("\\n")),
-      containsRealNewline: Boolean(privateKey?.includes("\n")),
-    },
-  };
-};
-
-const getErrorCode = (error: unknown): string | undefined => {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string"
-  ) {
-    return error.code;
-  }
-
-  return undefined;
-};
-
 /**
  * Reads the best available request IP from proxy headers for server-side rate limiting.
  */
@@ -126,13 +91,9 @@ export const createSession = async (idToken: string): Promise<ActionResponse<voi
     });
 
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to create admin session", {
-      message: "Failed to create admin session",
       stage,
-      errorName: error instanceof Error ? error.name : "UnknownError",
-      errorCode: getErrorCode(error),
-      ...getSafeAuthDebugContext(),
     });
     return { success: false, error: AUTH_ERRORS.SESSION_CREATION_FAILED };
   }

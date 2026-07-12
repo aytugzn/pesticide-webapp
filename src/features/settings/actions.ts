@@ -56,9 +56,9 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      const details = errText.length > 500 ? errText.substring(0, 500) + "..." : errText;
-      console.error("Google Places API request failed", { status: response.status, details });
+      console.error("Google Places API request failed", {
+        status: response.status,
+      });
       return { success: false, error: SETTINGS_ERRORS.PLACES_API_FAILED };
     }
 
@@ -88,9 +88,8 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 
     return { success: true };
 
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Google Places API request failed", { error: errorMessage });
+  } catch {
+    console.error("Google Places API request failed");
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
   }
 };

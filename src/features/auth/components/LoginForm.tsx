@@ -54,9 +54,7 @@ export const LoginForm = () => {
     } catch (err: unknown) {
       if (isPopupCancelled(err)) return;
       setError(DICTIONARY.auth.login.error);
-      console.error("Login failed", {
-        message: err instanceof Error ? err.message : "Unknown error",
-      });
+      console.error("Login failed");
     } finally {
       setLoading(false);
     }

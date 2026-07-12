@@ -132,8 +132,8 @@ export const ContactPageSection = ({
       <ContactProcessSection />
       <ContactRequestInfoSection />
       <ServiceAreasSection regions={visibleRegions} />
-      <OtherContactChannelsSection channels={otherChannels} />
       <ContactFormSection pests={pests} regions={regions} />
+      <OtherContactChannelsSection channels={otherChannels} />
     </AlternatingSections>
   );
 };

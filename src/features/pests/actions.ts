@@ -14,6 +14,7 @@ import {
   type GeneratedContent,
 } from "./types";
 import {
+  generatePestContentSchema,
   savePestSchema,
   updatePestSchema,
   generatedContentSchema,
@@ -61,10 +62,8 @@ export const checkPestExists = async (
   try {
     const doc = await getAdminDb().collection("pests").doc(parsedSlug.data).get();
     return { success: true, data: doc.exists };
-  } catch (error: unknown) {
-    console.error("Failed to check pest existence", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to check pest existence");
     return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
   }
 };
@@ -103,10 +102,9 @@ export const getPestForAdminEdit = async (
         slug: doc.id,
       },
     };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to fetch pest for admin edit", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
     return { success: false, error: PEST_ERRORS.FETCH_FAILED };
   }
@@ -120,8 +118,16 @@ export const generatePestContent = async (
     return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedInput = generatePestContentSchema.safeParse({
+    name,
+    description,
+  });
+  if (!parsedInput.success) {
+    return { success: false, error: PEST_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
-    const prompt = buildPestPrompt({ name, description });
+    const prompt = buildPestPrompt(parsedInput.data);
     const keys = getGeminiApiKeys();
 
     if (keys.length === 0) {
@@ -165,14 +171,20 @@ export const generatePestContent = async (
           msg.includes("generate_content_free_tier_requests") ||
           msg.includes("limit:")
         ) {
-          console.warn(`Gemini generation failed with key index ${i} due to quota/rate limit`);
+          console.warn("Gemini generation failed due to quota or rate limit", {
+            keyIndex: i,
+          });
           isQuotaError = true;
           continue; // Try next key
         } else if (msg.includes("invalid api key") || msg.includes("unauthorized") || msg.includes("api_key_invalid") || msg.includes("key invalid")) {
-          console.warn(`Gemini generation failed with key index ${i} due to invalid key/auth`);
+          console.warn("Gemini generation failed due to invalid key", {
+            keyIndex: i,
+          });
           continue; // Try next key
         } else if (msg.includes("503")) {
-          console.warn(`Gemini generation failed with key index ${i} due to 503`);
+          console.warn("Gemini generation failed due to provider availability", {
+            keyIndex: i,
+          });
           continue; // Try next key
         } else {
           console.error("Pest AI generation failed", { reason: "unknown_ai_error" });
@@ -246,10 +258,9 @@ export const savePest = async (
       .create(cleanDocData);
 
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to save pest", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error"
     });
     return { success: false, error: PEST_ERRORS.SAVE_FAILED };
   }
@@ -301,7 +312,7 @@ export const updatePest = async (
 
     return { success: true };
   } catch (error: unknown) {
-    console.error("Failed to update pest", { slug, error: error instanceof Error ? error.message : String(error) });
+    console.error("Failed to update pest", { slug });
     if (typeof error === "object" && error !== null && "code" in error && (error as { code: number }).code === 5) {
       return { success: false, error: PEST_ERRORS.NOT_FOUND };
     }
@@ -378,10 +389,9 @@ export const togglePestStatus = async (
     }
 
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to toggle pest status", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error"
     });
     return { success: false, error: PEST_ERRORS.TOGGLE_FAILED };
   }
@@ -428,10 +438,9 @@ export const deletePest = async (
 
     updateTag("global-data");
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to delete pest", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
     return { success: false, error: PEST_ERRORS.DELETE_FAILED };
   }

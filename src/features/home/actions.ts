@@ -50,10 +50,8 @@ export const getHomeData = async (): Promise<ActionResponse<HomeData, HomeErrorC
         viewAllReviewsUrl
       }
     };
-  } catch (error: unknown) {
-    console.error("Failed to fetch home page data", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to fetch home page data");
     return { success: false, error: HOME_ERRORS.FETCH_FAILED };
   }
 };

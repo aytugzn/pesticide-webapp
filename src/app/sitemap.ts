@@ -64,7 +64,7 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
       return { url: getAbsoluteUrl(`/${combination.region}/${combination.pest}`), priority: 0.9, changeFrequency: "monthly" };
     });
   } catch (error: unknown) {
-    console.error("Failed to generate sitemap", { error: error instanceof Error ? error.message : "Unknown error" });
+    console.error("Failed to generate sitemap");
     throw error;
   }
 

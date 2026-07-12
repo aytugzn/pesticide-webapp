@@ -68,7 +68,7 @@ export const getCombination = async (
     console.error("Failed to fetch public combination", {
       regionSlug,
       pestSlug,
-      error: getErrorInfo(error),
+      errorCode: getErrorInfo(error).code,
     });
     throw error;
   }
@@ -120,7 +120,7 @@ export const getAllActiveCombinations = async (): Promise<ActivePublicCombinatio
       }));
   } catch (error: unknown) {
     console.error("Failed to fetch active public combinations", {
-      error: getErrorInfo(error),
+      errorCode: getErrorInfo(error).code,
     });
     throw error;
   }

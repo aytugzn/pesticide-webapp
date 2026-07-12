@@ -65,11 +65,8 @@ export const sendTelegramContactRequest = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
       console.error(TELEGRAM_LOG_MESSAGES.apiFailed, {
         status: response.status,
-        error_code: errorData?.error_code,
-        description: errorData?.description,
       });
       return { success: false, error: TELEGRAM_ERRORS.apiFailed };
     }
@@ -80,10 +77,8 @@ export const sendTelegramContactRequest = async (
       messageId: data.result.message_id,
       chatId: String(data.result.chat.id),
     };
-  } catch (error: unknown) {
-    console.error("Failed to send Telegram message", {
-      message: error instanceof Error ? error.message : "Unknown network error",
-    });
+  } catch {
+    console.error(TELEGRAM_LOG_MESSAGES.networkError);
     return { success: false, error: TELEGRAM_ERRORS.networkError };
   }
 };
@@ -119,20 +114,15 @@ export const editTelegramMessageAsResolved = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
       console.error(TELEGRAM_LOG_MESSAGES.apiFailed, {
         status: response.status,
-        error_code: errorData?.error_code,
-        description: errorData?.description,
       });
       return { success: false, error: TELEGRAM_ERRORS.apiFailed };
     }
 
     return { success: true };
-  } catch (error: unknown) {
-    console.error("Failed to edit Telegram message", {
-      message: error instanceof Error ? error.message : "Unknown network error",
-    });
+  } catch {
+    console.error(TELEGRAM_LOG_MESSAGES.networkError);
     return { success: false, error: TELEGRAM_ERRORS.networkError };
   }
 };

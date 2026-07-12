@@ -55,3 +55,51 @@ export const bulkCombinationMutationSchema = z
   .refine((value) => !!value.regionSlug || !!value.pestSlug, {
     path: ["regionSlug"],
   });
+
+const bulkJobStatusSchema = z.enum([
+  "pending",
+  "generating",
+  "done",
+  "error",
+]);
+
+const bulkProgressItemSchema = z
+  .object({
+    regionSlug: slugSchema,
+    regionName: z.string().trim().min(1).max(120),
+    pestSlug: slugSchema,
+    pestName: z.string().trim().min(1).max(120),
+    status: bulkJobStatusSchema,
+    error: z.string().trim().min(1).max(120).optional(),
+  })
+  .strict();
+
+const jobIdSchema = z.uuid();
+
+export const startCombinationJobSchema = z
+  .array(bulkProgressItemSchema)
+  .min(1)
+  .max(1000);
+
+export const updateCombinationJobItemSchema = z
+  .object({
+    jobId: jobIdSchema,
+    index: z.number().int().nonnegative().max(999),
+    patch: z
+      .object({
+        status: bulkJobStatusSchema.optional(),
+        error: z.string().trim().min(1).max(120).optional(),
+      })
+      .strict()
+      .refine((value) => Object.keys(value).length > 0),
+  })
+  .strict();
+
+export const combinationJobIdSchema = jobIdSchema;
+
+export const finishCombinationJobSchema = z
+  .object({
+    jobId: jobIdSchema,
+    status: z.enum(["completed", "aborted", "failed"]),
+  })
+  .strict();

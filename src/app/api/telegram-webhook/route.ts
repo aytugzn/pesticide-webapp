@@ -105,10 +105,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     await answerTelegramCallback(callbackQueryId);
     await editTelegramMessageAsResolved(chatId, messageId);
 
-  } catch (error: unknown) {
-    console.error("Failed to resolve contact request", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to resolve contact request");
 
     // 4C. ERROR STATE: Failed to update database
     // Send an extra warning message to admin from dictionary

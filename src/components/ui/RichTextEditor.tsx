@@ -195,8 +195,8 @@ export const RichTextEditor = ({
       if (value !== editor.getHTML()) {
         editor.commands.setContent(value);
       }
-    } catch (error: unknown) {
-      console.warn("[RichTextEditor] Editor sync failed", { error: error instanceof Error ? error.message : "Unknown error" });
+    } catch {
+      console.warn("Rich text editor sync failed");
     }
   }, [value, editor]);
 

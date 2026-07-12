@@ -14,6 +14,7 @@ import {
   type GeneratedContent,
 } from "./types";
 import {
+  generateRegionContentSchema,
   saveRegionSchema,
   updateRegionSchema,
   generatedContentSchema,
@@ -61,10 +62,8 @@ export const checkRegionExists = async (
   try {
     const doc = await getAdminDb().collection("regions").doc(parsedSlug.data).get();
     return { success: true, data: doc.exists };
-  } catch (error: unknown) {
-    console.error("Failed to check region existence", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to check region existence");
     return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
   }
 };
@@ -103,10 +102,9 @@ export const getRegionForAdminEdit = async (
         slug: doc.id,
       },
     };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to fetch region for admin edit", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
     return { success: false, error: REGION_ERRORS.FETCH_FAILED };
   }
@@ -120,8 +118,16 @@ export const generateRegionContent = async (
     return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
   }
 
+  const parsedInput = generateRegionContentSchema.safeParse({
+    name,
+    description,
+  });
+  if (!parsedInput.success) {
+    return { success: false, error: REGION_ERRORS.VALIDATION_FAILED };
+  }
+
   try {
-    const prompt = buildRegionPrompt({ name, description });
+    const prompt = buildRegionPrompt(parsedInput.data);
     const keys = getGeminiApiKeys();
 
     if (keys.length === 0) {
@@ -165,14 +171,20 @@ export const generateRegionContent = async (
           msg.includes("generate_content_free_tier_requests") ||
           msg.includes("limit:")
         ) {
-          console.warn(`Gemini generation failed with key index ${i} due to quota/rate limit`);
+          console.warn("Gemini generation failed due to quota or rate limit", {
+            keyIndex: i,
+          });
           isQuotaError = true;
           continue; // Try next key
         } else if (msg.includes("invalid api key") || msg.includes("unauthorized") || msg.includes("api_key_invalid") || msg.includes("key invalid")) {
-          console.warn(`Gemini generation failed with key index ${i} due to invalid key/auth`);
+          console.warn("Gemini generation failed due to invalid key", {
+            keyIndex: i,
+          });
           continue; // Try next key
         } else if (msg.includes("503")) {
-          console.warn(`Gemini generation failed with key index ${i} due to 503`);
+          console.warn("Gemini generation failed due to provider availability", {
+            keyIndex: i,
+          });
           continue; // Try next key
         } else {
           console.error("Region AI generation failed", { reason: "unknown_ai_error" });
@@ -245,10 +257,9 @@ export const saveRegion = async (
       .create(cleanDocData);
 
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to save region", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error"
     });
     return { success: false, error: REGION_ERRORS.SAVE_FAILED };
   }
@@ -300,7 +311,7 @@ export const updateRegion = async (
 
     return { success: true };
   } catch (error: unknown) {
-    console.error("Failed to update region", { slug, error: error instanceof Error ? error.message : String(error) });
+    console.error("Failed to update region", { slug });
     if (typeof error === "object" && error !== null && "code" in error && (error as { code: number }).code === 5) {
       return { success: false, error: REGION_ERRORS.NOT_FOUND };
     }
@@ -377,10 +388,9 @@ export const toggleRegionStatus = async (
     }
 
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to toggle region status", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error"
     });
     return { success: false, error: REGION_ERRORS.TOGGLE_FAILED };
   }
@@ -427,10 +437,9 @@ export const deleteRegion = async (
 
     updateTag("global-data");
     return { success: true };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to delete region", {
       slug,
-      message: error instanceof Error ? error.message : "Unknown error",
     });
     return { success: false, error: REGION_ERRORS.DELETE_FAILED };
   }

@@ -25,10 +25,8 @@ export const revalidateAll = async (): Promise<
     updateTag("all-combinations");
 
     return { success: true };
-  } catch (error: unknown) {
-    console.error("Failed to revalidate public site", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+  } catch {
+    console.error("Failed to revalidate public site");
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
   }
 };

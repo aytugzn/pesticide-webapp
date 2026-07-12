@@ -132,8 +132,8 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       window.location.href = ROUTES.login;
-    } catch (err) {
-      console.error("Logout failed", { error: err instanceof Error ? err.message : String(err) });
+    } catch {
+      console.error("Logout failed");
     }
   };
 

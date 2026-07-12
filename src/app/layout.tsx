@@ -31,7 +31,7 @@ const getLayoutSettings = async () => {
       .get();
     return parseSettingsDoc(settingsSnap.data());
   } catch (error: unknown) {
-    console.error("Failed to fetch layout settings", { error: error instanceof Error ? error.message : "Unknown error" });
+    console.error("Failed to fetch layout settings");
     throw error;
   }
 };

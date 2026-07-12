@@ -28,9 +28,7 @@ export const getGlobalData = async (): Promise<GlobalData> => {
       settings: parseSettingsDoc(settingsSnap.data()),
     };
   } catch (error: unknown) {
-    console.error("Failed to fetch global data", {
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+    console.error("Failed to fetch global data");
     throw error;
   }
 };

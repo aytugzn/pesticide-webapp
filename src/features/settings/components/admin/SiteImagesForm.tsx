@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImagePlus, Loader2, Save, Edit, Trash2, ImageIcon } from "lucide-react";
@@ -140,19 +140,23 @@ const CompactSlideCard = ({
   const isPending = Boolean(draft.selectedFile);
   const altText = draft.alt.trim() || defaultAlt;
 
-  // Resolve thumbnail
-  let thumbUrl = "";
-  if (draft.selectedFile) {
-    thumbUrl = URL.createObjectURL(draft.selectedFile);
-  } else if (draft.image || draft.imageUrl) {
-    const resolved = resolveAppImage({
-      image: draft.image,
-      imageUrl: draft.imageUrl,
-      fallbackAlt: altText,
-      preset: "thumbnail",
-    });
-    thumbUrl = resolved?.url || "";
-  }
+  const thumbUrl = useMemo(() => {
+    if (draft.selectedFile) {
+      return URL.createObjectURL(draft.selectedFile);
+    }
+
+    if (draft.image || draft.imageUrl) {
+      const resolved = resolveAppImage({
+        image: draft.image,
+        imageUrl: draft.imageUrl,
+        fallbackAlt: altText,
+        preset: "thumbnail",
+      });
+      return resolved?.url || "";
+    }
+
+    return "";
+  }, [altText, draft.image, draft.imageUrl, draft.selectedFile]);
 
   // Cleanup object URL
   useEffect(() => {
@@ -279,6 +283,89 @@ const getCurrentImage = (
   return resolved
     ? { id, url: resolved.url, altText: resolved.alt }
     : null;
+};
+
+type ExpandedSlideCardProps = {
+  idPrefix: SiteUploadTarget;
+  draft: SlideDraft;
+  title: string;
+  helpText: string;
+  defaultAlt: string;
+  removeCardLabel: string;
+  onCollapse: () => void;
+  onFileSelect: (file: File) => void;
+  onAltChange: (alt: string) => void;
+  onRemove: () => void;
+  onRemoveCard: () => void;
+  onValidationError: () => void;
+};
+
+/**
+ * Renders the shared expanded editor used by each site image group.
+ *
+ * @param props - Draft image state and group-specific callbacks.
+ * @returns The expanded image upload editor card.
+ */
+const ExpandedSlideCard = ({
+  idPrefix,
+  draft,
+  title,
+  helpText,
+  defaultAlt,
+  removeCardLabel,
+  onCollapse,
+  onFileSelect,
+  onAltChange,
+  onRemove,
+  onRemoveCard,
+  onValidationError,
+}: ExpandedSlideCardProps) => {
+  const d = DICTIONARY.admin.settings.siteImages;
+
+  return (
+    <div className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">
+          {title} - {d.compactCard.editing}
+        </h4>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={onCollapse}
+        >
+          {d.compactCard.collapse}
+        </Button>
+      </div>
+      <AdminImageUploadField
+        id={`${idPrefix}-${draft.key}`}
+        label={title}
+        helpText={helpText}
+        currentImage={
+          draft.selectedFile
+            ? null
+            : getCurrentImage(
+                `${draft.key}-current`,
+                draft.image,
+                draft.imageUrl,
+                draft.alt || defaultAlt,
+              )
+        }
+        selectedFile={draft.selectedFile}
+        alt={draft.alt}
+        altLabel={d.altLabel}
+        altPlaceholder={d.altPlaceholder}
+        altDisabled={!draft.image && !draft.imageUrl && !draft.selectedFile}
+        onFileSelect={onFileSelect}
+        onAltChange={onAltChange}
+        onRemove={onRemove}
+        onRemoveCard={onRemoveCard}
+        removeCardLabel={removeCardLabel}
+        onValidationError={onValidationError}
+      />
+    </div>
+  );
 };
 
 export const SiteImagesForm = ({
@@ -514,68 +601,56 @@ export const SiteImagesForm = ({
             }
 
             return (
-              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
-                <div className="flex items-center justify-between gap-2 min-w-0">
-                  <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">{title} - {d.compactCard.editing}</h4>
-                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setExpandedKey(null)}>
-                    {d.compactCard.collapse}
-                  </Button>
-                </div>
-                <AdminImageUploadField
-                  id={`site-hero-${draft.key}`}
-                  label={title}
-                  helpText={d.heroHelp}
-                  currentImage={
-                    draft.selectedFile
-                      ? null
-                      : getCurrentImage(
-                          `${draft.key}-current`,
-                          draft.image,
-                          draft.imageUrl,
-                          draft.alt || d.heroAltDefault,
-                        )
-                  }
-                  selectedFile={draft.selectedFile}
-                  alt={draft.alt}
-                  altLabel={d.altLabel}
-                  altPlaceholder={d.altPlaceholder}
-                  altDisabled={!draft.image && !draft.imageUrl && !draft.selectedFile}
-                  onFileSelect={(file) =>
-                    setHeroDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key ? { ...item, selectedFile: file } : item,
-                      ),
-                    )
-                  }
-                  onAltChange={(alt) =>
-                    setHeroDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key ? { ...item, alt } : item,
-                      ),
-                    )
-                  }
-                  onRemove={() => {
-                    setHeroDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key
-                          ? { ...item, image: undefined, imageUrl: undefined, selectedFile: null }
-                          : item,
-                      ),
-                    );
-                    setExpandedKey(null);
-                  }}
-                  onRemoveCard={() => {
-                    setHeroDrafts((current) =>
-                      current.filter((item) => item.key !== draft.key),
-                    );
-                    setExpandedKey(null);
-                  }}
-                  removeCardLabel={d.removeHero}
-                  onValidationError={() =>
-                    setFeedback({ type: "error", message: d.error })
-                  }
-                />
-              </div>
+              <ExpandedSlideCard
+                key={draft.key}
+                idPrefix="site-hero"
+                draft={draft}
+                title={title}
+                helpText={d.heroHelp}
+                defaultAlt={d.heroAltDefault}
+                removeCardLabel={d.removeHero}
+                onCollapse={() => setExpandedKey(null)}
+                onFileSelect={(file) =>
+                  setHeroDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key
+                        ? { ...item, selectedFile: file }
+                        : item,
+                    ),
+                  )
+                }
+                onAltChange={(alt) =>
+                  setHeroDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key ? { ...item, alt } : item,
+                    ),
+                  )
+                }
+                onRemove={() => {
+                  setHeroDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key
+                        ? {
+                            ...item,
+                            image: undefined,
+                            imageUrl: undefined,
+                            selectedFile: null,
+                          }
+                        : item,
+                    ),
+                  );
+                  setExpandedKey(null);
+                }}
+                onRemoveCard={() => {
+                  setHeroDrafts((current) =>
+                    current.filter((item) => item.key !== draft.key),
+                  );
+                  setExpandedKey(null);
+                }}
+                onValidationError={() =>
+                  setFeedback({ type: "error", message: d.error })
+                }
+              />
             );
           })}
         </div>
@@ -659,68 +734,56 @@ export const SiteImagesForm = ({
             }
 
             return (
-              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
-                <div className="flex items-center justify-between gap-2 min-w-0">
-                  <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">{title} - {d.compactCard.editing}</h4>
-                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setExpandedKey(null)}>
-                    {d.compactCard.collapse}
-                  </Button>
-                </div>
-                <AdminImageUploadField
-                  id={`site-services-${draft.key}`}
-                  label={title}
-                  helpText={d.servicesHelp}
-                  currentImage={
-                    draft.selectedFile
-                      ? null
-                      : getCurrentImage(
-                          `${draft.key}-current`,
-                          draft.image,
-                          draft.imageUrl,
-                          draft.alt || d.servicesAltDefault,
-                        )
-                  }
-                  selectedFile={draft.selectedFile}
-                  alt={draft.alt}
-                  altLabel={d.altLabel}
-                  altPlaceholder={d.altPlaceholder}
-                  altDisabled={!draft.image && !draft.imageUrl && !draft.selectedFile}
-                  onFileSelect={(file) =>
-                    setServicesDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key ? { ...item, selectedFile: file } : item,
-                      ),
-                    )
-                  }
-                  onAltChange={(alt) =>
-                    setServicesDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key ? { ...item, alt } : item,
-                      ),
-                    )
-                  }
-                  onRemove={() => {
-                    setServicesDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key
-                          ? { ...item, image: undefined, imageUrl: undefined, selectedFile: null }
-                          : item,
-                      ),
-                    );
-                    setExpandedKey(null);
-                  }}
-                  onRemoveCard={() => {
-                    setServicesDrafts((current) =>
-                      current.filter((item) => item.key !== draft.key),
-                    );
-                    setExpandedKey(null);
-                  }}
-                  removeCardLabel={d.removeServices}
-                  onValidationError={() =>
-                    setFeedback({ type: "error", message: d.error })
-                  }
-                />
-              </div>
+              <ExpandedSlideCard
+                key={draft.key}
+                idPrefix="site-services"
+                draft={draft}
+                title={title}
+                helpText={d.servicesHelp}
+                defaultAlt={d.servicesAltDefault}
+                removeCardLabel={d.removeServices}
+                onCollapse={() => setExpandedKey(null)}
+                onFileSelect={(file) =>
+                  setServicesDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key
+                        ? { ...item, selectedFile: file }
+                        : item,
+                    ),
+                  )
+                }
+                onAltChange={(alt) =>
+                  setServicesDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key ? { ...item, alt } : item,
+                    ),
+                  )
+                }
+                onRemove={() => {
+                  setServicesDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key
+                        ? {
+                            ...item,
+                            image: undefined,
+                            imageUrl: undefined,
+                            selectedFile: null,
+                          }
+                        : item,
+                    ),
+                  );
+                  setExpandedKey(null);
+                }}
+                onRemoveCard={() => {
+                  setServicesDrafts((current) =>
+                    current.filter((item) => item.key !== draft.key),
+                  );
+                  setExpandedKey(null);
+                }}
+                onValidationError={() =>
+                  setFeedback({ type: "error", message: d.error })
+                }
+              />
             );
           })}
         </div>
@@ -804,68 +867,56 @@ export const SiteImagesForm = ({
             }
 
             return (
-              <div key={draft.key} className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
-                <div className="flex items-center justify-between gap-2 min-w-0">
-                  <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">{title} - {d.compactCard.editing}</h4>
-                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setExpandedKey(null)}>
-                    {d.compactCard.collapse}
-                  </Button>
-                </div>
-                <AdminImageUploadField
-                  id={`site-why-us-${draft.key}`}
-                  label={title}
-                  helpText={d.whyUsHelp}
-                  currentImage={
-                    draft.selectedFile
-                      ? null
-                      : getCurrentImage(
-                          `${draft.key}-current`,
-                          draft.image,
-                          draft.imageUrl,
-                          draft.alt || d.whyUsAltDefault,
-                        )
-                  }
-                  selectedFile={draft.selectedFile}
-                  alt={draft.alt}
-                  altLabel={d.altLabel}
-                  altPlaceholder={d.altPlaceholder}
-                  altDisabled={!draft.image && !draft.imageUrl && !draft.selectedFile}
-                  onFileSelect={(file) =>
-                    setWhyUsDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key ? { ...item, selectedFile: file } : item,
-                      ),
-                    )
-                  }
-                  onAltChange={(alt) =>
-                    setWhyUsDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key ? { ...item, alt } : item,
-                      ),
-                    )
-                  }
-                  onRemove={() => {
-                    setWhyUsDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key
-                          ? { ...item, image: undefined, imageUrl: undefined, selectedFile: null }
-                          : item,
-                      ),
-                    );
-                    setExpandedKey(null);
-                  }}
-                  onRemoveCard={() => {
-                    setWhyUsDrafts((current) =>
-                      current.filter((item) => item.key !== draft.key),
-                    );
-                    setExpandedKey(null);
-                  }}
-                  removeCardLabel={d.removeWhyUs}
-                  onValidationError={() =>
-                    setFeedback({ type: "error", message: d.error })
-                  }
-                />
-              </div>
+              <ExpandedSlideCard
+                key={draft.key}
+                idPrefix="site-why-us"
+                draft={draft}
+                title={title}
+                helpText={d.whyUsHelp}
+                defaultAlt={d.whyUsAltDefault}
+                removeCardLabel={d.removeWhyUs}
+                onCollapse={() => setExpandedKey(null)}
+                onFileSelect={(file) =>
+                  setWhyUsDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key
+                        ? { ...item, selectedFile: file }
+                        : item,
+                    ),
+                  )
+                }
+                onAltChange={(alt) =>
+                  setWhyUsDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key ? { ...item, alt } : item,
+                    ),
+                  )
+                }
+                onRemove={() => {
+                  setWhyUsDrafts((current) =>
+                    current.map((item) =>
+                      item.key === draft.key
+                        ? {
+                            ...item,
+                            image: undefined,
+                            imageUrl: undefined,
+                            selectedFile: null,
+                          }
+                        : item,
+                    ),
+                  );
+                  setExpandedKey(null);
+                }}
+                onRemoveCard={() => {
+                  setWhyUsDrafts((current) =>
+                    current.filter((item) => item.key !== draft.key),
+                  );
+                  setExpandedKey(null);
+                }}
+                onValidationError={() =>
+                  setFeedback({ type: "error", message: d.error })
+                }
+              />
             );
           })}
         </div>

@@ -30,6 +30,11 @@ export const generatedContentSchema = z.object({
     .max(10),
 });
 
+export const generatePestContentSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  description: z.string().trim(),
+});
+
 export const savePestSchema = z.object({
   slug: slugSchema,
   name: z.string().trim().min(1).max(120),
