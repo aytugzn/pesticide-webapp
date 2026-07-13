@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImagePlus, Loader2, Save, Edit, Trash2, ImageIcon } from "lucide-react";
-import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
+import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
 import { uploadAdminImage } from "@/features/image-upload/actions";
 import { AdminImageUploadField } from "@/features/image-upload/components/admin/AdminImageUploadField";
 import { saveSiteImages } from "@/features/settings/actions";
@@ -30,7 +30,6 @@ type SiteImagesFormProps = {
   initialServicesSlides?: AppImage[];
 };
 
-type Feedback = { type: "success" | "error"; message: string } | null;
 type SiteUploadTarget = "site-hero" | "site-why-us" | "site-services";
 
 /**
@@ -122,7 +121,6 @@ const CompactSlideCard = ({
   title,
   defaultAlt,
   onEdit,
-  onRemove,
   onRemoveCard,
   removeCardLabel,
   d,
@@ -131,7 +129,6 @@ const CompactSlideCard = ({
   title: string;
   defaultAlt: string;
   onEdit: () => void;
-  onRemove: () => void;
   onRemoveCard: () => void;
   removeCardLabel: string;
   d: typeof DICTIONARY.admin.settings.siteImages.compactCard;
@@ -217,22 +214,6 @@ const CompactSlideCard = ({
           <Edit className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
           <span className="hidden sm:inline">{d.edit}</span>
         </Button>
-        {hasImage && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onRemove}
-            className="h-8 px-2"
-            title={d.removeImage}
-            aria-label={d.removeImage}
-          >
-            <Trash2
-              className="h-3.5 w-3.5 text-text-secondary"
-              aria-hidden="true"
-            />
-          </Button>
-        )}
         <Button
           type="button"
           variant="danger"
@@ -295,7 +276,6 @@ type ExpandedSlideCardProps = {
   onCollapse: () => void;
   onFileSelect: (file: File) => void;
   onAltChange: (alt: string) => void;
-  onRemove: () => void;
   onRemoveCard: () => void;
   onValidationError: () => void;
 };
@@ -316,14 +296,13 @@ const ExpandedSlideCard = ({
   onCollapse,
   onFileSelect,
   onAltChange,
-  onRemove,
   onRemoveCard,
   onValidationError,
 }: ExpandedSlideCardProps) => {
   const d = DICTIONARY.admin.settings.siteImages;
 
   return (
-    <div className="space-y-4 rounded-brand-md border-2 border-brand-primary/20 bg-brand-surface-muted p-2 sm:p-4 min-w-0">
+    <div className="space-y-4 rounded-brand-md border border-brand-border bg-surface-neutral p-2 sm:p-4 min-w-0">
       <div className="flex items-center justify-between gap-2 min-w-0">
         <h4 className="font-semibold text-text-primary text-sm truncate min-w-0 flex-1">
           {title} - {d.compactCard.editing}
@@ -357,9 +336,9 @@ const ExpandedSlideCard = ({
         altLabel={d.altLabel}
         altPlaceholder={d.altPlaceholder}
         altDisabled={!draft.image && !draft.imageUrl && !draft.selectedFile}
+        subtleDropzone
         onFileSelect={onFileSelect}
         onAltChange={onAltChange}
-        onRemove={onRemove}
         onRemoveCard={onRemoveCard}
         removeCardLabel={removeCardLabel}
         onValidationError={onValidationError}
@@ -374,6 +353,7 @@ export const SiteImagesForm = ({
   initialServicesSlides = [],
 }: SiteImagesFormProps) => {
   const router = useRouter();
+  const { showToast, showToastSequence } = useCombinationAdminToast();
   const d = DICTIONARY.admin.settings.siteImages;
 
   const [heroDrafts, setHeroDrafts] = useState(() =>
@@ -390,7 +370,6 @@ export const SiteImagesForm = ({
   const [newWhyUsIndex, setNewWhyUsIndex] = useState(0);
   const [newServicesIndex, setNewServicesIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const initialSnapshot = createFormSnapshot(
@@ -462,7 +441,6 @@ export const SiteImagesForm = ({
     if (!isDirty || !allComplete) return;
 
     setIsSaving(true);
-    setFeedback(null);
 
     try {
       const heroResult = await processDrafts(
@@ -471,7 +449,7 @@ export const SiteImagesForm = ({
         d.heroAltDefault,
       );
       if (!heroResult.ok) {
-        setFeedback({ type: "error", message: d.error });
+        showToast({ variant: "error", message: d.uploadError });
         setIsSaving(false);
         return;
       }
@@ -482,7 +460,7 @@ export const SiteImagesForm = ({
         d.whyUsAltDefault,
       );
       if (!whyUsResult.ok) {
-        setFeedback({ type: "error", message: d.error });
+        showToast({ variant: "error", message: d.uploadError });
         setIsSaving(false);
         return;
       }
@@ -493,7 +471,7 @@ export const SiteImagesForm = ({
         d.servicesAltDefault,
       );
       if (!servicesResult.ok) {
-        setFeedback({ type: "error", message: d.error });
+        showToast({ variant: "error", message: d.uploadError });
         setIsSaving(false);
         return;
       }
@@ -505,14 +483,26 @@ export const SiteImagesForm = ({
       });
 
       if (!result.success) {
-        setFeedback({ type: "error", message: d.error });
+        showToast({ variant: "error", message: d.error });
         return;
       }
 
-      setFeedback({ type: "success", message: d.success });
+      if (result.data?.cleanupStatus === "success") {
+        showToastSequence([
+          { variant: "success", message: d.success },
+          { variant: "success", message: d.cleanupSuccess },
+        ]);
+      } else if (result.data?.cleanupStatus === "partial-failure") {
+        showToastSequence([
+          { variant: "success", message: d.success },
+          { variant: "warning", message: d.cleanupWarning },
+        ]);
+      } else {
+        showToast({ variant: "success", message: d.success });
+      }
       router.refresh();
     } catch {
-      setFeedback({ type: "error", message: d.error });
+      showToast({ variant: "error", message: d.error });
     } finally {
       setIsSaving(false);
     }
@@ -526,8 +516,6 @@ export const SiteImagesForm = ({
         </h2>
         <p className="text-sm text-text-secondary">{d.description}</p>
       </header>
-
-      {feedback && <Alert variant={feedback.type} message={feedback.message} />}
 
       {/* Hero Section */}
       <div className="space-y-4">
@@ -575,20 +563,6 @@ export const SiteImagesForm = ({
                   defaultAlt={d.heroAltDefault}
                   d={d.compactCard}
                   onEdit={() => setExpandedKey(draft.key)}
-                  onRemove={() =>
-                    setHeroDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key
-                          ? {
-                              ...item,
-                              image: undefined,
-                              imageUrl: undefined,
-                              selectedFile: null,
-                            }
-                          : item,
-                      ),
-                    )
-                  }
                   onRemoveCard={() => {
                     setHeroDrafts((current) =>
                       current.filter((item) => item.key !== draft.key),
@@ -626,21 +600,6 @@ export const SiteImagesForm = ({
                     ),
                   )
                 }
-                onRemove={() => {
-                  setHeroDrafts((current) =>
-                    current.map((item) =>
-                      item.key === draft.key
-                        ? {
-                            ...item,
-                            image: undefined,
-                            imageUrl: undefined,
-                            selectedFile: null,
-                          }
-                        : item,
-                    ),
-                  );
-                  setExpandedKey(null);
-                }}
                 onRemoveCard={() => {
                   setHeroDrafts((current) =>
                     current.filter((item) => item.key !== draft.key),
@@ -648,7 +607,7 @@ export const SiteImagesForm = ({
                   setExpandedKey(null);
                 }}
                 onValidationError={() =>
-                  setFeedback({ type: "error", message: d.error })
+                  showToast({ variant: "error", message: d.validationError })
                 }
               />
             );
@@ -708,20 +667,6 @@ export const SiteImagesForm = ({
                   defaultAlt={d.servicesAltDefault}
                   d={d.compactCard}
                   onEdit={() => setExpandedKey(draft.key)}
-                  onRemove={() =>
-                    setServicesDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key
-                          ? {
-                              ...item,
-                              image: undefined,
-                              imageUrl: undefined,
-                              selectedFile: null,
-                            }
-                          : item,
-                      ),
-                    )
-                  }
                   onRemoveCard={() => {
                     setServicesDrafts((current) =>
                       current.filter((item) => item.key !== draft.key),
@@ -759,21 +704,6 @@ export const SiteImagesForm = ({
                     ),
                   )
                 }
-                onRemove={() => {
-                  setServicesDrafts((current) =>
-                    current.map((item) =>
-                      item.key === draft.key
-                        ? {
-                            ...item,
-                            image: undefined,
-                            imageUrl: undefined,
-                            selectedFile: null,
-                          }
-                        : item,
-                    ),
-                  );
-                  setExpandedKey(null);
-                }}
                 onRemoveCard={() => {
                   setServicesDrafts((current) =>
                     current.filter((item) => item.key !== draft.key),
@@ -781,7 +711,7 @@ export const SiteImagesForm = ({
                   setExpandedKey(null);
                 }}
                 onValidationError={() =>
-                  setFeedback({ type: "error", message: d.error })
+                  showToast({ variant: "error", message: d.validationError })
                 }
               />
             );
@@ -841,20 +771,6 @@ export const SiteImagesForm = ({
                   defaultAlt={d.whyUsAltDefault}
                   d={d.compactCard}
                   onEdit={() => setExpandedKey(draft.key)}
-                  onRemove={() =>
-                    setWhyUsDrafts((current) =>
-                      current.map((item) =>
-                        item.key === draft.key
-                          ? {
-                              ...item,
-                              image: undefined,
-                              imageUrl: undefined,
-                              selectedFile: null,
-                            }
-                          : item,
-                      ),
-                    )
-                  }
                   onRemoveCard={() => {
                     setWhyUsDrafts((current) =>
                       current.filter((item) => item.key !== draft.key),
@@ -892,21 +808,6 @@ export const SiteImagesForm = ({
                     ),
                   )
                 }
-                onRemove={() => {
-                  setWhyUsDrafts((current) =>
-                    current.map((item) =>
-                      item.key === draft.key
-                        ? {
-                            ...item,
-                            image: undefined,
-                            imageUrl: undefined,
-                            selectedFile: null,
-                          }
-                        : item,
-                    ),
-                  );
-                  setExpandedKey(null);
-                }}
                 onRemoveCard={() => {
                   setWhyUsDrafts((current) =>
                     current.filter((item) => item.key !== draft.key),
@@ -914,7 +815,7 @@ export const SiteImagesForm = ({
                   setExpandedKey(null);
                 }}
                 onValidationError={() =>
-                  setFeedback({ type: "error", message: d.error })
+                  showToast({ variant: "error", message: d.validationError })
                 }
               />
             );

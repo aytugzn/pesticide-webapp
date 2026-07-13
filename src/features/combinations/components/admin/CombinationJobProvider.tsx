@@ -55,6 +55,7 @@ type CombinationJobContextType = {
   isAbortRequested: boolean;
   hasStartedJobInSession: boolean;
   showToast: (toast: AdminToastInput) => void;
+  showToastSequence: (toasts: AdminToastInput[]) => void;
   notifyBulkMutation: (notice: Omit<BulkMutationNotice, "id">) => void;
   subscribeBulkMutation: (handler: BulkMutationHandler) => () => void;
   startBulkGenerate: (missingItems: BulkProgressItem[]) => Promise<void>;
@@ -76,7 +77,10 @@ export const useCombinationJob = () => {
 
 export const useCombinationAdminToast = () => {
   const context = useCombinationJob();
-  return { showToast: context.showToast };
+  return {
+    showToast: context.showToast,
+    showToastSequence: context.showToastSequence,
+  };
 };
 
 const getToastDuration = (variant: AdminToastVariant) =>
@@ -130,6 +134,9 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
   const jobIdRef = useRef<string | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastSequenceTimeoutRefs = useRef(
+    new Set<ReturnType<typeof setTimeout>>(),
+  );
   const bulkMutationNoticeIdRef = useRef(0);
   const bulkMutationHandlersRef = useRef(new Set<BulkMutationHandler>());
 
@@ -146,7 +153,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
     setToast(null);
   }, []);
 
-  const showToast = useCallback((nextToast: AdminToastInput) => {
+  const displayToast = useCallback((nextToast: AdminToastInput) => {
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
@@ -159,6 +166,32 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
       toastTimeoutRef.current = null;
     }, getToastDuration(nextToast.variant));
   }, []);
+
+  const clearToastSequence = useCallback(() => {
+    toastSequenceTimeoutRefs.current.forEach(clearTimeout);
+    toastSequenceTimeoutRefs.current.clear();
+  }, []);
+
+  const showToast = useCallback((nextToast: AdminToastInput) => {
+    clearToastSequence();
+    displayToast(nextToast);
+  }, [clearToastSequence, displayToast]);
+
+  const showToastSequence = useCallback((toasts: AdminToastInput[]) => {
+    clearToastSequence();
+    if (toasts.length === 0) return;
+
+    displayToast(toasts[0]);
+    let delayMs = 0;
+    toasts.slice(1).forEach((nextToast, index) => {
+      delayMs += getToastDuration(toasts[index].variant);
+      const timeout = setTimeout(() => {
+        toastSequenceTimeoutRefs.current.delete(timeout);
+        displayToast(nextToast);
+      }, delayMs);
+      toastSequenceTimeoutRefs.current.add(timeout);
+    });
+  }, [clearToastSequence, displayToast]);
 
   const notifyBulkMutation = useCallback((notice: Omit<BulkMutationNotice, "id">) => {
     bulkMutationNoticeIdRef.current += 1;
@@ -179,6 +212,8 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
+    toastSequenceTimeoutRefs.current.forEach(clearTimeout);
+    toastSequenceTimeoutRefs.current.clear();
   }, []);
 
   // BroadcastChannel Setup
@@ -517,6 +552,7 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
         isAbortRequested,
         hasStartedJobInSession,
         showToast,
+        showToastSequence,
         notifyBulkMutation,
         subscribeBulkMutation,
         startBulkGenerate,

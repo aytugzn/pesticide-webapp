@@ -24,6 +24,7 @@ type AdminImageUploadFieldProps = {
   altLabel: string;
   altPlaceholder: string;
   altDisabled?: boolean;
+  subtleDropzone?: boolean;
   onFileSelect: (file: File) => void;
   onAltChange: (alt: string) => void;
   onRemove?: () => void;
@@ -63,6 +64,7 @@ export const AdminImageUploadField = ({
   altLabel,
   altPlaceholder,
   altDisabled = false,
+  subtleDropzone = false,
   onFileSelect,
   onAltChange,
   onRemove,
@@ -138,7 +140,10 @@ export const AdminImageUploadField = ({
           onKeyDown={handleCardKeyDown}
           aria-label={hasImage ? d.replaceHint : d.dropHint}
           className={cn(
-            "group relative flex min-h-52 md:min-h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-brand-md border-2 border-dashed border-brand-border bg-brand-surface transition-colors hover:border-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2",
+            "group relative flex min-h-52 md:min-h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-brand-md border-2 border-dashed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+            subtleDropzone
+              ? "border-brand-border/70 bg-surface-neutral hover:border-brand-border-strong hover:bg-brand-surface-light/40 focus-visible:ring-brand-primary/50"
+              : "border-brand-border bg-brand-surface hover:border-brand-primary focus-visible:ring-brand-primary",
             hasImage && "border-solid",
           )}
         >

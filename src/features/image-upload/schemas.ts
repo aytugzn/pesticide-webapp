@@ -45,3 +45,7 @@ export const cloudinaryUploadResponseSchema = z.object({
   height: z.number().int().positive().optional(),
   format: z.string().trim().min(1).optional(),
 });
+
+export const cloudinaryDestroyResponseSchema = z.object({
+  result: z.enum(["ok", "not found"]),
+});

@@ -16,6 +16,13 @@ export const SETTINGS_ERRORS = {
 
 export type SettingsErrorCode = keyof typeof SETTINGS_ERRORS;
 export type SaveSiteImagesInput = z.infer<typeof saveSiteImagesSchema>;
+export type SiteImagesCleanupStatus =
+  | "not-needed"
+  | "success"
+  | "partial-failure";
+export type SaveSiteImagesResult = {
+  cleanupStatus: SiteImagesCleanupStatus;
+};
 
 export type GlobalData = {
   pests: PestDoc[];

@@ -8,9 +8,14 @@ import type { ActionResponse } from "@/types";
 import {
   SETTINGS_ERRORS,
   type SaveSiteImagesInput,
+  type SaveSiteImagesResult,
   type SettingsErrorCode,
 } from "./types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import {
+  collectManagedSiteImagePublicIds,
+  deleteManagedSiteImage,
+} from "@/features/image-upload/cloudinary";
 import { saveSiteImagesSchema } from "./schemas";
 
 /**
@@ -102,7 +107,7 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
  */
 export const saveSiteImages = async (
   input: SaveSiteImagesInput,
-): Promise<ActionResponse<void, SettingsErrorCode>> => {
+): Promise<ActionResponse<SaveSiteImagesResult, SettingsErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
   }
@@ -114,6 +119,20 @@ export const saveSiteImages = async (
 
   try {
     const db = getAdminDb();
+    const settingsCollection = db.collection("settings");
+    const previousPublicIds = new Set<string>();
+    let canSafelyCleanUp = true;
+    try {
+      const previousSettingsSnapshot = await settingsCollection.get();
+      previousSettingsSnapshot.docs.forEach((doc) => {
+        collectManagedSiteImagePublicIds(doc.data()).forEach((publicId) =>
+          previousPublicIds.add(publicId),
+        );
+      });
+    } catch {
+      canSafelyCleanUp = false;
+      console.error("Failed to read previous site image references");
+    }
     const batch = db.batch();
     const slides = parsed.data.heroSlides.map((slide, index) => ({
       ...(slide.id ? { id: slide.id } : {}),
@@ -159,7 +178,39 @@ export const saveSiteImages = async (
     }
 
     await batch.commit();
-    return { success: true };
+
+    if (!canSafelyCleanUp) {
+      return { success: true, data: { cleanupStatus: "partial-failure" } };
+    }
+
+    try {
+      const currentSettingsSnapshot = await settingsCollection.get();
+      const currentPublicIds = new Set<string>();
+      currentSettingsSnapshot.docs.forEach((doc) => {
+        collectManagedSiteImagePublicIds(doc.data()).forEach((publicId) =>
+          currentPublicIds.add(publicId),
+        );
+      });
+      const orphanedPublicIds = [...previousPublicIds].filter(
+        (publicId) => !currentPublicIds.has(publicId),
+      );
+
+      if (orphanedPublicIds.length === 0) {
+        return { success: true, data: { cleanupStatus: "not-needed" } };
+      }
+
+      const cleanupResults = await Promise.all(
+        orphanedPublicIds.map(deleteManagedSiteImage),
+      );
+      const cleanupStatus = cleanupResults.every(Boolean)
+        ? "success"
+        : "partial-failure";
+
+      return { success: true, data: { cleanupStatus } };
+    } catch {
+      console.error("Failed to clean up stale site images");
+      return { success: true, data: { cleanupStatus: "partial-failure" } };
+    }
   } catch {
     console.error("Failed to save site images");
     return { success: false, error: SETTINGS_ERRORS.SAVE_FAILED };
