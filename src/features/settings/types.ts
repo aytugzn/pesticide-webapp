@@ -1,4 +1,9 @@
-import type { PestDoc, RegionDoc, SettingsDoc } from "@/types";
+import type {
+  PestDoc,
+  RegionDoc,
+  SettingsDoc,
+  SiteImageSlideDoc,
+} from "@/types";
 import { z } from "zod";
 import { saveSiteImagesSchema } from "./schemas";
 
@@ -20,8 +25,15 @@ export type SiteImagesCleanupStatus =
   | "not-needed"
   | "success"
   | "partial-failure";
-export type SaveSiteImagesResult = {
+export type PublishSiteImagesResult = {
+  published: boolean;
   cleanupStatus: SiteImagesCleanupStatus;
+};
+
+export type SiteImagesData = {
+  heroSlides: SiteImageSlideDoc[];
+  whyUsSlides: SiteImageSlideDoc[];
+  servicesSlides: SiteImageSlideDoc[];
 };
 
 export type GlobalData = {

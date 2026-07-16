@@ -1,11 +1,12 @@
 import type {
   AppImage,
+  SiteImageSlideDoc,
   PestDoc,
   RegionDoc,
   SettingsDoc,
   CombinationDoc,
 } from "@/types";
-import type { HeroSlideDoc, GoogleReviewDoc } from "@/features/home/types";
+import type { GoogleReviewDoc } from "@/features/home/types";
 import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 
@@ -15,13 +16,19 @@ import { DICTIONARY } from "@/constants/dictionary";
  * @param data - Raw image reference
  * @returns A validated AppImage, or undefined when required fields are invalid
  */
-export const parseAppImage = (data: unknown): AppImage | undefined => {
+export const parseAppImage = (
+  data: unknown,
+  fallbackAlt = "",
+): AppImage | undefined => {
   if (!data || typeof data !== "object") return undefined;
 
   const image = data as Record<string, unknown>;
   const publicId =
     typeof image.publicId === "string" ? image.publicId.trim() : "";
-  const alt = typeof image.alt === "string" ? image.alt.trim() : "";
+  const alt =
+    typeof image.alt === "string" && image.alt.trim()
+      ? image.alt.trim()
+      : fallbackAlt.trim();
 
   if (image.source !== "cloudinary" || !publicId || !alt) return undefined;
 
@@ -77,15 +84,11 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
       typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
     whyUsImage: parseAppImage(d.whyUsImage),
     whyUsSlides: Array.isArray(d.whyUsSlides)
-      ? d.whyUsSlides
-          .map(parseAppImage)
-          .filter((img): img is AppImage => img !== undefined)
+      ? parseSiteImageSlides(d.whyUsSlides)
       : undefined,
     servicesImage: parseAppImage(d.servicesImage),
     servicesSlides: Array.isArray(d.servicesSlides)
-      ? d.servicesSlides
-          .map(parseAppImage)
-          .filter((img): img is AppImage => img !== undefined)
+      ? parseSiteImageSlides(d.servicesSlides)
       : undefined,
     heroAutoplayDelay:
       typeof d.heroAutoplayDelay === "number" ? d.heroAutoplayDelay : undefined,
@@ -268,28 +271,58 @@ export const parseCombinationDoc = (data: unknown): CombinationDoc => {
  * @param fallbackOrder - Used as the `order` value when the doc has none (e.g. array index)
  * @returns Type-safe HeroSlideDoc object, or null if the slide has no image
  */
-export const parseHeroSlideDoc = (
+export const parseSiteImageSlideDoc = (
   data: unknown,
   fallbackOrder: number,
-): HeroSlideDoc | null => {
+): SiteImageSlideDoc | null => {
   if (!data || typeof data !== "object") return null;
 
   const d = data as Record<string, unknown>;
-  const image = parseAppImage(d.image);
+  const rawAltText =
+    typeof d.altText === "string" && d.altText.trim() ? d.altText.trim() : "";
+  const image =
+    parseAppImage(d.image, rawAltText) ?? parseAppImage(d, rawAltText);
   const imageUrl = typeof d.imageUrl === "string" ? d.imageUrl.trim() : "";
   if (!image && !imageUrl) return null;
 
+  const rawId = typeof d.id === "string" ? d.id.trim() : "";
+  const stableId =
+    rawId ||
+    image?.assetId ||
+    image?.publicId ||
+    `legacy-site-image-${fallbackOrder}`;
+
   return {
-    id: typeof d.id === "string" ? d.id : undefined,
+    id: stableId,
     image,
     imageUrl: imageUrl || undefined,
-    altText:
-      typeof d.altText === "string" && d.altText.trim()
-        ? d.altText.trim()
-        : image?.alt,
-    order: typeof d.order === "number" ? d.order : fallbackOrder,
+    altText: rawAltText || image?.alt || "",
+    order:
+      typeof d.order === "number" &&
+      Number.isInteger(d.order) &&
+      d.order >= 0
+        ? d.order
+        : fallbackOrder,
   };
 };
+
+/**
+ * Parses a mixed legacy/canonical site-image array without letting one invalid
+ * entry discard the remaining usable slides.
+ *
+ * @param data - Raw Firestore slide array
+ * @returns Valid slides ordered by their canonical order field
+ */
+export const parseSiteImageSlides = (data: unknown): SiteImageSlideDoc[] => {
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .map((slide, index) => parseSiteImageSlideDoc(slide, index))
+    .filter((slide): slide is SiteImageSlideDoc => slide !== null)
+    .sort((first, second) => first.order - second.order);
+};
+
+export const parseHeroSlideDoc = parseSiteImageSlideDoc;
 
 /**
  * Parses and validates raw Firestore data into a GoogleReviewDoc.

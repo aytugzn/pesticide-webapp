@@ -1,12 +1,6 @@
-import type { AppImage } from "@/types";
+import type { SiteImageSlideDoc } from "@/types";
 
-export type HeroSlideDoc = { 
-  id?: string; 
-  image?: AppImage;
-  imageUrl?: string;
-  altText?: string; 
-  order: number; 
-};
+export type HeroSlideDoc = SiteImageSlideDoc;
 
 export type GoogleReviewDoc = {
   id: string;

@@ -1,8 +1,7 @@
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { SERVICES_SECTION_MAX_ITEMS } from "@/constants/ui";
-import type { PestDoc } from "@/types";
-import type { AppImage } from "@/types";
+import type { AppImage, PestDoc, SiteImageSlideDoc } from "@/types";
 import { ServiceCard } from "@/components/ui/ServiceCard";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
@@ -11,7 +10,7 @@ import { resolveAppImage } from "@/utils/cloudinary";
 
 type ServicesSectionProps = {
   pests: PestDoc[];
-  slides?: AppImage[];
+  slides?: SiteImageSlideDoc[];
   legacyImage?: AppImage;
   autoplayDelay?: number;
 }
@@ -29,15 +28,18 @@ export const ServicesSection = ({
 
   if (slides && slides.length > 0) {
     sliderImages = slides
-      .map((img, index) => {
+      .map((slide) => {
         const resolved = resolveAppImage({
-          image: img,
-          fallbackAlt: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+          image: slide.image,
+          imageUrl: slide.imageUrl,
+          fallbackAlt:
+            slide.altText ||
+            DICTIONARY.admin.settings.siteImages.servicesAltDefault,
           preset: "section",
         });
         return resolved
           ? {
-              id: img.assetId || img.publicId || `services-${index}`,
+              id: slide.id,
               url: resolved.url,
               altText: resolved.alt,
             }

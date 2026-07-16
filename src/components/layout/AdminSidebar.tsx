@@ -11,6 +11,7 @@ import {
   FileText,
   MessageSquare,
   Star,
+  Images,
   Settings,
   X,
   LogOut,
@@ -41,6 +42,7 @@ const navItems = [
   { href: ROUTES.adminReports, label: d.menu.reports, icon: FileText },
   { href: ROUTES.adminMessages, label: d.menu.messages, icon: MessageSquare },
   { href: ROUTES.adminReviews, label: d.menu.reviews, icon: Star },
+  { href: ROUTES.adminSiteImages, label: d.menu.siteImages, icon: Images },
   { href: ROUTES.adminSettings, label: d.menu.settings, icon: Settings },
 ];
 

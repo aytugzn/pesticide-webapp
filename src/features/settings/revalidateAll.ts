@@ -6,27 +6,41 @@ import { updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getAdminDb } from "@/lib/firebase-admin";
-import { SETTINGS_ERRORS, type SettingsErrorCode } from "./types";
+import { publishSiteImagesDraft } from "./publishSiteImages";
+import {
+  SETTINGS_ERRORS,
+  type PublishSiteImagesResult,
+  type SettingsErrorCode,
+} from "./types";
 
-/** Verifies Firestore availability before invalidating public cache tags. */
+/**
+ * Runs the site-image publish step while preserving the global cache refresh
+ * behavior used by layout, sitemap, combinations, and other public consumers.
+ *
+ * @returns Global refresh plus optional image publish/cleanup status
+ */
 export const revalidateAll = async (): Promise<
-  ActionResponse<void, SettingsErrorCode>
+  ActionResponse<PublishSiteImagesResult, SettingsErrorCode>
 > => {
   if (!(await requireAdmin())) {
     return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
   }
 
-  try {
-    await getAdminDb().collection("settings").doc("general").get();
+  const publishResult = await publishSiteImagesDraft(getAdminDb());
 
-    updateTag("global-data");
-    updateTag("home-data");
+  if (!publishResult.success) {
     updateTag("layout-settings");
     updateTag("all-combinations");
-
-    return { success: true };
-  } catch {
-    console.error("Failed to revalidate public site");
-    return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
+    return publishResult;
   }
+
+  if (!publishResult.data?.published) {
+    updateTag("global-data");
+    updateTag("home-data");
+  }
+
+  updateTag("layout-settings");
+  updateTag("all-combinations");
+
+  return publishResult;
 };

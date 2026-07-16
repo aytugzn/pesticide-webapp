@@ -10,6 +10,14 @@ export type AppImage = {
   format?: string;
 };
 
+export type SiteImageSlideDoc = {
+  id: string;
+  order: number;
+  image?: AppImage;
+  imageUrl?: string;
+  altText: string;
+};
+
 export type PestDoc = { name: string; slug: string; description?: string; cardDescription?: string; image?: AppImage; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
 export type RegionDoc = { name: string; slug: string; description?: string; cardDescription?: string; image?: AppImage; imageUrl?: string; isActive?: boolean; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; };
 
@@ -20,9 +28,9 @@ export type SettingsDoc = {
   workingHours?: string;
   defaultOgImage?: string;
   whyUsImage?: AppImage;
-  whyUsSlides?: AppImage[];
+  whyUsSlides?: SiteImageSlideDoc[];
   servicesImage?: AppImage;
-  servicesSlides?: AppImage[];
+  servicesSlides?: SiteImageSlideDoc[];
   heroAutoplayDelay?: number;
   servicesAutoplayDelay?: number;
   reviewsAutoplayDelay?: number;

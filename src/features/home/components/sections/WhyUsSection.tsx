@@ -3,11 +3,11 @@ import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { CheckListItem } from "@/components/ui/CheckListItem";
 import { cn } from "@/utils/cn";
-import type { AppImage } from "@/types";
+import type { AppImage, SiteImageSlideDoc } from "@/types";
 import { resolveAppImage } from "@/utils/cloudinary";
 
 type WhyUsSectionProps = {
-  slides?: AppImage[];
+  slides?: SiteImageSlideDoc[];
   legacyImage?: AppImage | null;
   variant?: "default" | "embedded";
 }
@@ -23,15 +23,18 @@ export const WhyUsSection = ({
 
   if (slides && slides.length > 0) {
     sliderImages = slides
-      .map((img, index) => {
+      .map((slide) => {
         const resolved = resolveAppImage({
-          image: img,
-          fallbackAlt: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+          image: slide.image,
+          imageUrl: slide.imageUrl,
+          fallbackAlt:
+            slide.altText ||
+            DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
           preset: "section",
         });
         return resolved
           ? {
-              id: img.assetId || img.publicId || `why-us-${index}`,
+              id: slide.id,
               url: resolved.url,
               altText: resolved.alt,
             }

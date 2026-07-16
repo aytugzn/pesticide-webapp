@@ -10,17 +10,41 @@ import { useCombinationAdminToast } from "@/features/combinations/components/adm
 
 export const GlobalRevalidateButton = () => {
   const [isRevalidating, setIsRevalidating] = useState(false);
-  const { showToast } = useCombinationAdminToast();
+  const { showToast, showToastSequence } = useCombinationAdminToast();
 
   const handleRevalidate = async () => {
     setIsRevalidating(true);
     try {
       const res = await revalidateAll();
       if (res.success) {
-        showToast({
-          variant: "success",
-          message: DICTIONARY.admin.settings.revalidateSuccess,
-        });
+        if (res.data?.cleanupStatus === "success") {
+          showToastSequence([
+            {
+              variant: "success",
+              message: DICTIONARY.admin.settings.revalidateSuccess,
+            },
+            {
+              variant: "success",
+              message: DICTIONARY.admin.settings.siteImages.cleanupSuccess,
+            },
+          ]);
+        } else if (res.data?.cleanupStatus === "partial-failure") {
+          showToastSequence([
+            {
+              variant: "success",
+              message: DICTIONARY.admin.settings.revalidateSuccess,
+            },
+            {
+              variant: "warning",
+              message: DICTIONARY.admin.settings.siteImages.cleanupWarning,
+            },
+          ]);
+        } else {
+          showToast({
+            variant: "success",
+            message: DICTIONARY.admin.settings.revalidateSuccess,
+          });
+        }
       } else {
         showToast({
           variant: "error",

@@ -8,6 +8,7 @@ export const ROUTES = deepFreeze({
   adminCombinations: "/admin/combinations",
   adminReports: "/admin/service-reports",
   adminMessages: "/admin/messages",
+  adminSiteImages: "/admin/site-images",
   adminSettings: "/admin/settings",
   adminReviews: "/admin/reviews",
   

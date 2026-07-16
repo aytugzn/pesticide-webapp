@@ -8,15 +8,11 @@ import type { ActionResponse } from "@/types";
 import {
   SETTINGS_ERRORS,
   type SaveSiteImagesInput,
-  type SaveSiteImagesResult,
   type SettingsErrorCode,
 } from "./types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import {
-  collectManagedSiteImagePublicIds,
-  deleteManagedSiteImage,
-} from "@/features/image-upload/cloudinary";
 import { saveSiteImagesSchema } from "./schemas";
+import { SITE_IMAGES_DRAFT_DOCUMENT_ID } from "./constants";
 
 /**
  * Server Action to fetch Google Places stats and update Firestore.
@@ -100,14 +96,14 @@ export const syncGooglePlacesStats = async (): Promise<ActionResponse<void, Sett
 };
 
 /**
- * Saves admin-managed home visuals without publishing public cache tags.
+ * Saves admin-managed home visuals to the isolated draft document.
  *
  * @param input - Ordered Hero slides and optional WhyUs/Services images
  * @returns A controlled settings action response
  */
 export const saveSiteImages = async (
   input: SaveSiteImagesInput,
-): Promise<ActionResponse<SaveSiteImagesResult, SettingsErrorCode>> => {
+): Promise<ActionResponse<void, SettingsErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
   }
@@ -119,98 +115,26 @@ export const saveSiteImages = async (
 
   try {
     const db = getAdminDb();
-    const settingsCollection = db.collection("settings");
-    const previousPublicIds = new Set<string>();
-    let canSafelyCleanUp = true;
-    try {
-      const previousSettingsSnapshot = await settingsCollection.get();
-      previousSettingsSnapshot.docs.forEach((doc) => {
-        collectManagedSiteImagePublicIds(doc.data()).forEach((publicId) =>
-          previousPublicIds.add(publicId),
-        );
-      });
-    } catch {
-      canSafelyCleanUp = false;
-      console.error("Failed to read previous site image references");
-    }
-    const batch = db.batch();
-    const slides = parsed.data.heroSlides.map((slide, index) => ({
-      ...(slide.id ? { id: slide.id } : {}),
-      ...(slide.image ? { image: slide.image } : {}),
-      ...(slide.imageUrl ? { imageUrl: slide.imageUrl } : {}),
-      ...(slide.altText ? { altText: slide.altText } : {}),
-      order: index,
-    }));
-    const generalUpdate: Record<string, unknown> = {};
-
-    if (parsed.data.whyUsSlides !== undefined) {
-      generalUpdate.whyUsSlides = parsed.data.whyUsSlides.map((slide, index) => ({
-        ...(slide.id ? { id: slide.id } : {}),
+    const serializeSlides = (slides: SaveSiteImagesInput["heroSlides"]) =>
+      slides.map((slide, index) => ({
+        id: slide.id,
         ...(slide.image ? { image: slide.image } : {}),
         ...(slide.imageUrl ? { imageUrl: slide.imageUrl } : {}),
-        ...(slide.altText ? { altText: slide.altText } : {}),
+        altText: slide.altText,
         order: index,
       }));
-    }
 
-    if (parsed.data.servicesSlides !== undefined) {
-      generalUpdate.servicesSlides = parsed.data.servicesSlides.map((slide, index) => ({
-        ...(slide.id ? { id: slide.id } : {}),
-        ...(slide.image ? { image: slide.image } : {}),
-        ...(slide.imageUrl ? { imageUrl: slide.imageUrl } : {}),
-        ...(slide.altText ? { altText: slide.altText } : {}),
-        order: index,
-      }));
-    }
-
-    batch.set(
-      db.collection("settings").doc("heroSlider"),
-      { slides },
-      { merge: true },
-    );
-
-    if (Object.keys(generalUpdate).length > 0) {
-      batch.set(
-        db.collection("settings").doc("general"),
-        generalUpdate,
-        { merge: true },
-      );
-    }
-
-    await batch.commit();
-
-    if (!canSafelyCleanUp) {
-      return { success: true, data: { cleanupStatus: "partial-failure" } };
-    }
-
-    try {
-      const currentSettingsSnapshot = await settingsCollection.get();
-      const currentPublicIds = new Set<string>();
-      currentSettingsSnapshot.docs.forEach((doc) => {
-        collectManagedSiteImagePublicIds(doc.data()).forEach((publicId) =>
-          currentPublicIds.add(publicId),
-        );
+    await db
+      .collection("settings")
+      .doc(SITE_IMAGES_DRAFT_DOCUMENT_ID)
+      .set({
+        heroSlides: serializeSlides(parsed.data.heroSlides),
+        whyUsSlides: serializeSlides(parsed.data.whyUsSlides),
+        servicesSlides: serializeSlides(parsed.data.servicesSlides),
+        updatedAt: Date.now(),
       });
-      const orphanedPublicIds = [...previousPublicIds].filter(
-        (publicId) => !currentPublicIds.has(publicId),
-      );
 
-      if (orphanedPublicIds.length === 0) {
-        return { success: true, data: { cleanupStatus: "not-needed" } };
-      }
-
-      const cleanupResults = await Promise.all(
-        orphanedPublicIds.map(deleteManagedSiteImage),
-      );
-      const cleanupStatus = cleanupResults.every(Boolean)
-        ? "success"
-        : "partial-failure";
-
-      return { success: true, data: { cleanupStatus } };
-    } catch {
-      console.error("Failed to clean up stale site images");
-      return { success: true, data: { cleanupStatus: "partial-failure" } };
-    }
+    return { success: true };
   } catch {
     console.error("Failed to save site images");
     return { success: false, error: SETTINGS_ERRORS.SAVE_FAILED };

@@ -617,7 +617,8 @@ const adminDict = {
       reports: "Raporlar",
       messages: "Mesajlar",
       reviews: "Yorumlar",
-      settings: "Ayarlar",
+      siteImages: "Site Görselleri",
+      settings: "Site Ayarları",
     },
     stats: {
       totalRegions: "Toplam Bölge",
@@ -909,7 +910,7 @@ const adminDict = {
     siteImages: {
       title: "Site Görselleri",
       description:
-        "Ana sayfa Hero, Hizmetler ve Neden DMR görsellerini yönetin. Kaydetme işlemi yalnızca veri tabanını günceller, canlı siteye yansıması için 'Canlı Siteyi Güncelle' butonunu kullanın.",
+        "Ana sayfa Hero, Hizmetler ve Neden DMR görsellerini yönetin. Kaydetme işlemi taslağı günceller; canlı siteye yansıtmak için 'Canlı Siteyi Güncelle' butonunu kullanın.",
       heroTitle: "Ana Sayfa Hero Slider Görselleri",
       heroItemTitle: "Hero Görseli {number}",
       heroHelp: "Ana sayfanın üst bölümündeki hero slider görsellerini yönetir. JPEG, PNG veya WebP; en fazla 5 MB.",
@@ -934,7 +935,7 @@ const adminDict = {
       altPlaceholder: "Görseli kısa ve açıklayıcı biçimde tanımlayın",
       save: "Site Görsellerini Kaydet",
       saving: "Görseller Kaydediliyor...",
-      success: "Site görselleri kaydedildi.",
+      success: "Görsel taslağı kaydedildi.",
       cleanupSuccess: "Görsel silindi.",
       cleanupWarning: "Görsel silinemedi.",
       uploadError: "Görsel yüklenemedi.",

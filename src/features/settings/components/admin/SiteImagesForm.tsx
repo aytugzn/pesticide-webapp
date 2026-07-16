@@ -11,8 +11,7 @@ import { uploadAdminImage } from "@/features/image-upload/actions";
 import { AdminImageUploadField } from "@/features/image-upload/components/admin/AdminImageUploadField";
 import { saveSiteImages } from "@/features/settings/actions";
 import { SITE_IMAGE_GROUP_MAX_IMAGES } from "@/features/settings/constants";
-import type { HeroSlideDoc } from "@/features/home/types";
-import type { AppImage } from "@/types";
+import type { AppImage, SiteImageSlideDoc } from "@/types";
 import { resolveAppImage } from "@/utils/cloudinary";
 
 type SlideDraft = {
@@ -25,41 +24,31 @@ type SlideDraft = {
 };
 
 type SiteImagesFormProps = {
-  initialHeroSlides: HeroSlideDoc[];
-  initialWhyUsSlides?: AppImage[];
-  initialServicesSlides?: AppImage[];
+  initialHeroSlides: SiteImageSlideDoc[];
+  initialWhyUsSlides?: SiteImageSlideDoc[];
+  initialServicesSlides?: SiteImageSlideDoc[];
 };
 
 type SiteUploadTarget = "site-hero" | "site-why-us" | "site-services";
 
 /**
  * Creates draft state objects for image arrays.
- * Extracts correct ID, image, and alt text for both HeroSlideDocs and raw AppImages.
  * @param slides - The initial array of slides or images
  * @param prefix - Prefix for draft keys
  * @returns Array of initialized slide drafts
  */
 const createSlideDrafts = (
-  slides: Array<HeroSlideDoc | AppImage>,
+  slides: SiteImageSlideDoc[],
   prefix: string,
 ): SlideDraft[] =>
-  slides.map((slide, index) => {
-    // Handle both HeroSlideDoc and raw AppImage (for services/whyUs arrays)
-    const isHeroSlide = "order" in slide;
-    const id = isHeroSlide ? slide.id : undefined;
-    const image = isHeroSlide ? slide.image : (slide as AppImage);
-    const imageUrl = isHeroSlide ? slide.imageUrl : undefined;
-    const altText = isHeroSlide ? slide.altText : slide.alt;
-
-    return {
-      key: id || `${prefix}-${index}`,
-      id,
-      image,
-      imageUrl,
-      alt: image?.alt || altText || "",
-      selectedFile: null,
-    };
-  });
+  slides.map((slide, index) => ({
+    key: slide.id || `${prefix}-${index}`,
+    id: slide.id,
+    image: slide.image,
+    imageUrl: slide.imageUrl,
+    alt: slide.image?.alt || slide.altText,
+    selectedFile: null,
+  }));
 
 /**
  * Creates a JSON snapshot of the form drafts for dirty checking.
@@ -353,7 +342,7 @@ export const SiteImagesForm = ({
   initialServicesSlides = [],
 }: SiteImagesFormProps) => {
   const router = useRouter();
-  const { showToast, showToastSequence } = useCombinationAdminToast();
+  const { showToast } = useCombinationAdminToast();
   const d = DICTIONARY.admin.settings.siteImages;
 
   const [heroDrafts, setHeroDrafts] = useState(() =>
@@ -407,8 +396,8 @@ export const SiteImagesForm = ({
     drafts: SlideDraft[],
     target: SiteUploadTarget,
     defaultAlt: string,
-  ): Promise<{ ok: true; value: HeroSlideDoc[] } | { ok: false }> => {
-    const savedSlides: HeroSlideDoc[] = [];
+  ): Promise<{ ok: true; value: SiteImageSlideDoc[] } | { ok: false }> => {
+    const savedSlides: SiteImageSlideDoc[] = [];
     for (let index = 0; index < drafts.length; index++) {
       const draft = drafts[index];
       const alt = draft.alt.trim() || defaultAlt;
@@ -487,19 +476,7 @@ export const SiteImagesForm = ({
         return;
       }
 
-      if (result.data?.cleanupStatus === "success") {
-        showToastSequence([
-          { variant: "success", message: d.success },
-          { variant: "success", message: d.cleanupSuccess },
-        ]);
-      } else if (result.data?.cleanupStatus === "partial-failure") {
-        showToastSequence([
-          { variant: "success", message: d.success },
-          { variant: "warning", message: d.cleanupWarning },
-        ]);
-      } else {
-        showToast({ variant: "success", message: d.success });
-      }
+      showToast({ variant: "success", message: d.success });
       router.refresh();
     } catch {
       showToast({ variant: "error", message: d.error });
