@@ -82,6 +82,8 @@ Projenin yerel ortamda çalıştırılması için aşağıdaki komutları kullan
    TELEGRAM_BOT_TOKEN=
    TELEGRAM_CHAT_ID=
    TELEGRAM_WEBHOOK_SECRET=
+   TELEGRAM_WEBHOOK_ORIGIN= # Server-only sabit HTTPS webhook origin'i (opsiyonel; Vercel production URL fallback'i vardır)
+   VERCEL_AUTOMATION_BYPASS_SECRET= # Yalnızca webhook hedefi Vercel Deployment Protection arkasındaysa
    GOOGLE_PLACES_API_KEY=
    # GOOGLE_PLACE_ID= (Kullanılmıyor)
    NEXT_PUBLIC_SITE_URL=
@@ -126,3 +128,23 @@ git diff --check
 - Production ortamına çıkmadan önce `lint`, `typecheck` ve `build` komutları başarıyla çalıştırılmalıdır.
 - **Google Fonts:** Proje `next/font/google` kullandığı için build (derleme) sırasında dış ağa (Google sunucularına) erişim gerektirir. Kapalı CI/CD ortamlarında veya internet erişimi kısıtlı deployment platformlarında build hata verebilir. Deploy ortamının dış ağa açık olduğundan emin olun.
 - Firebase tarafındaki Firestore kotaları ve Google Cloud budget limitleri canlı sistemde sürekli takip edilmelidir.
+
+### Telegram Webhook Kaydı
+
+Telegram webhook'u bot seviyesinde tek seferlik bir deployment ayarıdır; iletişim formu veya mesaj gönderme akışı içinde yeniden kaydedilmez. Kayıt scripti origin'i önce server-only `TELEGRAM_WEBHOOK_ORIGIN`, ardından Vercel system environment variable'ı `VERCEL_PROJECT_PRODUCTION_URL` üzerinden çözer. İki değer de yoksa localhost veya tahminî domain kullanmadan kontrollü biçimde durur. Mevcut sabit production alias'ı `https://pesticide-webapp.vercel.app` adresidir; webhook origin'i canonical site URL'sinden bağımsızdır ve bu işlem için `NEXT_PUBLIC_SITE_URL` değiştirilmez.
+
+Endpoint ve production secret eşleşmesini Firestore'a dokunmayan payload ile doğrulamak için:
+
+```bash
+npm run telegram:webhook:set -- --dry-run
+```
+
+Probe başarılı olduktan sonra webhook'u kaydetmek ve `getWebhookInfo` ile doğrulamak için:
+
+```bash
+npm run telegram:webhook:set
+```
+
+Generated deployment URL'si Vercel Authentication arkasındaysa Project Settings → Deployment Protection → Protection Bypass for Automation üzerinden oluşturulan `VERCEL_AUTOMATION_BYPASS_SECRET` kullanılabilir. Script bu değeri URL-safe query parametresi olarak ekler ve terminal çıktısında maskeler. Sabit production alias'ı doğrudan erişilebiliyorsa bypass gerekli değildir.
+
+Webhook origin'i veya secret değiştiğinde komut yeniden çalıştırılır. İleride custom domaine geçildiğinde yalnızca `TELEGRAM_WEBHOOK_ORIGIN` yeni HTTPS origin'i gösterecek şekilde güncellenir; iletişim formu, canonical metadata ve route path'i değişmez. Token ve secret değerleri repoya, terminal komutuna veya ekran görüntüsüne yazılmamalıdır.
