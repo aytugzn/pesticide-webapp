@@ -95,4 +95,6 @@ export type SeoEntityFormConfig<TError extends string> = {
     payload: Record<string, unknown>,
   ) => Promise<ActionResponse<void, TError>>;
   onSuccess?: () => void;
+  onCancel?: () => void;
+  autoFocusName?: boolean;
 };

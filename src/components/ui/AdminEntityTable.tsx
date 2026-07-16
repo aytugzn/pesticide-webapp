@@ -5,7 +5,7 @@ export type AdminEntityColumn<T> = {
   key: string;
   header: React.ReactNode;
   className?: string;
-  render: (row: T) => React.ReactNode;
+  render: (row: T, presentation?: "mobile" | "desktop") => React.ReactNode;
 };
 
 export type AdminEntityTableProps<T> = {
@@ -56,7 +56,7 @@ export const AdminEntityTable = <T,>({
                       {col.header}
                     </div>
                     <div className="mt-1 text-sm text-text-primary break-words">
-                      {col.render(row)}
+                      {col.render(row, "mobile")}
                     </div>
                   </div>
                 ))}
@@ -64,7 +64,7 @@ export const AdminEntityTable = <T,>({
 
               {actionColumn && (
                 <div className="flex w-full flex-wrap items-center justify-end gap-2 border-t border-brand-border/50 pt-3">
-                  {actionColumn.render(row)}
+                  {actionColumn.render(row, "mobile")}
                 </div>
               )}
             </article>
@@ -91,7 +91,7 @@ export const AdminEntityTable = <T,>({
               <tr key={getRowKey(row)} className="border-b border-brand-border/50 last:border-0 hover:bg-surface-neutral/80 transition-colors group">
                 {columns.map((col) => (
                   <td key={col.key} className={cn("px-6 py-4 text-text-primary", col.className)}>
-                    {col.render(row)}
+                    {col.render(row, "desktop")}
                   </td>
                 ))}
               </tr>

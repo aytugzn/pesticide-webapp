@@ -86,6 +86,8 @@ export const SeoEntityForm = <TError extends string>({
   save,
   update,
   onSuccess,
+  onCancel,
+  autoFocusName = false,
 }: SeoEntityFormConfig<TError>) => {
   const router = useRouter();
   const normalizedInitialData = normalizeInitialData(initialData);
@@ -482,6 +484,7 @@ export const SeoEntityForm = <TError extends string>({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           id={`${entity}-name`}
+          autoFocus={autoFocusName}
           label={d.formName}
           value={formData.name}
           onChange={(event) => {
@@ -678,6 +681,17 @@ export const SeoEntityForm = <TError extends string>({
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSaving || isGenerating}
+              className="w-full sm:w-auto"
+            >
+              {DICTIONARY.global.ui.cancel}
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
