@@ -7,6 +7,7 @@ import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Input } from "@/components/ui/Input";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { ImageUploadErrorCode } from "@/features/image-upload/types";
+import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
 import { cn } from "@/utils/cn";
 
 type ClientImageValidationError = Extract<
@@ -24,6 +25,7 @@ type AdminImageUploadFieldProps = {
   altLabel: string;
   altPlaceholder: string;
   altDisabled?: boolean;
+  showAltCharacterCount?: boolean;
   subtleDropzone?: boolean;
   onFileSelect: (file: File) => void;
   onAltChange: (alt: string) => void;
@@ -64,6 +66,7 @@ export const AdminImageUploadField = ({
   altLabel,
   altPlaceholder,
   altDisabled = false,
+  showAltCharacterCount = false,
   subtleDropzone = false,
   onFileSelect,
   onAltChange,
@@ -227,6 +230,8 @@ export const AdminImageUploadField = ({
         onChange={(event) => onAltChange(event.target.value)}
         placeholder={altPlaceholder}
         disabled={altDisabled}
+        maxLength={SEO_CONTENT_LIMITS.IMAGE_ALT}
+        showCharacterCount={showAltCharacterCount}
       />
     </section>
   );

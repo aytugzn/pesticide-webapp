@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Star } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
-import { getAdminDb } from "@/lib/firebase-admin";
+import { ROUTES } from "@/constants/routes";
 import { AdminListPage } from "@/components/layout/AdminListPage";
-import { AdminDataTable } from "@/components/ui/AdminDataTable";
+import { ReviewsManager } from "@/features/reviews/components/admin/ReviewsManager";
+import { getAdminReviewsData } from "@/features/reviews/data";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.reviews.title} | ${DICTIONARY.global.brand}`,
@@ -13,14 +15,8 @@ export const metadata: Metadata = {
 
 const AdminReviewsPage = async () => {
   await connection();
-  const snap = await getAdminDb().collection("settings").doc("reviews").get();
-  const data = snap.data();
-  const items = Array.isArray(data?.items) ? data.items : [];
-  const rows = items.map((item: Record<string, unknown>) => [
-    String(item.authorName || item.name || "-"),
-    String(item.rating || "5"),
-    String(item.text || "-"),
-  ]);
+  const data = await getAdminReviewsData();
+  if (!data) redirect(ROUTES.login);
 
   return (
     <AdminListPage
@@ -29,11 +25,7 @@ const AdminReviewsPage = async () => {
       description={DICTIONARY.admin.reviews.description}
       icon={Star}
     >
-      <AdminDataTable
-        emptyText={DICTIONARY.admin.reviews.empty}
-        columns={[DICTIONARY.admin.reviews.table.customer, DICTIONARY.admin.reviews.table.rating, DICTIONARY.admin.reviews.table.comment]}
-        rows={rows}
-      />
+      <ReviewsManager initialData={data} />
     </AdminListPage>
   );
 };

@@ -23,6 +23,7 @@ import type {
   SeoEntityInitialData,
   SeoGeneratedContent,
 } from "@/features/seo-content/types";
+import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
@@ -441,6 +442,8 @@ export const SeoEntityForm = <TError extends string>({
             }));
           }}
           placeholder={d.formNamePlaceholder}
+          maxLength={SEO_CONTENT_LIMITS.NAME}
+          showCharacterCount
         />
 
         <Input
@@ -495,6 +498,7 @@ export const SeoEntityForm = <TError extends string>({
         altLabel={d.imageAltLabel}
         altPlaceholder={d.imageAltPlaceholder}
         altDisabled={!selectedImageFile && !formData.image}
+        showAltCharacterCount
         onFileSelect={(file) => {
           setSelectedImageFile(file);
           setIsImageRemoved(false);
@@ -545,6 +549,8 @@ export const SeoEntityForm = <TError extends string>({
           id={`${entity}-title`}
           label={d.titleLabel}
           value={formData.title}
+          maxLength={SEO_CONTENT_LIMITS.TITLE}
+          showCharacterCount
           onChange={(event) => updateField("title", event.target.value)}
         />
 
@@ -552,6 +558,8 @@ export const SeoEntityForm = <TError extends string>({
           id={`${entity}-meta`}
           label={d.metaLabel}
           value={formData.metaDesc}
+          maxLength={SEO_CONTENT_LIMITS.META_DESCRIPTION}
+          showCharacterCount
           onChange={(event) => updateField("metaDesc", event.target.value)}
           rows={2}
         />
@@ -560,6 +568,8 @@ export const SeoEntityForm = <TError extends string>({
           id={`${entity}-h1`}
           label={d.h1Label}
           value={formData.h1}
+          maxLength={SEO_CONTENT_LIMITS.H1}
+          showCharacterCount
           onChange={(event) => updateField("h1", event.target.value)}
         />
 

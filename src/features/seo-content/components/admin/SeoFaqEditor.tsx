@@ -3,6 +3,7 @@
 import { DICTIONARY } from "@/constants/dictionary";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
 
 type SeoFaqEditorProps = {
   faq: { question: string; answer: string }[];
@@ -37,6 +38,8 @@ export const SeoFaqEditor = ({
               id={`faq-q-${index}`}
               label={`${d.faqQ} ${index + 1}`}
               value={item.question}
+              maxLength={SEO_CONTENT_LIMITS.FAQ_QUESTION}
+              showCharacterCount
               onChange={(e) => onFaqChange(index, "question", e.target.value)}
             />
           </div>
@@ -45,6 +48,8 @@ export const SeoFaqEditor = ({
               id={`faq-a-${index}`}
               label={`${d.faqA} ${index + 1}`}
               value={item.answer}
+              maxLength={SEO_CONTENT_LIMITS.FAQ_ANSWER}
+              showCharacterCount
               onChange={(e) => onFaqChange(index, "answer", e.target.value)}
               rows={3}
             />

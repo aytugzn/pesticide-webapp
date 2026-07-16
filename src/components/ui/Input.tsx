@@ -1,13 +1,28 @@
 import React from "react";
+import { DICTIONARY } from "@/constants/dictionary";
 import { cn } from "@/utils/cn";
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   optionalText?: string;
+  showCharacterCount?: boolean;
+  error?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, optionalText, id, ...props }, ref) => {
+  (
+    {
+      className,
+      label,
+      optionalText,
+      showCharacterCount = false,
+      error,
+      id,
+      ...props
+    },
+    ref,
+  ) => {
+    const errorId = error && id ? `${id}-error` : undefined;
     if (props.type === "checkbox") {
       return (
         <label htmlFor={id} className={cn("flex items-center gap-2 cursor-pointer w-fit", className)}>
@@ -35,13 +50,25 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           className={cn(
             "w-full bg-surface-neutral border border-brand-border rounded-xl px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary transition-all",
+            error &&
+              "border-error-border focus:border-error-border focus:ring-error-border/50",
             className
           )}
+          aria-invalid={Boolean(error) || props["aria-invalid"]}
+          aria-describedby={errorId || props["aria-describedby"]}
           {...props}
         />
-        {props.maxLength && (
-          <span className="text-xs text-text-muted self-end">
-            {String(props.value || "").length}/{props.maxLength}
+        {error && (
+          <span id={errorId} className="text-xs text-error-text">
+            {error}
+          </span>
+        )}
+        {showCharacterCount && props.maxLength && (
+          <span
+            className="text-xs text-text-muted self-end"
+            aria-label={`${String(props.value || "").length} / ${props.maxLength} ${DICTIONARY.global.ui.characterCount}`}
+          >
+            {String(props.value || "").length} / {props.maxLength}
           </span>
         )}
       </div>

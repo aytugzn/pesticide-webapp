@@ -1,8 +1,16 @@
 "use client";
 
-import { ReactNode, ButtonHTMLAttributes } from "react";
+import type {
+  ButtonHTMLAttributes,
+  MouseEvent,
+  ReactNode,
+} from "react";
 
-import { Button, type ButtonVariant, type ButtonSize } from "@/components/ui/Button";
+import {
+  Button,
+  type ButtonSize,
+  type ButtonVariant,
+} from "@/components/ui/Button";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 
 type ScrollButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -27,26 +35,23 @@ export const ScrollButton = ({
   className = "",
   ...props
 }: ScrollButtonProps) => {
-
   const scrollTo = useSmoothScroll();
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
 
-    if (onClick) {
-      onClick(e);
-    }
-
+    onClick?.(event);
     scrollTo(targetId);
   };
 
   return (
-    <Button 
+    <Button
       variant={variant}
       size={size}
       className={className}
-      onClick={handleClick} 
       {...props}
+      type="button"
+      onClick={handleClick}
     >
       {children}
     </Button>

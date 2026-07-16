@@ -95,7 +95,7 @@ export const WhyUsSection = ({
             />
 
             {/* Image Frame */}
-            <div className="relative mt-8 aspect-video w-full overflow-hidden rounded-lg border border-brand-border shadow-xl shadow-brand-primary/5 group lg:mt-auto">
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-brand-border shadow-xl shadow-brand-primary/5 group lg:mt-auto">
               <ImageSlider
                 images={sliderImages}
                 autoplayDelay={autoplayDelay}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SEO_LIMITS } from "./constants";
+import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
 
 const slugSchema = z
   .string()
@@ -21,8 +22,8 @@ export const generatedContentSchema = z.object({
   faq: z
     .array(
       z.object({
-        question: z.string().trim().min(1).max(200),
-        answer: z.string().trim().min(1).max(800),
+        question: z.string().trim().min(1).max(SEO_CONTENT_LIMITS.FAQ_QUESTION),
+        answer: z.string().trim().min(1).max(SEO_CONTENT_LIMITS.FAQ_ANSWER),
       }),
     )
     .min(1)

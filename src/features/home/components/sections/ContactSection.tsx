@@ -27,7 +27,7 @@ export const ContactSection = ({ pests, regions }: ContactSectionProps) => {
           align="center"
         />
 
-        <div className="mt-12">
+        <div>
           <ContactForm pests={pests} regions={regions} />
         </div>
       </div>

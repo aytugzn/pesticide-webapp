@@ -58,6 +58,7 @@ export type PublishGeneralSettingsResult = {
 
 export type GlobalPublishResult = PublishSiteImagesResult & {
   generalSettingsPublished: boolean;
+  reviewsPublished: boolean;
   partialFailure: boolean;
   cacheInvalidationFailed: boolean;
 };

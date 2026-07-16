@@ -15,6 +15,7 @@ import {
   SLIDER_AUTOPLAY_DELAY_MIN_SECONDS,
 } from "@/features/settings/constants";
 import { normalizeTurkishPhone } from "@/utils/phone";
+import { parseReviewItem } from "@/features/reviews/utils";
 
 /**
  * Parses a non-empty string while removing surrounding whitespace.
@@ -402,21 +403,7 @@ export const parseGoogleReviewDoc = (
   data: unknown,
   fallbackId: number,
 ): GoogleReviewDoc | null => {
-  if (!data || typeof data !== "object") return null;
-
-  const d = data as Record<string, unknown>;
-  const authorName = typeof d.authorName === "string" ? d.authorName : "";
-  if (!authorName) return null;
-
-  return {
-    id: typeof d.id === "string" ? d.id : String(fallbackId),
-    authorName,
-    rating: typeof d.rating === "number" ? d.rating : 5,
-    text: typeof d.text === "string" ? d.text : "",
-    authorPhotoUrl:
-      typeof d.authorPhotoUrl === "string" ? d.authorPhotoUrl : undefined,
-    reviewUrl: typeof d.reviewUrl === "string" ? d.reviewUrl : undefined,
-  };
+  return parseReviewItem(data, String(fallbackId));
 };
 
 /**

@@ -44,6 +44,7 @@ export const CombinationEditor = ({
           label={d.formTitle}
           value={title}
           maxLength={SEO_LIMITS.TITLE_MAX_LENGTH}
+          showCharacterCount
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
@@ -54,6 +55,7 @@ export const CombinationEditor = ({
           label={d.formH1}
           value={h1}
           maxLength={SEO_LIMITS.H1_MAX_LENGTH}
+          showCharacterCount
           onChange={(e) => setH1(e.target.value)}
         />
       </div>
@@ -64,6 +66,7 @@ export const CombinationEditor = ({
           label={d.formMeta}
           value={metaDesc}
           maxLength={SEO_LIMITS.META_DESC_MAX_LENGTH}
+          showCharacterCount
           onChange={(e) => setMetaDesc(e.target.value)}
           rows={2}
         />

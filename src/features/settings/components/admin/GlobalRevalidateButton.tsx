@@ -25,7 +25,9 @@ export const GlobalRevalidateButton = () => {
       const res = await revalidateAll();
       if (res.success) {
         const shouldRefreshAdminData = Boolean(
-          res.data?.published || res.data?.generalSettingsPublished,
+          res.data?.published ||
+            res.data?.generalSettingsPublished ||
+            res.data?.reviewsPublished,
         );
         if (res.data?.cacheInvalidationFailed) {
           showToast({
@@ -34,7 +36,9 @@ export const GlobalRevalidateButton = () => {
           });
         } else {
           const didPublish = Boolean(
-            res.data?.published || res.data?.generalSettingsPublished,
+            res.data?.published ||
+              res.data?.generalSettingsPublished ||
+              res.data?.reviewsPublished,
           );
           const hasSpecificWarning = Boolean(
             res.data?.cleanupStatus === "partial-failure",

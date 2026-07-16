@@ -27,7 +27,7 @@ type GoogleSocialLinksProps = {
  */
 const GoogleStatsSkeleton = () => (
   <div
-    className="flex items-center gap-4"
+    className="flex min-h-20 min-w-0 flex-1 items-center gap-4 sm:min-h-14 sm:min-w-64"
     role="status"
     aria-label={DICTIONARY.home.googleStats.loading}
   >
@@ -52,7 +52,7 @@ const GoogleStatsFrame = ({
   statsContent,
   socialContent,
 }: GoogleStatsFrameProps) => (
-  <div className="flex w-full items-center border-t border-brand-border/50 pt-6">
+  <div className="flex w-full min-w-0 items-center justify-between gap-3 border-t border-brand-border/50 pt-6 sm:gap-4">
     {statsContent}
     {socialContent}
   </div>
@@ -74,7 +74,7 @@ const GoogleStatsDetails = ({ data }: { data: GoogleStatsData }) => {
   );
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
       <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-brand-border bg-brand-surface shadow-sm md:h-14 md:w-14">
         <Image
           src={logoImg}
@@ -85,7 +85,7 @@ const GoogleStatsDetails = ({ data }: { data: GoogleStatsData }) => {
         />
       </div>
 
-      <div className="flex flex-col justify-center gap-1.5">
+      <div className="flex min-w-0 flex-col justify-center gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <p className="text-sm font-bold leading-none text-text-primary md:text-base">
             {DICTIONARY.home.googleStats.businessName}
@@ -112,7 +112,10 @@ const GoogleStatsDetails = ({ data }: { data: GoogleStatsData }) => {
             </span>
             <Star
               className="h-3.5 w-3.5 fill-google-yellow text-google-yellow md:h-4 md:w-4"
-              aria-label={DICTIONARY.home.googleStats.ratingAria(ratingText)}
+              aria-label={DICTIONARY.home.googleStats.ratingAria.replace(
+                "{rating}",
+                ratingText,
+              )}
               role="img"
             />
           </div>
@@ -143,7 +146,7 @@ const GoogleSocialLinks = ({
   if (!instagramUrl && !facebookUrl) return null;
 
   return (
-    <div className="ml-auto flex items-center gap-2 pl-2 md:gap-3">
+    <div className="flex shrink-0 items-center gap-2 md:gap-3">
       {instagramUrl && (
         <a
           href={instagramUrl}
@@ -183,27 +186,31 @@ const GoogleSocialLinks = ({
  *
  * @returns Validated stats details, or null for empty and error states
  */
-const GoogleStatsContent = () => {
+const ResolvedGoogleStats = ({
+  instagramUrl,
+  facebookUrl,
+}: GoogleSocialLinksProps) => {
   const statsPromise = useGoogleStatsPromise();
   const state = use(statsPromise);
-  return state.status === "success" ? (
-    <GoogleStatsDetails data={state.data} />
-  ) : null;
-};
-
-/**
- * Resolves stats when no social links can keep the outer frame meaningful.
- *
- * @returns A complete stats frame on success, otherwise null
- */
-const GoogleStatsWithoutSocialLinks = () => {
-  const statsPromise = useGoogleStatsPromise();
-  const state = use(statsPromise);
-  return state.status === "success" ? (
-    <GoogleStatsFrame
-      statsContent={<GoogleStatsDetails data={state.data} />}
+  const socialContent = (
+    <GoogleSocialLinks
+      instagramUrl={instagramUrl}
+      facebookUrl={facebookUrl}
     />
-  ) : null;
+  );
+
+  if (state.status === "success") {
+    return (
+      <GoogleStatsFrame
+        statsContent={<GoogleStatsDetails data={state.data} />}
+        socialContent={socialContent}
+      />
+    );
+  }
+
+  if (!instagramUrl && !facebookUrl) return null;
+
+  return <div className="flex items-center">{socialContent}</div>;
 };
 
 /**
@@ -221,31 +228,26 @@ export const GoogleStats = ({
   const finalFacebookUrl = facebookUrl ?? DICTIONARY.social.facebook.url;
   const hasSocialLinks = Boolean(finalInstagramUrl || finalFacebookUrl);
 
-  if (!hasSocialLinks) {
-    return (
-      <Suspense
-        fallback={
-          <GoogleStatsFrame statsContent={<GoogleStatsSkeleton />} />
-        }
-      >
-        <GoogleStatsWithoutSocialLinks />
-      </Suspense>
-    );
-  }
-
   return (
-    <GoogleStatsFrame
-      statsContent={
-        <Suspense fallback={<GoogleStatsSkeleton />}>
-          <GoogleStatsContent />
-        </Suspense>
-      }
-      socialContent={
-        <GoogleSocialLinks
-          instagramUrl={finalInstagramUrl}
-          facebookUrl={finalFacebookUrl}
+    <Suspense
+      fallback={
+        <GoogleStatsFrame
+          statsContent={<GoogleStatsSkeleton />}
+          socialContent={
+            hasSocialLinks ? (
+              <GoogleSocialLinks
+                instagramUrl={finalInstagramUrl}
+                facebookUrl={finalFacebookUrl}
+              />
+            ) : undefined
+          }
         />
       }
-    />
+    >
+      <ResolvedGoogleStats
+        instagramUrl={finalInstagramUrl}
+        facebookUrl={finalFacebookUrl}
+      />
+    </Suspense>
   );
 };

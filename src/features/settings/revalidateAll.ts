@@ -16,6 +16,10 @@ import {
   prepareGeneralSettingsDraftPublish,
 } from "./publishGeneralSettings";
 import {
+  commitReviewsPublish,
+  prepareReviewsDraftPublish,
+} from "@/features/reviews/publishReviews";
+import {
   SETTINGS_ERRORS,
   type GlobalPublishResult,
   type SettingsErrorCode,
@@ -43,6 +47,11 @@ const updateFailureCacheTags = (): void => {
   updateTag("all-combinations");
 };
 
+/** Refreshes only the public data consumed by the review carousel. */
+const updateReviewsCacheTag = (): void => {
+  updateTag("home-data");
+};
+
 /**
  * Runs authorized draft preparation, Firestore commits, cache invalidation,
  * and finally Cloudinary cleanup.
@@ -57,12 +66,14 @@ export const revalidateAll = async (): Promise<
   }
 
   const db = getAdminDb();
-  const [sitePreparation, generalPreparation] = await Promise.all([
-    prepareSiteImagesDraftPublish(db),
-    prepareGeneralSettingsDraftPublish(db),
-  ]);
+  const [sitePreparation, generalPreparation, reviewsPreparation] =
+    await Promise.all([
+      prepareSiteImagesDraftPublish(db),
+      prepareGeneralSettingsDraftPublish(db),
+      prepareReviewsDraftPublish(db),
+    ]);
 
-  const [sitePublish, generalPublish] = await Promise.all([
+  const [sitePublish, generalPublish, reviewsPublish] = await Promise.all([
     sitePreparation.success && sitePreparation.data
       ? commitSiteImagesPublish(db, sitePreparation.data)
       : Promise.resolve({
@@ -79,18 +90,34 @@ export const revalidateAll = async (): Promise<
             ? SETTINGS_ERRORS.FETCH_FAILED
             : generalPreparation.error,
         }),
+    reviewsPreparation.success && reviewsPreparation.data
+      ? commitReviewsPublish(db, reviewsPreparation.data)
+      : Promise.resolve({
+          success: false as const,
+          error: reviewsPreparation.success
+            ? SETTINGS_ERRORS.FETCH_FAILED
+            : reviewsPreparation.error,
+        }),
   ]);
   const siteImagesPublished =
     sitePublish.success && Boolean(sitePublish.data?.published);
   const generalSettingsPublished =
     generalPublish.success && Boolean(generalPublish.data?.published);
-  const anyPublished = siteImagesPublished || generalSettingsPublished;
-  const anyDomainFailure = !sitePublish.success || !generalPublish.success;
+  const reviewsPublished =
+    reviewsPublish.success && Boolean(reviewsPublish.data?.published);
+  const globalDomainPublished =
+    siteImagesPublished || generalSettingsPublished;
+  const anyPublished = globalDomainPublished || reviewsPublished;
+  const anyDomainFailure =
+    !sitePublish.success || !generalPublish.success || !reviewsPublish.success;
 
   let cacheInvalidationFailed = false;
   try {
-    if (anyPublished || !anyDomainFailure) {
+    if (globalDomainPublished || (!anyPublished && !anyDomainFailure)) {
       updateGlobalCacheTags();
+    } else if (reviewsPublished) {
+      updateReviewsCacheTag();
+      if (anyDomainFailure) updateFailureCacheTags();
     } else {
       updateFailureCacheTags();
     }
@@ -127,6 +154,7 @@ export const revalidateAll = async (): Promise<
       published: siteImagesPublished,
       cleanupStatus,
       generalSettingsPublished,
+      reviewsPublished,
       partialFailure,
       cacheInvalidationFailed,
     },
