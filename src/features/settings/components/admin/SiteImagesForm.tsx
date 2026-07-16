@@ -7,8 +7,12 @@ import { ImagePlus, Loader2, Save, Edit, Trash2, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
-import { uploadAdminImage } from "@/features/image-upload/actions";
+import {
+  cleanupAdminImageUploads,
+  uploadAdminImage,
+} from "@/features/image-upload/actions";
 import { AdminImageUploadField } from "@/features/image-upload/components/admin/AdminImageUploadField";
+import { rollbackUploadedAdminImages } from "@/features/image-upload/rollback";
 import { saveSiteImages } from "@/features/settings/actions";
 import { SITE_IMAGE_GROUP_MAX_IMAGES } from "@/features/settings/constants";
 import type { AppImage, SiteImageSlideDoc } from "@/types";
@@ -30,6 +34,14 @@ type SiteImagesFormProps = {
 };
 
 type SiteUploadTarget = "site-hero" | "site-why-us" | "site-services";
+
+type ProcessDraftsResult =
+  | {
+      ok: true;
+      value: SiteImageSlideDoc[];
+      uploadedImages: AppImage[];
+    }
+  | { ok: false; uploadedImages: AppImage[] };
 
 /**
  * Creates draft state objects for image arrays.
@@ -342,7 +354,7 @@ export const SiteImagesForm = ({
   initialServicesSlides = [],
 }: SiteImagesFormProps) => {
   const router = useRouter();
-  const { showToast } = useCombinationAdminToast();
+  const { showToast, showToastSequence } = useCombinationAdminToast();
   const d = DICTIONARY.admin.settings.siteImages;
 
   const [heroDrafts, setHeroDrafts] = useState(() =>
@@ -396,40 +408,88 @@ export const SiteImagesForm = ({
     drafts: SlideDraft[],
     target: SiteUploadTarget,
     defaultAlt: string,
-  ): Promise<{ ok: true; value: SiteImageSlideDoc[] } | { ok: false }> => {
+  ): Promise<ProcessDraftsResult> => {
     const savedSlides: SiteImageSlideDoc[] = [];
-    for (let index = 0; index < drafts.length; index++) {
-      const draft = drafts[index];
-      const alt = draft.alt.trim() || defaultAlt;
-      let image = draft.image;
-      let imageUrl = draft.imageUrl;
+    const uploadedImages: AppImage[] = [];
 
-      if (draft.selectedFile) {
-        const uploadResult = await uploadFile(target, draft.selectedFile, alt);
-        if (!uploadResult.success || !uploadResult.data) {
-          return { ok: false };
+    try {
+      for (let index = 0; index < drafts.length; index++) {
+        const draft = drafts[index];
+        const alt = draft.alt.trim() || defaultAlt;
+        let image = draft.image;
+        let imageUrl = draft.imageUrl;
+
+        if (draft.selectedFile) {
+          const uploadResult = await uploadFile(target, draft.selectedFile, alt);
+          if (!uploadResult.success || !uploadResult.data) {
+            return { ok: false, uploadedImages };
+          }
+          image = uploadResult.data;
+          imageUrl = undefined;
+          uploadedImages.push(uploadResult.data);
+        } else if (image && image.alt !== alt) {
+          image = { ...image, alt };
         }
-        image = uploadResult.data;
-        imageUrl = undefined;
-      } else if (image && image.alt !== alt) {
-        image = { ...image, alt };
-      }
 
-      savedSlides.push({
-        id: draft.id || image?.assetId || image?.publicId || draft.key,
-        ...(image ? { image } : {}),
-        ...(imageUrl ? { imageUrl } : {}),
-        altText: alt,
-        order: index,
-      });
+        savedSlides.push({
+          id: draft.id || image?.assetId || image?.publicId || draft.key,
+          ...(image ? { image } : {}),
+          ...(imageUrl ? { imageUrl } : {}),
+          altText: alt,
+          order: index,
+        });
+      }
+      return { ok: true, value: savedSlides, uploadedImages };
+    } catch {
+      return { ok: false, uploadedImages };
     }
-    return { ok: true, value: savedSlides };
+  };
+
+  /**
+   * Preserves the primary save/upload error and adds a warning only when
+   * best-effort rollback cannot clean every newly uploaded image.
+   */
+  const showFailureWithRollback = async (
+    message: string,
+    uploadedImages: readonly AppImage[],
+  ): Promise<void> => {
+    const cleanupStatus = await rollbackUploadedAdminImages(
+      uploadedImages,
+      cleanupAdminImageUploads,
+    );
+    showToastSequence(
+      cleanupStatus === "partial-failure"
+        ? [
+            { variant: "error", message },
+            {
+              variant: "warning",
+              message: DICTIONARY.admin.imageUpload.cleanupWarning,
+            },
+          ]
+        : [{ variant: "error", message }],
+    );
+  };
+
+  /**
+   * Reports an indeterminate save result without deleting assets that may
+   * already have been committed to Firestore.
+   */
+  const showAmbiguousSaveOutcome = (hasUploadedImages: boolean): void => {
+    showToast({
+      variant: "warning",
+      message: hasUploadedImages
+        ? DICTIONARY.admin.imageUpload.ambiguousSaveWithUploads
+        : DICTIONARY.admin.imageUpload.ambiguousSave,
+    });
   };
 
   const handleSave = async () => {
     if (!isDirty || !allComplete) return;
 
     setIsSaving(true);
+    const uploadedImages: AppImage[] = [];
+    let saveOutcome: "not-started" | "pending" | "failed" | "succeeded" =
+      "not-started";
 
     try {
       const heroResult = await processDrafts(
@@ -437,9 +497,9 @@ export const SiteImagesForm = ({
         "site-hero",
         d.heroAltDefault,
       );
+      uploadedImages.push(...heroResult.uploadedImages);
       if (!heroResult.ok) {
-        showToast({ variant: "error", message: d.uploadError });
-        setIsSaving(false);
+        await showFailureWithRollback(d.uploadError, uploadedImages);
         return;
       }
 
@@ -448,9 +508,9 @@ export const SiteImagesForm = ({
         "site-why-us",
         d.whyUsAltDefault,
       );
+      uploadedImages.push(...whyUsResult.uploadedImages);
       if (!whyUsResult.ok) {
-        showToast({ variant: "error", message: d.uploadError });
-        setIsSaving(false);
+        await showFailureWithRollback(d.uploadError, uploadedImages);
         return;
       }
 
@@ -459,12 +519,13 @@ export const SiteImagesForm = ({
         "site-services",
         d.servicesAltDefault,
       );
+      uploadedImages.push(...servicesResult.uploadedImages);
       if (!servicesResult.ok) {
-        showToast({ variant: "error", message: d.uploadError });
-        setIsSaving(false);
+        await showFailureWithRollback(d.uploadError, uploadedImages);
         return;
       }
 
+      saveOutcome = "pending";
       const result = await saveSiteImages({
         heroSlides: heroResult.value,
         whyUsSlides: whyUsResult.value,
@@ -472,14 +533,20 @@ export const SiteImagesForm = ({
       });
 
       if (!result.success) {
-        showToast({ variant: "error", message: d.error });
+        saveOutcome = "failed";
+        await showFailureWithRollback(d.error, uploadedImages);
         return;
       }
 
+      saveOutcome = "succeeded";
       showToast({ variant: "success", message: d.success });
       router.refresh();
     } catch {
-      showToast({ variant: "error", message: d.error });
+      if (saveOutcome === "not-started") {
+        await showFailureWithRollback(d.error, uploadedImages);
+      } else if (saveOutcome === "pending") {
+        showAmbiguousSaveOutcome(uploadedImages.length > 0);
+      }
     } finally {
       setIsSaving(false);
     }

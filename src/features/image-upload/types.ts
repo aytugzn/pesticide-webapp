@@ -9,3 +9,12 @@ export const IMAGE_UPLOAD_ERRORS = {
 } as const;
 
 export type ImageUploadErrorCode = keyof typeof IMAGE_UPLOAD_ERRORS;
+
+export type AdminImageCleanupStatus =
+  | "not-needed"
+  | "success"
+  | "partial-failure";
+
+export type AdminImageCleanupResult = {
+  status: AdminImageCleanupStatus;
+};

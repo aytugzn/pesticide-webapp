@@ -10,6 +10,26 @@ const MANAGED_SITE_IMAGE_FOLDERS = [
   "sites/default/home/services/",
 ] as const;
 
+const MANAGED_ADMIN_IMAGE_FOLDERS = [
+  ...MANAGED_SITE_IMAGE_FOLDERS,
+  "sites/default/entities/pests/",
+  "sites/default/entities/regions/",
+] as const;
+
+type ManagedPublicIdPredicate = (publicId: string) => boolean;
+
+/**
+ * Rejects empty, traversal-like, and backslash-separated Cloudinary paths.
+ *
+ * @param publicId - Normalized Cloudinary public ID
+ * @returns Whether every folder segment is safe to evaluate against allowlists
+ */
+const hasSafePublicIdSegments = (publicId: string): boolean =>
+  !publicId.includes("\\") &&
+  publicId
+    .split("/")
+    .every((segment) => segment.length > 0 && segment !== "." && segment !== "..");
+
 /**
  * Checks whether a public ID belongs to one of the admin-managed site image folders.
  *
@@ -17,7 +37,18 @@ const MANAGED_SITE_IMAGE_FOLDERS = [
  * @returns Whether the asset is within the site-image cleanup boundary
  */
 const isManagedSiteImagePublicId = (publicId: string): boolean =>
+  hasSafePublicIdSegments(publicId) &&
   MANAGED_SITE_IMAGE_FOLDERS.some((folder) => publicId.startsWith(folder));
+
+/**
+ * Checks whether a public ID belongs to any admin-managed upload folder.
+ *
+ * @param publicId - Normalized Cloudinary public ID
+ * @returns Whether rollback may consider the asset for deletion
+ */
+export const isManagedAdminImagePublicId = (publicId: string): boolean =>
+  hasSafePublicIdSegments(publicId) &&
+  MANAGED_ADMIN_IMAGE_FOLDERS.some((folder) => publicId.startsWith(folder));
 
 /**
  * Extracts a public ID from a legacy delivery URL only when it belongs to the
@@ -26,7 +57,10 @@ const isManagedSiteImagePublicId = (publicId: string): boolean =>
  * @param value - Potential legacy Cloudinary delivery URL
  * @returns A safe managed public ID, or null when the URL is not eligible
  */
-const parseManagedPublicIdFromUrl = (value: string): string | null => {
+const parseManagedPublicIdFromUrl = (
+  value: string,
+  isManagedPublicId: ManagedPublicIdPredicate,
+): string | null => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
   if (!cloudName) return null;
 
@@ -67,27 +101,28 @@ const parseManagedPublicIdFromUrl = (value: string): string | null => {
     );
 
     const publicId = normalizeCloudinaryPublicId(publicIdSegments.join("/"));
-    return publicId && isManagedSiteImagePublicId(publicId) ? publicId : null;
+    return publicId && isManagedPublicId(publicId) ? publicId : null;
   } catch {
     return null;
   }
 };
 
 /**
- * Recursively collects managed Cloudinary public IDs from raw Firestore data.
- * Object-based AppImage references are preferred, while safe same-cloud legacy
- * URLs remain supported without requiring a migration.
+ * Recursively collects allowlisted Cloudinary public IDs from Firestore data.
+ * Object references and safe same-cloud legacy URLs are both supported.
  *
- * @param data - Raw settings document data
- * @returns Unique public IDs within the managed site-image folders
+ * @param data - Raw Firestore document data
+ * @param isManagedPublicId - Scope-specific public ID allowlist predicate
+ * @returns Unique public IDs accepted by the supplied predicate
  */
-export const collectManagedSiteImagePublicIds = (
+const collectManagedImagePublicIds = (
   data: unknown,
+  isManagedPublicId: ManagedPublicIdPredicate,
 ): Set<string> => {
   const publicIds = new Set<string>();
   const visit = (value: unknown): void => {
     if (typeof value === "string") {
-      const publicId = parseManagedPublicIdFromUrl(value);
+      const publicId = parseManagedPublicIdFromUrl(value, isManagedPublicId);
       if (publicId) publicIds.add(publicId);
       return;
     }
@@ -98,7 +133,7 @@ export const collectManagedSiteImagePublicIds = (
       const record = value as Record<string, unknown>;
       if (record.source === "cloudinary" && typeof record.publicId === "string") {
         const publicId = normalizeCloudinaryPublicId(record.publicId);
-        if (publicId && isManagedSiteImagePublicId(publicId)) {
+        if (publicId && isManagedPublicId(publicId)) {
           publicIds.add(publicId);
         }
       }
@@ -112,21 +147,34 @@ export const collectManagedSiteImagePublicIds = (
 };
 
 /**
- * Deletes one managed site image through Cloudinary's authenticated server API.
- * Missing assets are treated as already cleaned up.
+ * Collects managed site-image references without widening stale publish cleanup.
  *
- * @param publicId - Managed Cloudinary public ID selected after reference checks
- * @returns Whether the asset is absent from Cloudinary after the request
+ * @param data - Raw Firestore document data
+ * @returns Unique public IDs within site-only managed folders
  */
-export const deleteManagedSiteImage = async (
-  publicId: string,
-): Promise<boolean> => {
-  const normalizedPublicId = normalizeCloudinaryPublicId(publicId);
-  if (!normalizedPublicId || !isManagedSiteImagePublicId(normalizedPublicId)) {
-    console.warn("Skipped unmanaged Cloudinary site image cleanup");
-    return false;
-  }
+export const collectManagedSiteImagePublicIds = (
+  data: unknown,
+): Set<string> => collectManagedImagePublicIds(data, isManagedSiteImagePublicId);
 
+/**
+ * Collects all admin-managed image references for rollback safety checks.
+ *
+ * @param data - Raw Firestore document data
+ * @returns Unique public IDs within site and entity managed folders
+ */
+export const collectManagedAdminImagePublicIds = (
+  data: unknown,
+): Set<string> => collectManagedImagePublicIds(data, isManagedAdminImagePublicId);
+
+/**
+ * Deletes one already-normalized and allowlisted Cloudinary image.
+ *
+ * @param normalizedPublicId - Safe public ID selected by a scoped wrapper
+ * @returns Whether the asset is absent after the request
+ */
+const deleteManagedImage = async (
+  normalizedPublicId: string,
+): Promise<boolean> => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
   const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
   const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
@@ -152,7 +200,7 @@ export const deleteManagedSiteImage = async (
     );
 
     if (!response.ok) {
-      console.error("Cloudinary site image cleanup failed", {
+      console.error("Cloudinary managed image cleanup failed", {
         status: response.status,
       });
       return false;
@@ -168,7 +216,44 @@ export const deleteManagedSiteImage = async (
 
     return true;
   } catch {
-    console.error("Cloudinary site image cleanup request failed");
+    console.error("Cloudinary managed image cleanup request failed");
     return false;
   }
+};
+
+/**
+ * Deletes one managed site image through Cloudinary's authenticated server API.
+ * Missing assets are treated as already cleaned up.
+ *
+ * @param publicId - Managed Cloudinary public ID selected after reference checks
+ * @returns Whether the asset is absent from Cloudinary after the request
+ */
+export const deleteManagedSiteImage = async (
+  publicId: string,
+): Promise<boolean> => {
+  const normalizedPublicId = normalizeCloudinaryPublicId(publicId);
+  if (!normalizedPublicId || !isManagedSiteImagePublicId(normalizedPublicId)) {
+    console.warn("Skipped unmanaged Cloudinary site image cleanup");
+    return false;
+  }
+
+  return deleteManagedImage(normalizedPublicId);
+};
+
+/**
+ * Deletes one image within the broader admin rollback allowlist.
+ *
+ * @param publicId - Candidate public ID from a failed client save attempt
+ * @returns Whether the asset is absent from Cloudinary after the request
+ */
+export const deleteManagedAdminImage = async (
+  publicId: string,
+): Promise<boolean> => {
+  const normalizedPublicId = normalizeCloudinaryPublicId(publicId);
+  if (!normalizedPublicId || !isManagedAdminImagePublicId(normalizedPublicId)) {
+    console.warn("Skipped unmanaged Cloudinary admin image cleanup");
+    return false;
+  }
+
+  return deleteManagedImage(normalizedPublicId);
 };

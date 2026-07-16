@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
 
+const ADMIN_IMAGE_CLEANUP_MAX_ITEMS = 18;
+
 export const appImageSchema = z.object({
   source: z.literal("cloudinary"),
   publicId: z.string().trim().min(1),
@@ -40,6 +42,12 @@ export const imageUploadInputSchema = z.discriminatedUnion("target", [
   z.object({ target: z.literal("site-why-us"), alt: imageAltSchema }),
   z.object({ target: z.literal("site-services"), alt: imageAltSchema }),
 ]);
+
+export const adminImageCleanupInputSchema = z.object({
+  publicIds: z
+    .array(z.string().trim().min(1).max(500))
+    .max(ADMIN_IMAGE_CLEANUP_MAX_ITEMS),
+});
 
 export const cloudinaryUploadResponseSchema = z.object({
   public_id: z.string().trim().min(1),

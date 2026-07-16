@@ -102,7 +102,7 @@ const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterB
           title={DICTIONARY.global.logo.title}
           draggable={false}
           fill
-          className="object-contain object-left dark:invert dark:brightness-0"
+          className="object-contain object-left"
         />
       </div>
     </div>

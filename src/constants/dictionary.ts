@@ -610,6 +610,11 @@ const adminDict = {
     dropHint: "Görsel seçmek için tıklayın veya sürükleyin",
     formatHint: "JPEG, PNG, WebP · max 5 MB",
     replaceHint: "Değiştirmek için tıklayın",
+    cleanupWarning: "Yüklenen bazı görseller temizlenemedi.",
+    ambiguousSave:
+      "Kayıt sonucu doğrulanamadı. Lütfen kaydı kontrol edin.",
+    ambiguousSaveWithUploads:
+      "Kayıt sonucu doğrulanamadı. Yeni yüklenen görseller güvenlik amacıyla otomatik temizlenmedi. Lütfen kaydı kontrol edin.",
   },
   preview: {
     button: "Önizle",

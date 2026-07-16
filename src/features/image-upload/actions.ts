@@ -4,15 +4,24 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { getAdminDb } from "@/lib/firebase-admin";
 import type { ActionResponse, AppImage } from "@/types";
 import {
+  adminImageCleanupInputSchema,
   cloudinaryUploadResponseSchema,
   imageUploadInputSchema,
 } from "./schemas";
 import {
   IMAGE_UPLOAD_ERRORS,
+  type AdminImageCleanupResult,
   type ImageUploadErrorCode,
 } from "./types";
+import {
+  collectManagedAdminImagePublicIds,
+  deleteManagedAdminImage,
+  isManagedAdminImagePublicId,
+} from "./cloudinary";
+import { normalizeCloudinaryPublicId } from "@/utils/cloudinary";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -189,5 +198,93 @@ export const uploadAdminImage = async (
   } catch {
     console.error("Cloudinary upload request failed");
     return { success: false, error: IMAGE_UPLOAD_ERRORS.UPLOAD_FAILED };
+  }
+};
+
+/**
+ * Best-effort rollback for newly uploaded images after a failed Firestore save.
+ * Existing Firestore references are rechecked before any Cloudinary deletion.
+ *
+ * @param input - Candidate public IDs returned by the current upload attempt
+ * @returns A not-needed, success, or partial-failure cleanup status
+ */
+export const cleanupAdminImageUploads = async (
+  input: unknown,
+): Promise<ActionResponse<AdminImageCleanupResult, ImageUploadErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: IMAGE_UPLOAD_ERRORS.UNAUTHORIZED };
+  }
+
+  const parsedInput = adminImageCleanupInputSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { success: false, error: IMAGE_UPLOAD_ERRORS.VALIDATION_FAILED };
+  }
+
+  if (parsedInput.data.publicIds.length === 0) {
+    return { success: true, data: { status: "not-needed" } };
+  }
+
+  const normalizedPublicIds = new Set<string>();
+  let hasRejectedCandidate = false;
+  parsedInput.data.publicIds.forEach((publicId) => {
+    const normalizedPublicId = normalizeCloudinaryPublicId(publicId);
+    if (
+      normalizedPublicId &&
+      isManagedAdminImagePublicId(normalizedPublicId)
+    ) {
+      normalizedPublicIds.add(normalizedPublicId);
+      return;
+    }
+
+    hasRejectedCandidate = true;
+  });
+
+  if (normalizedPublicIds.size === 0) {
+    return { success: true, data: { status: "partial-failure" } };
+  }
+
+  try {
+    const db = getAdminDb();
+    const [settingsSnapshot, pestsSnapshot, regionsSnapshot] =
+      await Promise.all([
+        db.collection("settings").get(),
+        db.collection("pests").get(),
+        db.collection("regions").get(),
+      ]);
+    const referencedPublicIds = new Set<string>();
+    [settingsSnapshot, pestsSnapshot, regionsSnapshot].forEach((snapshot) => {
+      snapshot.docs.forEach((doc) => {
+        collectManagedAdminImagePublicIds(doc.data()).forEach((publicId) =>
+          referencedPublicIds.add(publicId),
+        );
+      });
+    });
+
+    const deletionCandidates = [...normalizedPublicIds].filter(
+      (publicId) => !referencedPublicIds.has(publicId),
+    );
+    const hasReferencedCandidate =
+      deletionCandidates.length !== normalizedPublicIds.size;
+    const deletionResults = await Promise.allSettled(
+      deletionCandidates.map(deleteManagedAdminImage),
+    );
+    const hasDeletionFailure = deletionResults.some(
+      (result) => result.status === "rejected" || !result.value,
+    );
+
+    return {
+      success: true,
+      data: {
+        status:
+          hasRejectedCandidate ||
+          hasReferencedCandidate ||
+          hasDeletionFailure
+            ? "partial-failure"
+            : "success",
+      },
+    };
+  } catch {
+    console.error("Failed to verify admin image rollback references");
+    return { success: true, data: { status: "partial-failure" } };
   }
 };

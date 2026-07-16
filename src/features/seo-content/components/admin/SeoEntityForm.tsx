@@ -13,8 +13,12 @@ import { slugify } from "@/utils/slugify";
 import { Switch } from "@/components/ui/Switch";
 import { DICTIONARY } from "@/constants/dictionary";
 import { SeoEntityPreviewModal } from "./SeoEntityPreviewModal";
-import { uploadAdminImage } from "@/features/image-upload/actions";
+import {
+  cleanupAdminImageUploads,
+  uploadAdminImage,
+} from "@/features/image-upload/actions";
 import { AdminImageUploadField } from "@/features/image-upload/components/admin/AdminImageUploadField";
+import { rollbackUploadedAdminImages } from "@/features/image-upload/rollback";
 import type { ImageUploadErrorCode } from "@/features/image-upload/types";
 import type { AppImage } from "@/types";
 import { resolveAppImage } from "@/utils/cloudinary";
@@ -112,6 +116,8 @@ export const SeoEntityForm = <TError extends string>({
     if (error === "AI_GENERATION_FAILED") return d.errorAiGen;
     if (error === "VALIDATION_FAILED") return d.errorAiVal;
     if (error === "AI_QUOTA_EXCEEDED" as TError) return d.errorQuotaExceeded;
+    if (error === "SAVE_FAILED") return d.errorSave;
+    if (error === "UPDATE_FAILED") return d.updateError;
 
     return d.errorDefault;
   };
@@ -126,6 +132,40 @@ export const SeoEntityForm = <TError extends string>({
 
   const getDefaultImageAlt = () =>
     d.imageDefaultAltTemplate.replace("{name}", formData.name.trim());
+
+  /**
+   * Shows the primary persistence error and appends a controlled cleanup
+   * warning only when rollback could not remove the newly uploaded image.
+   */
+  const setFailureWithRollback = async (
+    message: string,
+    uploadedImage?: AppImage,
+  ): Promise<void> => {
+    const cleanupStatus = await rollbackUploadedAdminImages(
+      uploadedImage ? [uploadedImage] : [],
+      cleanupAdminImageUploads,
+    );
+    setFeedback({
+      type: "error",
+      message:
+        cleanupStatus === "partial-failure"
+          ? `${message} ${DICTIONARY.admin.imageUpload.cleanupWarning}`
+          : message,
+    });
+  };
+
+  /**
+   * Reports an indeterminate save result without deleting an image that may
+   * already have been committed to Firestore.
+   */
+  const setAmbiguousSaveOutcome = (hasUploadedImage: boolean): void => {
+    setFeedback({
+      type: "error",
+      message: hasUploadedImage
+        ? DICTIONARY.admin.imageUpload.ambiguousSaveWithUploads
+        : DICTIONARY.admin.imageUpload.ambiguousSave,
+    });
+  };
 
   const handleRemoveImage = () => {
     setSelectedImageFile(null);
@@ -243,6 +283,9 @@ export const SeoEntityForm = <TError extends string>({
 
     setIsSaving(true);
     setFeedback(null);
+    let uploadedImage: AppImage | undefined;
+    let saveOutcome: "not-started" | "pending" | "failed" | "succeeded" =
+      "not-started";
 
     try {
       if (mode === "create") {
@@ -294,6 +337,7 @@ export const SeoEntityForm = <TError extends string>({
         }
 
         imageToSave = uploadResult.data;
+        uploadedImage = uploadResult.data;
       } else if (
         !isImageRemoved &&
         formData.image &&
@@ -303,6 +347,7 @@ export const SeoEntityForm = <TError extends string>({
       }
 
       if (mode === "edit" && update) {
+        saveOutcome = "pending";
         const res = await update(formData.slug, {
           name: formData.name,
           description: formData.description,
@@ -317,19 +362,22 @@ export const SeoEntityForm = <TError extends string>({
         });
 
         if (res.success) {
+          saveOutcome = "succeeded";
           setFeedback({ type: "success", message: d.updateSuccess });
           router.refresh();
           onSuccess?.();
           return;
         }
 
-        setFeedback({
-          type: "error",
-          message: getErrorMessage(res.error),
-        });
+        saveOutcome = "failed";
+        await setFailureWithRollback(
+          getErrorMessage(res.error),
+          uploadedImage,
+        );
         return;
       }
 
+      saveOutcome = "pending";
       const res = await save(
         formData.slug,
         formData.name,
@@ -340,6 +388,7 @@ export const SeoEntityForm = <TError extends string>({
       );
 
       if (res.success) {
+        saveOutcome = "succeeded";
         setFeedback({ type: "success", message: d.successSave });
 
         if (!initialData) {
@@ -355,13 +404,18 @@ export const SeoEntityForm = <TError extends string>({
       }
 
       if (!res.success) {
-        setFeedback({
-          type: "error",
-          message: getErrorMessage(res.error),
-        });
+        saveOutcome = "failed";
+        await setFailureWithRollback(
+          getErrorMessage(res.error),
+          uploadedImage,
+        );
       }
     } catch {
-      setFeedback({ type: "error", message: d.errorDefault });
+      if (saveOutcome === "not-started") {
+        await setFailureWithRollback(d.errorDefault, uploadedImage);
+      } else if (saveOutcome === "pending") {
+        setAmbiguousSaveOutcome(Boolean(uploadedImage));
+      }
     } finally {
       setIsSaving(false);
     }

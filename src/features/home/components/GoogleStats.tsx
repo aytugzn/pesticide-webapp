@@ -23,21 +23,28 @@ type GoogleSocialLinksProps = {
 /**
  * Preserves the Google stats area dimensions while the server promise resolves.
  *
- * @returns An accessible, non-blocking skeleton for the stats content only
+ * @returns A decorative, non-blocking skeleton for the stats content only
  */
 const GoogleStatsSkeleton = () => (
   <div
-    className="flex min-h-20 min-w-0 flex-1 items-center gap-4 sm:min-h-14 sm:min-w-64"
-    role="status"
-    aria-label={DICTIONARY.home.googleStats.loading}
+    className="flex min-h-20 min-w-0 flex-1 items-center gap-3 sm:min-h-14 sm:min-w-64 sm:gap-4"
+    aria-hidden="true"
   >
     <div
-      className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-surface-neutral md:h-14 md:w-14"
-      aria-hidden="true"
+      className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-brand-surface-muted md:h-14 md:w-14"
     />
-    <div className="space-y-2" aria-hidden="true">
-      <div className="h-4 w-32 animate-pulse rounded-brand-sm bg-surface-neutral" />
-      <div className="h-3 w-24 animate-pulse rounded-brand-sm bg-surface-neutral" />
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="h-4 w-24 animate-pulse rounded-brand-sm bg-brand-surface-muted" />
+        <div className="h-4 w-20 animate-pulse rounded-full bg-brand-surface-muted" />
+      </div>
+      <div className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="h-4 w-10 animate-pulse rounded-brand-sm bg-brand-surface-muted" />
+          <div className="h-3 w-16 animate-pulse rounded-brand-sm bg-brand-surface-muted" />
+        </div>
+        <div className="h-3 w-24 animate-pulse rounded-brand-sm bg-brand-surface-muted" />
+      </div>
     </div>
   </div>
 );
@@ -210,7 +217,9 @@ const ResolvedGoogleStats = ({
 
   if (!instagramUrl && !facebookUrl) return null;
 
-  return <div className="flex items-center">{socialContent}</div>;
+  return (
+    <div className="flex w-full items-center justify-start">{socialContent}</div>
+  );
 };
 
 /**
