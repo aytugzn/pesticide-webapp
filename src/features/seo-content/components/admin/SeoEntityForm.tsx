@@ -646,7 +646,13 @@ export const SeoEntityForm = <TError extends string>({
         />
       </div>
 
-      <div className="pt-4 border-t border-brand-border flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        className={
+          mode === "edit"
+            ? "sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-col gap-3 border-t border-brand-border bg-brand-surface px-4 pb-4 pt-4 sm:-mx-6 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pb-6"
+            : "flex flex-col gap-3 border-t border-brand-border pt-4 sm:flex-row sm:items-center sm:justify-between"
+        }
+      >
         <div className="w-full sm:w-auto">
           {mode === "create" && (
             <Switch

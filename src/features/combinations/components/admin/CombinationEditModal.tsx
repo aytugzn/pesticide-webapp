@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { CSSProperties } from "react";
 import { X, Loader2, Save, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -16,8 +15,6 @@ import { COMBINATION_ERRORS } from "../../types";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useCombinationAdminToast } from "./CombinationJobProvider";
 import type { CombinationRow, GeneratedContent } from "../../types";
-
-const MODAL_STYLE: CSSProperties = { maxHeight: "calc(100dvh - 1.5rem)" };
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
@@ -145,8 +142,7 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
 
   return (
     <section
-      className="w-full max-w-5xl min-w-0 bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300"
-      style={MODAL_STYLE}
+      className="max-h-full w-full max-w-5xl min-w-0 bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -298,15 +294,13 @@ export const CombinationEditModal = ({
   if (!isOpen || !row) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-overlay-strong backdrop-blur-sm p-3 transition-opacity duration-300 sm:p-4">
-      <div className="min-h-full flex items-center justify-center py-3 pointer-events-none sm:py-6">
-        <CombinationEditForm
-          key={`${row.region}_${row.pest}`}
-          row={row}
-          onClose={onClose}
-          onSuccess={onSuccess}
-        />
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-overlay-strong p-3 backdrop-blur-sm transition-opacity duration-300 sm:p-6">
+      <CombinationEditForm
+        key={`${row.region}_${row.pest}`}
+        row={row}
+        onClose={onClose}
+        onSuccess={onSuccess}
+      />
     </div>
   );
 };

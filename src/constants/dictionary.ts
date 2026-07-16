@@ -625,6 +625,8 @@ const adminDict = {
   dashboard: {
     title: "DMR İlaçlama",
     subtitle: "Yönetim Paneli",
+    draftNotice:
+      "Admin panelinde yaptığınız değişiklikler taslak olarak kaydedilir. Değişiklikleri canlı siteye aktarmak için 'Canlı Siteyi Güncelle' butonunu kullanın.",
     navAria: "Admin navigasyon",
     menu: {
       regions: "Bölgeler",

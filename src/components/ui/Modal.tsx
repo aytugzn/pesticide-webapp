@@ -1,16 +1,12 @@
 "use client";
 
 import { useId } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useScrollLock } from "@/hooks/useScrollLock";
-
-const MODAL_STYLE: CSSProperties = {
-  maxHeight: "calc(100dvh - 1.5rem)",
-};
 
 type ModalProps = {
   isOpen: boolean;
@@ -43,20 +39,19 @@ export const Modal = ({
     <>
       <div
         className={cn(
-          "fixed inset-0 z-50 m-0 overflow-x-hidden transition-opacity duration-300",
+          "fixed inset-0 z-50 m-0 overflow-hidden transition-opacity duration-300",
           overlayClassName,
         )}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="fixed inset-0 z-50 m-0 flex items-center justify-center overflow-x-hidden p-3 pointer-events-none sm:p-6">
+      <div className="fixed inset-0 z-50 m-0 flex items-center justify-center overflow-hidden p-3 pointer-events-none sm:p-6">
         <section
           className={cn(
-            "m-0 w-full max-w-lg max-w-full bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300",
+            "m-0 max-h-full w-full max-w-lg max-w-full bg-brand-surface rounded-xl shadow-2xl flex flex-col overflow-hidden overflow-x-hidden pointer-events-auto transform transition-all duration-300",
             className,
           )}
-          style={MODAL_STYLE}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}

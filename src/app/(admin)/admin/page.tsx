@@ -5,6 +5,7 @@ import { Map, Bug, Sparkles } from "lucide-react";
 import { connection } from "next/server";
 import { StatCard } from "@/features/dashboard/components/StatCard";
 import { SystemStatusCard } from "@/features/dashboard/components/SystemStatusCard";
+import { Alert } from "@/components/ui/Alert";
 
 export const metadata: Metadata = {
   title: `Dashboard | ${DICTIONARY.global.brand} ${DICTIONARY.admin.dashboard.subtitle}`,
@@ -65,6 +66,8 @@ const AdminPage = async () => {
           {d.subtitle}
         </p>
       </div>
+
+      <Alert variant="info" message={d.draftNotice} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, index) => (

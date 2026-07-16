@@ -41,6 +41,19 @@ type ReviewFieldErrors = Partial<
   Record<keyof ReviewFormState, string>
 >;
 
+type ReviewFormPanelProps = {
+  form: ReviewFormState;
+  fieldErrors: ReviewFieldErrors;
+  idPrefix: string;
+  submitLabel: string;
+  title?: string;
+  titleId?: string;
+  autoFocus?: boolean;
+  onFieldChange: (field: keyof ReviewFormState, value: string) => void;
+  onCancel: () => void;
+  onSubmit: () => void;
+};
+
 const createFormState = (review?: ReviewItem): ReviewFormState => ({
   id: review?.id ?? crypto.randomUUID(),
   authorName: review?.authorName ?? "",
@@ -72,6 +85,111 @@ const createFieldErrors = (
   });
 
   return errors;
+};
+
+/**
+ * Renders the shared review create/edit fields without owning workflow state.
+ *
+ * @param props - Controlled values, validation messages, labels, and callbacks
+ * @returns A consistent review form panel for page and table wrappers
+ */
+const ReviewFormPanel = ({
+  form,
+  fieldErrors,
+  idPrefix,
+  submitLabel,
+  title,
+  titleId,
+  autoFocus = false,
+  onFieldChange,
+  onCancel,
+  onSubmit,
+}: ReviewFormPanelProps) => {
+  const d = DICTIONARY.admin.reviews;
+
+  return (
+    <div className="rounded-brand-lg border border-brand-border bg-surface-neutral/40 px-4 py-5 shadow-sm sm:px-5 sm:py-6">
+      {title && (
+        <h2
+          id={titleId}
+          className="mb-5 border-b border-brand-border pb-4 font-heading text-lg font-bold text-text-primary"
+        >
+          {title}
+        </h2>
+      )}
+      <div className="space-y-5">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <Input
+              id={`${idPrefix}-author-name`}
+              data-review-author-input={autoFocus ? "" : undefined}
+              label={d.customerName}
+              placeholder={d.customerNamePlaceholder}
+              value={form.authorName}
+              maxLength={REVIEW_LIMITS.AUTHOR_NAME}
+              showCharacterCount
+              error={fieldErrors.authorName}
+              onChange={(event) => onFieldChange("authorName", event.target.value)}
+            />
+          </div>
+          <Input
+            id={`${idPrefix}-rating`}
+            label={d.rating}
+            type="number"
+            min={1}
+            max={5}
+            step={1}
+            value={form.rating}
+            error={fieldErrors.rating}
+            onChange={(event) => onFieldChange("rating", event.target.value)}
+          />
+        </div>
+        <Textarea
+          id={`${idPrefix}-text`}
+          label={d.reviewText}
+          placeholder={d.reviewTextPlaceholder}
+          value={form.text}
+          maxLength={REVIEW_LIMITS.TEXT}
+          showCharacterCount
+          error={fieldErrors.text}
+          rows={3}
+          onChange={(event) => onFieldChange("text", event.target.value)}
+        />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Input
+            id={`${idPrefix}-avatar-url`}
+            label={d.avatarUrl}
+            optionalText={d.optional}
+            type="url"
+            placeholder={d.avatarUrlPlaceholder}
+            value={form.authorPhotoUrl}
+            maxLength={REVIEW_LIMITS.URL}
+            error={fieldErrors.authorPhotoUrl}
+            onChange={(event) => onFieldChange("authorPhotoUrl", event.target.value)}
+          />
+          <Input
+            id={`${idPrefix}-source-url`}
+            label={d.sourceUrl}
+            optionalText={d.optional}
+            type="url"
+            placeholder={d.sourceUrlPlaceholder}
+            value={form.reviewUrl}
+            maxLength={REVIEW_LIMITS.URL}
+            error={fieldErrors.reviewUrl}
+            onChange={(event) => onFieldChange("reviewUrl", event.target.value)}
+          />
+        </div>
+        <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            {d.cancel}
+          </Button>
+          <Button type="button" variant="primary" onClick={onSubmit}>
+            {submitLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 /**
@@ -171,6 +289,31 @@ export const ReviewsManager = ({
     }
   };
 
+  const renderEditPanel = (
+    row: ReviewItem,
+    presentation: "mobile" | "desktop",
+  ) => {
+    if (editingReviewId !== row.id || !form) return null;
+
+    return (
+      <section
+        aria-label={d.editReview}
+        className="mx-auto my-2 max-w-5xl"
+      >
+        <ReviewFormPanel
+          form={form}
+          fieldErrors={fieldErrors}
+          idPrefix={`review-edit-${row.id}-${presentation}`}
+          submitLabel={d.apply}
+          autoFocus
+          onFieldChange={updateForm}
+          onCancel={handleCloseForm}
+          onSubmit={handleApplyReview}
+        />
+      </section>
+    );
+  };
+
   const columns: AdminEntityColumn<ReviewItem>[] = [
       {
         key: "order",
@@ -181,91 +324,18 @@ export const ReviewsManager = ({
       {
         key: "customer",
         header: d.table.customer,
-        render: (row, presentation = "desktop") =>
-          editingReviewId === row.id && form ? (
-            <Input
-              id={`review-author-name-${row.id}-${presentation}`}
-              data-review-author-input
-              label={d.customerName}
-              placeholder={d.customerNamePlaceholder}
-              value={form.authorName}
-              maxLength={REVIEW_LIMITS.AUTHOR_NAME}
-              showCharacterCount
-              error={fieldErrors.authorName}
-              onChange={(event) => updateForm("authorName", event.target.value)}
-              className="min-w-48"
-            />
-          ) : (
-            <span className="font-medium">{row.authorName}</span>
-          ),
+        render: (row) => <span className="font-medium">{row.authorName}</span>,
       },
       {
         key: "rating",
         header: d.table.rating,
         className: "w-20",
-        render: (row, presentation = "desktop") =>
-          editingReviewId === row.id && form ? (
-            <Input
-              id={`review-rating-${row.id}-${presentation}`}
-              label={d.rating}
-              type="number"
-              min={1}
-              max={5}
-              step={1}
-              value={form.rating}
-              error={fieldErrors.rating}
-              onChange={(event) => updateForm("rating", event.target.value)}
-              className="min-w-20"
-            />
-          ) : (
-            row.rating
-          ),
+        render: (row) => row.rating,
       },
       {
         key: "comment",
         header: d.table.comment,
-        render: (row, presentation = "desktop") =>
-          editingReviewId === row.id && form ? (
-            <div className="min-w-64 space-y-3">
-              <Textarea
-                id={`review-text-${row.id}-${presentation}`}
-                label={d.reviewText}
-                placeholder={d.reviewTextPlaceholder}
-                value={form.text}
-                maxLength={REVIEW_LIMITS.TEXT}
-                showCharacterCount
-                error={fieldErrors.text}
-                rows={3}
-                onChange={(event) => updateForm("text", event.target.value)}
-              />
-              <div className="grid gap-3 xl:grid-cols-2">
-                <Input
-                  id={`review-avatar-url-${row.id}-${presentation}`}
-                  label={d.avatarUrl}
-                  optionalText={d.optional}
-                  type="url"
-                  placeholder={d.avatarUrlPlaceholder}
-                  value={form.authorPhotoUrl}
-                  maxLength={REVIEW_LIMITS.URL}
-                  error={fieldErrors.authorPhotoUrl}
-                  onChange={(event) => updateForm("authorPhotoUrl", event.target.value)}
-                />
-                <Input
-                  id={`review-source-url-${row.id}-${presentation}`}
-                  label={d.sourceUrl}
-                  optionalText={d.optional}
-                  type="url"
-                  placeholder={d.sourceUrlPlaceholder}
-                  value={form.reviewUrl}
-                  maxLength={REVIEW_LIMITS.URL}
-                  error={fieldErrors.reviewUrl}
-                  onChange={(event) => updateForm("reviewUrl", event.target.value)}
-                />
-              </div>
-            </div>
-          ) : (
-            <p className="line-clamp-3 max-w-xl">{row.text}</p>
-          ),
+        render: (row) => <p className="line-clamp-3 max-w-xl">{row.text}</p>,
       },
       {
         key: "actions",
@@ -275,18 +345,7 @@ export const ReviewsManager = ({
           const index = items.findIndex((item) => item.id === row.id);
           const isEditingThisRow = editingReviewId === row.id;
 
-          if (isEditingThisRow) {
-            return (
-              <div className="flex flex-wrap justify-end gap-2 md:flex-nowrap">
-                <Button type="button" variant="outline" size="sm" onClick={handleCloseForm}>
-                  {d.cancel}
-                </Button>
-                <Button type="button" variant="primary" size="sm" onClick={handleApplyReview}>
-                  {d.apply}
-                </Button>
-              </div>
-            );
-          }
+          if (isEditingThisRow) return null;
 
           return (
             <div className="flex flex-wrap justify-end gap-2 md:flex-nowrap">
@@ -376,85 +435,20 @@ export const ReviewsManager = ({
         <section
           id="new-review-panel"
           aria-labelledby="new-review-panel-title"
-          className="max-w-4xl rounded-brand-lg border border-brand-border bg-brand-surface p-4 shadow-sm sm:p-6"
+          className="w-full"
         >
-          <h2
-            id="new-review-panel-title"
-            className="mb-5 border-b border-brand-border pb-4 font-heading text-lg font-bold text-text-primary"
-          >
-            {d.addReview}
-          </h2>
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-2">
-                <Input
-                  id="review-author-name"
-                  data-review-author-input
-                  label={d.customerName}
-                  placeholder={d.customerNamePlaceholder}
-                  value={form.authorName}
-                  maxLength={REVIEW_LIMITS.AUTHOR_NAME}
-                  showCharacterCount
-                  error={fieldErrors.authorName}
-                  onChange={(event) => updateForm("authorName", event.target.value)}
-                />
-              </div>
-              <Input
-                id="review-rating"
-                label={d.rating}
-                type="number"
-                min={1}
-                max={5}
-                step={1}
-                value={form.rating}
-                error={fieldErrors.rating}
-                onChange={(event) => updateForm("rating", event.target.value)}
-              />
-            </div>
-            <Textarea
-              id="review-text"
-              label={d.reviewText}
-              placeholder={d.reviewTextPlaceholder}
-              value={form.text}
-              maxLength={REVIEW_LIMITS.TEXT}
-              showCharacterCount
-              error={fieldErrors.text}
-              rows={3}
-              onChange={(event) => updateForm("text", event.target.value)}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                id="review-avatar-url"
-                label={d.avatarUrl}
-                optionalText={d.optional}
-                type="url"
-                placeholder={d.avatarUrlPlaceholder}
-                value={form.authorPhotoUrl}
-                maxLength={REVIEW_LIMITS.URL}
-                error={fieldErrors.authorPhotoUrl}
-                onChange={(event) => updateForm("authorPhotoUrl", event.target.value)}
-              />
-              <Input
-                id="review-source-url"
-                label={d.sourceUrl}
-                optionalText={d.optional}
-                type="url"
-                placeholder={d.sourceUrlPlaceholder}
-                value={form.reviewUrl}
-                maxLength={REVIEW_LIMITS.URL}
-                error={fieldErrors.reviewUrl}
-                onChange={(event) => updateForm("reviewUrl", event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={handleCloseForm}>
-                {d.cancel}
-              </Button>
-              <Button type="button" variant="primary" onClick={handleApplyReview}>
-                {d.apply}
-              </Button>
-            </div>
-          </div>
+          <ReviewFormPanel
+            form={form}
+            fieldErrors={fieldErrors}
+            idPrefix="review-create"
+            title={d.addReview}
+            titleId="new-review-panel-title"
+            submitLabel={d.apply}
+            autoFocus
+            onFieldChange={updateForm}
+            onCancel={handleCloseForm}
+            onSubmit={handleApplyReview}
+          />
         </section>
       )}
 
@@ -463,6 +457,8 @@ export const ReviewsManager = ({
         columns={columns}
         getRowKey={(row) => row.id}
         emptyMessage={d.empty}
+        desktopBreakpoint="xl"
+        renderExpandedContent={renderEditPanel}
       />
 
       <Modal
