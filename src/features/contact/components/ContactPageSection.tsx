@@ -51,6 +51,8 @@ export const ContactPageSection = ({
   const phone = settings?.phone || DEFAULT_PHONE;
   const email = settings?.email || DICTIONARY.footer.contact.email;
   const address = settings?.address || DICTIONARY.global.contact.address;
+  const workingHours =
+    settings?.workingHours || DICTIONARY.global.contact.workingHours;
   const phoneHref = generateTelUrl(phone);
   const whatsappHref = generateWhatsAppUrl(phone);
   const directionsHref = address
@@ -58,8 +60,8 @@ export const ContactPageSection = ({
     : undefined;
   const visibleRegions = regions.slice(0, VISIBLE_REGION_COUNT);
   const instagramUrl =
-    settings?.instagramUrl || DICTIONARY.social.instagram.url;
-  const facebookUrl = settings?.facebookUrl || DICTIONARY.social.facebook.url;
+    settings?.instagramUrl ?? DICTIONARY.social.instagram.url;
+  const facebookUrl = settings?.facebookUrl ?? DICTIONARY.social.facebook.url;
   const channels: ContactChannel[] = [
     {
       title: channelsDict.phoneTitle,
@@ -75,12 +77,12 @@ export const ContactPageSection = ({
       href: whatsappHref,
       icon: MessageCircle,
     },
-    ...(settings?.workingHours
+    ...(workingHours
       ? [
           {
             title: pageDict.workingHours.title,
             description: pageDict.workingHours.description,
-            value: settings.workingHours,
+            value: workingHours,
             icon: Clock,
           },
         ]
@@ -100,26 +102,33 @@ export const ContactPageSection = ({
       external: true,
       icon: MapPin,
     },
-    {
-      title: channelsDict.instagramTitle,
-      description: channelsDict.instagramDesc,
-      value: channelsDict.instagramTitle,
-      href: instagramUrl,
-      icon: InstagramIcon,
-    },
-    {
-      title: channelsDict.facebookTitle,
-      description: channelsDict.facebookDesc,
-      value: channelsDict.facebookTitle,
-      href: facebookUrl,
-      icon: FacebookIcon,
-    },
+    ...(instagramUrl
+      ? [
+          {
+            title: channelsDict.instagramTitle,
+            description: channelsDict.instagramDesc,
+            value: channelsDict.instagramTitle,
+            href: instagramUrl,
+            icon: InstagramIcon,
+          },
+        ]
+      : []),
+    ...(facebookUrl
+      ? [
+          {
+            title: channelsDict.facebookTitle,
+            description: channelsDict.facebookDesc,
+            value: channelsDict.facebookTitle,
+            href: facebookUrl,
+            icon: FacebookIcon,
+          },
+        ]
+      : []),
   ];
   const otherChannels = channels.filter(
     (channel) =>
       channel.title !== channelsDict.phoneTitle &&
-      channel.title !== channelsDict.whatsappTitle &&
-      channel.title !== pageDict.workingHours.title,
+      channel.title !== channelsDict.whatsappTitle,
   );
 
   return (
@@ -286,7 +295,7 @@ const QuickActionLink = ({
     </span>
     <span className="min-w-0">
       <span className="block font-heading text-sm font-bold">{title}</span>
-      <span className="mt-1 block text-xs leading-relaxed text-brand-primary/80">
+      <span className="mt-1 block break-words text-xs leading-relaxed text-brand-primary/80">
         {description}
       </span>
     </span>
@@ -322,7 +331,7 @@ const QuickActionButton = ({
     </span>
     <span className="min-w-0">
       <span className="block font-heading text-sm font-bold">{title}</span>
-      <span className="mt-1 block text-xs leading-relaxed text-brand-primary/80">
+      <span className="mt-1 block break-words text-xs leading-relaxed text-brand-primary/80">
         {description}
       </span>
     </span>
@@ -519,7 +528,7 @@ const ContactChannelCard = ({ channel }: { channel: ContactChannel }) => {
         aria-label={
           channel.external ? DICTIONARY.pages.contact.directions.aria : undefined
         }
-        className="group flex gap-4 border-t border-brand-border py-5 transition-colors hover:border-brand-primary/50"
+        className="group flex min-w-0 gap-4 border-t border-brand-border py-5 transition-colors hover:border-brand-primary/50"
       >
         {content}
         {channel.external && (
@@ -533,7 +542,7 @@ const ContactChannelCard = ({ channel }: { channel: ContactChannel }) => {
   }
 
   return (
-    <div className="flex gap-4 border-t border-brand-border py-5">
+    <div className="flex min-w-0 gap-4 border-t border-brand-border py-5">
       {content}
     </div>
   );

@@ -1,2 +1,6 @@
 export const SITE_IMAGE_GROUP_MAX_IMAGES = 6;
 export const SITE_IMAGES_DRAFT_DOCUMENT_ID = "siteImagesDraft";
+export const GENERAL_SETTINGS_DRAFT_DOCUMENT_ID = "generalDraft";
+export const SLIDER_AUTOPLAY_DELAY_MIN_SECONDS = 2;
+export const SLIDER_AUTOPLAY_DELAY_MAX_SECONDS = 120;
+export const GOOGLE_PLACE_ID_MAX_LENGTH = 2048;

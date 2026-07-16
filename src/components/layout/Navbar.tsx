@@ -27,8 +27,10 @@ export const Navbar = async () => {
       <NavbarContactStrip
         phone={rawPhone}
         phoneHref={telUrl}
-        workingHours={settings.workingHours}
-        email={settings.email}
+        workingHours={
+          settings.workingHours || DICTIONARY.global.contact.workingHours
+        }
+        email={settings.email || DICTIONARY.footer.contact.email}
       />
 
       <header className="sticky top-0 z-50 w-full bg-brand-surface border-b border-brand-border">

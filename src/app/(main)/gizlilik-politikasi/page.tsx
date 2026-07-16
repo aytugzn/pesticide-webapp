@@ -41,10 +41,19 @@ const PrivacyPage = () => (
       title={DICTIONARY.pages.privacy.heading}
       description={DICTIONARY.meta.privacy.description}
     />
-    <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-text-secondary leading-relaxed">
-      <p>
-        {DICTIONARY.pages.privacy.content}
-      </p>
+    <section className="mx-auto max-w-4xl space-y-6 px-4 py-16 leading-relaxed text-text-secondary sm:px-6 lg:px-8">
+      <p>{DICTIONARY.pages.privacy.content}</p>
+      <aside className="space-y-2">
+        <p>{DICTIONARY.pages.privacy.googleProviderNotice}</p>
+        <a
+          href={DICTIONARY.pages.privacy.googleProviderLink.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex font-medium text-brand-primary transition-colors hover:text-brand-primary-hover hover:underline"
+        >
+          {DICTIONARY.pages.privacy.googleProviderLink.label}
+        </a>
+      </aside>
     </section>
   </>
 );

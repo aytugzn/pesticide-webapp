@@ -33,15 +33,11 @@ export type SettingsDoc = {
   servicesSlides?: SiteImageSlideDoc[];
   heroAutoplayDelay?: number;
   servicesAutoplayDelay?: number;
+  whyUsAutoplayDelay?: number;
   reviewsAutoplayDelay?: number;
   googlePlaceId?: string;
   instagramUrl?: string;
   facebookUrl?: string;
-  googleStats?: {
-    rating: string;
-    reviewCount: string;
-    lastUpdatedAt?: number;
-  };
 };
 
 export type CombinationDoc = { region: string; pest: string; regionName?: string; pestName?: string; title?: string; h1?: string; metaDesc?: string; content?: string; faq?: { question: string; answer: string }[]; ogImage?: string; isActive?: boolean; isArchived?: boolean; archivedAt?: number; };

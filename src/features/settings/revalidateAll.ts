@@ -6,41 +6,129 @@ import { updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getAdminDb } from "@/lib/firebase-admin";
-import { publishSiteImagesDraft } from "./publishSiteImages";
+import {
+  cleanupPublishedSiteImages,
+  commitSiteImagesPublish,
+  prepareSiteImagesDraftPublish,
+} from "./publishSiteImages";
+import {
+  commitGeneralSettingsPublish,
+  prepareGeneralSettingsDraftPublish,
+} from "./publishGeneralSettings";
 import {
   SETTINGS_ERRORS,
-  type PublishSiteImagesResult,
+  type GlobalPublishResult,
   type SettingsErrorCode,
 } from "./types";
 
 /**
- * Runs the site-image publish step while preserving the global cache refresh
- * behavior used by layout, sitemap, combinations, and other public consumers.
+ * Refreshes each global public cache tag exactly once.
  *
- * @returns Global refresh plus optional image publish/cleanup status
+ * @returns Nothing after synchronous tag invalidation
+ */
+const updateGlobalCacheTags = (): void => {
+  updateTag("global-data");
+  updateTag("home-data");
+  updateTag("layout-settings");
+  updateTag("all-combinations");
+};
+
+/**
+ * Refreshes layout and combination responsibilities after domain failure.
+ *
+ * @returns Nothing after synchronous fallback invalidation
+ */
+const updateFailureCacheTags = (): void => {
+  updateTag("layout-settings");
+  updateTag("all-combinations");
+};
+
+/**
+ * Runs authorized draft preparation, Firestore commits, cache invalidation,
+ * and finally Cloudinary cleanup.
+ *
+ * @returns Detailed domain publish and warning state
  */
 export const revalidateAll = async (): Promise<
-  ActionResponse<PublishSiteImagesResult, SettingsErrorCode>
+  ActionResponse<GlobalPublishResult, SettingsErrorCode>
 > => {
   if (!(await requireAdmin())) {
     return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
   }
 
-  const publishResult = await publishSiteImagesDraft(getAdminDb());
+  const db = getAdminDb();
+  const [sitePreparation, generalPreparation] = await Promise.all([
+    prepareSiteImagesDraftPublish(db),
+    prepareGeneralSettingsDraftPublish(db),
+  ]);
 
-  if (!publishResult.success) {
-    updateTag("layout-settings");
-    updateTag("all-combinations");
-    return publishResult;
+  const [sitePublish, generalPublish] = await Promise.all([
+    sitePreparation.success && sitePreparation.data
+      ? commitSiteImagesPublish(db, sitePreparation.data)
+      : Promise.resolve({
+          success: false as const,
+          error: sitePreparation.success
+            ? SETTINGS_ERRORS.FETCH_FAILED
+            : sitePreparation.error,
+        }),
+    generalPreparation.success && generalPreparation.data
+      ? commitGeneralSettingsPublish(db, generalPreparation.data)
+      : Promise.resolve({
+          success: false as const,
+          error: generalPreparation.success
+            ? SETTINGS_ERRORS.FETCH_FAILED
+            : generalPreparation.error,
+        }),
+  ]);
+  const siteImagesPublished =
+    sitePublish.success && Boolean(sitePublish.data?.published);
+  const generalSettingsPublished =
+    generalPublish.success && Boolean(generalPublish.data?.published);
+  const anyPublished = siteImagesPublished || generalSettingsPublished;
+  const anyDomainFailure = !sitePublish.success || !generalPublish.success;
+
+  let cacheInvalidationFailed = false;
+  try {
+    if (anyPublished || !anyDomainFailure) {
+      updateGlobalCacheTags();
+    } else {
+      updateFailureCacheTags();
+    }
+  } catch {
+    cacheInvalidationFailed = true;
+    console.error("Failed to update global cache tags");
   }
 
-  if (!publishResult.data?.published) {
-    updateTag("global-data");
-    updateTag("home-data");
+  let cleanupStatus: GlobalPublishResult["cleanupStatus"] = "not-needed";
+  if (
+    !cacheInvalidationFailed &&
+    siteImagesPublished &&
+    sitePreparation.success &&
+    sitePreparation.data
+  ) {
+    cleanupStatus = await cleanupPublishedSiteImages(
+      db,
+      sitePreparation.data.cleanupCandidates,
+    );
   }
 
-  updateTag("layout-settings");
-  updateTag("all-combinations");
+  if (anyDomainFailure && !anyPublished) {
+    return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
+  }
 
-  return publishResult;
+  const partialFailure =
+    anyDomainFailure ||
+    cacheInvalidationFailed ||
+    cleanupStatus === "partial-failure";
+
+  return {
+    success: true,
+    data: {
+      published: siteImagesPublished,
+      cleanupStatus,
+      generalSettingsPublished,
+      partialFailure,
+      cacheInvalidationFailed,
+    },
+  };
 };

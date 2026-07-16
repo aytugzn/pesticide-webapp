@@ -12,6 +12,7 @@ import {
   HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   DEFAULT_PHONE,
 } from "@/constants/ui";
 import type { SettingsDoc } from "@/types";
@@ -54,6 +55,7 @@ const DEFAULT_SETTINGS: SettingsDoc = {
   phone: DEFAULT_PHONE,
   heroAutoplayDelay: HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   servicesAutoplayDelay: SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  whyUsAutoplayDelay: WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK,
   reviewsAutoplayDelay: REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
 };
 
@@ -72,16 +74,15 @@ const HomePage = async () => {
   const settings = globalData.settings || DEFAULT_SETTINGS;
 
   if (!homeDataResponse.success) {
-    console.error("Failed to fetch home page data", homeDataResponse.error);
+    console.error("Failed to fetch home page data", {
+      error: homeDataResponse.error,
+    });
   } else if (homeDataResponse.data) {
     const d = homeDataResponse.data;
     slides = d.slides;
     customReviews = d.customReviews;
     viewAllReviewsUrl = d.viewAllReviewsUrl;
   }
-
-  // Read Google Places data directly from settings (Database single source of truth)
-  const stats = settings.googleStats || null;
 
   const rawPhone = settings.phone || DEFAULT_PHONE;
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
@@ -95,6 +96,9 @@ const HomePage = async () => {
   const reviewsAutoplayDelay =
     (settings.reviewsAutoplayDelay || REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK) *
     1000;
+  const whyUsAutoplayDelay =
+    (settings.whyUsAutoplayDelay || WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK) *
+    1000;
 
   return (
     // <main> lives in (main)/layout.tsx — this div avoids double-nested <main>
@@ -105,7 +109,6 @@ const HomePage = async () => {
           telUrl={telUrl}
           whatsappUrl={whatsappUrl}
           autoplayDelay={heroAutoplayDelay}
-          stats={stats || undefined}
           instagramUrl={settings.instagramUrl}
           facebookUrl={settings.facebookUrl}
         />
@@ -118,6 +121,7 @@ const HomePage = async () => {
         <WhyUsSection
           slides={settings.whyUsSlides}
           legacyImage={settings.whyUsImage}
+          autoplayDelay={whyUsAutoplayDelay}
           variant={"embedded"}
         />
         <GoogleReviewsSection

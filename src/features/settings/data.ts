@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
+import { AppError } from "@/lib/exceptions";
 import {
   parsePestDoc,
   parseRegionDoc,
@@ -9,10 +10,79 @@ import {
   parseSiteImageSlides,
 } from "@/utils/parsers";
 import { cacheLife, cacheTag } from "next/cache";
-import type { AppImage, SiteImageSlideDoc } from "@/types";
+import type { AppImage, SettingsDoc, SiteImageSlideDoc } from "@/types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { SITE_IMAGES_DRAFT_DOCUMENT_ID } from "./constants";
-import type { GlobalData, SiteImagesData } from "./types";
+import { DICTIONARY } from "@/constants/dictionary";
+import {
+  DEFAULT_PHONE,
+  HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+} from "@/constants/ui";
+import {
+  GENERAL_SETTINGS_DRAFT_DOCUMENT_ID,
+  SITE_IMAGES_DRAFT_DOCUMENT_ID,
+} from "./constants";
+import { generalSettingsDraftSchema } from "./schemas";
+import type {
+  AdminGeneralSettingsData,
+  GeneralSettingsDraftData,
+  GeneralSettingsFormValues,
+  GlobalData,
+  SiteImagesData,
+} from "./types";
+
+/**
+ * Converts validated general settings into serializable form values.
+ *
+ * @param settings - Published settings with safe parser fallbacks
+ * @param draft - Optional validated draft, including intentional empty values
+ * @returns Flat string values consumed by the client form
+ */
+const createGeneralSettingsFormValues = (
+  settings: ReturnType<typeof parseSettingsDoc>,
+  draft?: GeneralSettingsDraftData,
+): GeneralSettingsFormValues => ({
+  phone: draft?.phone ?? settings.phone ?? DEFAULT_PHONE,
+  email:
+    draft?.email ?? settings.email ?? DICTIONARY.footer.contact.email,
+  address:
+    draft?.address ?? settings.address ?? DICTIONARY.global.contact.address,
+  workingHours:
+    draft?.workingHours ??
+    settings.workingHours ??
+    DICTIONARY.global.contact.workingHours,
+  instagramUrl:
+    draft?.instagramUrl ??
+    settings.instagramUrl ??
+    DICTIONARY.social.instagram.url,
+  facebookUrl:
+    draft?.facebookUrl ??
+    settings.facebookUrl ??
+    DICTIONARY.social.facebook.url,
+  googlePlaceId: draft?.googlePlaceId ?? settings.googlePlaceId ?? "",
+  heroAutoplayDelay: String(
+    draft?.heroAutoplayDelay ??
+      settings.heroAutoplayDelay ??
+      HERO_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  ),
+  servicesAutoplayDelay: String(
+    draft?.servicesAutoplayDelay ??
+      settings.servicesAutoplayDelay ??
+      SERVICES_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  ),
+  whyUsAutoplayDelay: String(
+    draft?.whyUsAutoplayDelay ??
+      settings.whyUsAutoplayDelay ??
+      WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  ),
+  reviewsAutoplayDelay: String(
+    draft?.reviewsAutoplayDelay ??
+      settings.reviewsAutoplayDelay ??
+      REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
+  ),
+});
 
 /**
  * Uses a valid draft group when present, while falling back to published data
@@ -116,6 +186,66 @@ export const getAdminSiteImagesData = async (): Promise<
 };
 
 /**
+ * Loads the private general-settings editor state after server-side admin
+ * authorization. The published document is used without creating a draft
+ * when no valid draft exists.
+ *
+ * @returns Serializable form values, or null when authorization fails
+ */
+export const getAdminGeneralSettingsData = async (): Promise<
+  AdminGeneralSettingsData | null
+> => {
+  if (!(await requireAdmin())) return null;
+
+  const db = getAdminDb();
+  const [publishedSnap, draftSnap] = await Promise.all([
+    db.collection("settings").doc("general").get(),
+    db
+      .collection("settings")
+      .doc(GENERAL_SETTINGS_DRAFT_DOCUMENT_ID)
+      .get(),
+  ]);
+  const settings = parseSettingsDoc(publishedSnap.data());
+
+  if (!draftSnap.exists) {
+    return {
+      values: createGeneralSettingsFormValues(settings),
+    };
+  }
+
+  const parsedDraft = generalSettingsDraftSchema.safeParse(draftSnap.data());
+  return {
+    values: createGeneralSettingsFormValues(
+      settings,
+      parsedDraft.success ? parsedDraft.data : undefined,
+    ),
+  };
+};
+
+/**
+ * Loads published general settings through the shared public-layout cache.
+ * Server helpers reuse this result instead of issuing request-scoped reads.
+ *
+ * @returns Parsed published settings from the layout-settings cache
+ */
+export const getPublicSettings = async (): Promise<SettingsDoc> => {
+  "use cache";
+  cacheLife("max");
+  cacheTag("layout-settings");
+
+  try {
+    const settingsSnap = await getAdminDb()
+      .collection("settings")
+      .doc("general")
+      .get();
+    return parseSettingsDoc(settingsSnap.data());
+  } catch {
+    console.error("Failed to fetch public settings");
+    throw new AppError("Failed to fetch public settings");
+  }
+};
+
+/**
  * Fetches globally shared public data without importing admin auth guards.
  *
  * @returns Active pests, active regions, and general settings.
@@ -137,8 +267,8 @@ export const getGlobalData = async (): Promise<GlobalData> => {
       regions: regionsSnap.docs.map((doc) => parseRegionDoc(doc.data())),
       settings: parseSettingsDoc(settingsSnap.data()),
     };
-  } catch (error: unknown) {
+  } catch {
     console.error("Failed to fetch global data");
-    throw error;
+    throw new AppError("Failed to fetch global data");
   }
 };

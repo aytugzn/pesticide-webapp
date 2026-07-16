@@ -5,7 +5,7 @@ import { Phone, MessageCircle, PhoneCall } from "lucide-react";
 import { GoogleStats } from "../GoogleStats";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import type { HeroSlideDoc, GoogleStatsDoc } from "@/features/home/types";
+import type { HeroSlideDoc } from "@/features/home/types";
 import { resolveAppImage } from "@/utils/cloudinary";
 
 const BACKUP_HERO_SLIDES: SliderImage[] = [
@@ -31,7 +31,6 @@ export const Hero = ({
   telUrl,
   whatsappUrl,
   autoplayDelay,
-  stats,
   instagramUrl,
   facebookUrl,
 }: {
@@ -39,7 +38,6 @@ export const Hero = ({
   telUrl: string;
   whatsappUrl: string;
   autoplayDelay?: number;
-  stats?: GoogleStatsDoc;
   instagramUrl?: string;
   facebookUrl?: string;
 }) => {
@@ -144,7 +142,6 @@ export const Hero = ({
 
             {/* Stats */}
             <GoogleStats
-              stats={stats}
               instagramUrl={instagramUrl}
               facebookUrl={facebookUrl}
             />

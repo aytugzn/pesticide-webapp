@@ -9,12 +9,14 @@ import { resolveAppImage } from "@/utils/cloudinary";
 type WhyUsSectionProps = {
   slides?: SiteImageSlideDoc[];
   legacyImage?: AppImage | null;
+  autoplayDelay?: number;
   variant?: "default" | "embedded";
 }
 
 export const WhyUsSection = ({
   slides,
   legacyImage = null,
+  autoplayDelay,
   variant = "default",
 }: WhyUsSectionProps) => {
   const data = DICTIONARY.home.whyUs;
@@ -94,7 +96,10 @@ export const WhyUsSection = ({
 
             {/* Image Frame */}
             <div className="relative mt-8 aspect-video w-full overflow-hidden rounded-lg border border-brand-border shadow-xl shadow-brand-primary/5 group lg:mt-auto">
-              <ImageSlider images={sliderImages} />
+              <ImageSlider
+                images={sliderImages}
+                autoplayDelay={autoplayDelay}
+              />
               <div
                 className="absolute inset-0 border border-brand-surface/20 rounded-lg pointer-events-none z-10 mix-blend-overlay"
                 aria-hidden="true"

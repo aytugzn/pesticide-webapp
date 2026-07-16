@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
-import { getAdminDb } from "@/lib/firebase-admin";
 import { DICTIONARY } from "@/constants/dictionary";
-import { cacheLife, cacheTag } from "next/cache";
-import { parseSettingsDoc } from "@/utils/parsers";
 import { getAbsoluteUrl } from "@/utils/getAbsoluteUrl";
+import { DEFAULT_PHONE } from "@/constants/ui";
+import { normalizeTurkishPhone } from "@/utils/phone";
+import { getPublicSettings } from "@/features/settings/data";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,25 +19,8 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-const getLayoutSettings = async () => {
-  "use cache";
-  cacheLife("max");
-  cacheTag("layout-settings");
-
-  try {
-    const settingsSnap = await getAdminDb()
-      .collection("settings")
-      .doc("general")
-      .get();
-    return parseSettingsDoc(settingsSnap.data());
-  } catch (error: unknown) {
-    console.error("Failed to fetch layout settings");
-    throw error;
-  }
-};
-
 export const generateMetadata = async (): Promise<Metadata> => {
-  const settings = await getLayoutSettings();
+  const settings = await getPublicSettings();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl;
   const cleanSiteUrl = siteUrl.replace(/\/$/, "");
   const legacyDefaultOgImages = [
@@ -89,11 +72,19 @@ export const generateMetadata = async (): Promise<Metadata> => {
   };
 };
 
-const RootLayout = ({
+const RootLayout = async ({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
+  const settings = await getPublicSettings();
+  const phone = settings.phone || DEFAULT_PHONE;
+  const email = settings.email || DICTIONARY.footer.contact.email;
+  const address = settings.address || DICTIONARY.global.contact.address;
+  const socialUrls = [
+    settings.instagramUrl ?? DICTIONARY.social.instagram.url,
+    settings.facebookUrl ?? DICTIONARY.social.facebook.url,
+  ].filter(Boolean);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -103,14 +94,13 @@ const RootLayout = ({
     url: getAbsoluteUrl("/"),
     logo: getAbsoluteUrl(DICTIONARY.meta.og.image.fallback),
     image: getAbsoluteUrl(DICTIONARY.meta.og.image.fallback),
-    sameAs: [
-      DICTIONARY.social.instagram.url,
-      DICTIONARY.social.facebook.url,
-    ],
+    telephone: normalizeTurkishPhone(phone),
+    email,
+    ...(socialUrls.length > 0 ? { sameAs: socialUrls } : {}),
     areaServed: DICTIONARY.global.city,
     address: {
       "@type": "PostalAddress",
-      streetAddress: DICTIONARY.global.contact.address,
+      streetAddress: address,
       addressLocality: DICTIONARY.global.city,
       addressCountry: "TR",
     },

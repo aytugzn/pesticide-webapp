@@ -76,16 +76,16 @@ const homeDict = {
   },
   googleStats: {
     businessName: "DMR İLAÇLAMA",
-    businessCategory: "İzmir Profesyonel İlaçlama Firması",
-    rating: "5.0",
-    reviewCount: "244",
     reviewsText: "Google Yorumu",
-    verifiedBadgeAria: "Doğrulanmış İşletme",
+    sourceBadge: "Google Maps",
+    loading: "Google değerlendirme bilgileri yükleniyor.",
+    ratingAria: (rating: string) =>
+      `5 yıldız üzerinden ${rating} Google değerlendirmesi`,
   },
   googleReviews: {
     title: "Müşterilerimiz Ne Diyor?",
     description:
-      "Google Haritalar üzerinden işletmemize yapılan gerçek ve doğrulanmış müşteri yorumları.",
+      "Google Haritalar üzerinden işletmemize yapılan müşteri yorumları.",
     viewAllButton: "Tüm Yorumları Google'da Gör",
     ariaStars: "5 yıldızlı müşteri memnuniyeti",
     ariaRating: "yıldızlı değerlendirme",
@@ -499,10 +499,22 @@ const pagesDict = {
   privacy: {
     heading: "Gizlilik Politikası",
     content: "İletişim formları ve dijital kanallar üzerinden paylaştığınız bilgiler, hizmet talebinizi yanıtlamak ve sizinle iletişime geçmek amacıyla işlenir.",
+    googleProviderNotice:
+      "Google Maps özelliklerinin veri işleme yaklaşımı hakkında ayrıntılı bilgi için sağlayıcının gizlilik politikasını inceleyebilirsiniz.",
+    googleProviderLink: {
+      label: "Google Privacy Policy",
+      url: "https://policies.google.com/privacy",
+    },
   },
   terms: {
     heading: "Kullanım Koşulları",
     content: "Bu web sitesindeki bilgiler genel bilgilendirme amaçlıdır. Hizmet kapsamı, uygulama koşulları ve fiyatlandırma keşif sonrasında netleştirilir.",
+    googleProviderNotice:
+      "Google Maps özelliklerinin kullanımında ilgili sağlayıcı koşulları da geçerlidir.",
+    googleProviderLink: {
+      label: "Google Maps Platform Terms",
+      url: "https://cloud.google.com/maps-platform/terms",
+    },
   },
   kvkk: {
     heading: "KVKK Aydınlatma Metni",
@@ -901,16 +913,100 @@ const adminDict = {
   },
   settings: {
     title: "Ayarlar",
-    description: "Site genelinde kullanılan temel iletişim ve marka ayarlarını kontrol edin.",
+    description: "Site genelinde kullanılan işletme ve iletişim ayarlarını yönetin.",
     empty: "Ayar bulunamadı.",
     revalidateBtn: "Canlı Siteyi Güncelle",
     revalidating: "Güncelleniyor...",
     revalidateSuccess: "Site başarıyla güncellendi.",
+    revalidatePartial: "Bazı değişiklikler yayınlandı, ancak bir bölüm güncellenemedi.",
+    cacheInvalidationWarning:
+      "Canlı site önbelleği yenilenemedi; görsel temizliği başlatılmadı.",
     revalidateError: "Güncelleme başarısız.",
+    general: {
+      title: "Genel İşletme Ayarları",
+      description:
+        "İletişim, sosyal medya, Google Place ID ve slider sürelerini yönetin. Kaydetme işlemi yalnızca taslağı günceller.",
+      contactSection: "İletişim Bilgileri",
+      socialSection: "Sosyal Medya ve Google",
+      sliderSection: "Slider Süreleri",
+      optional: "(İsteğe bağlı)",
+      draftNotice:
+        "Bu formdaki değişiklikler kaydedildiğinde canlı siteye hemen yansımaz. Yayınlamak için 'Canlı Siteyi Güncelle' butonunu kullanın.",
+      save: "Genel Ayar Taslağını Kaydet",
+      saving: "Taslak Kaydediliyor...",
+      success: "Genel ayarlar taslak olarak kaydedildi.",
+      error: "Genel ayarlar kaydedilemedi.",
+      validationError: "Lütfen işaretlenen alanları kontrol edin.",
+      fields: {
+        phone: {
+          label: "Telefon",
+          help: "Telefon ve WhatsApp bağlantılarında kullanılan numara.",
+          placeholder: "+90 5XX XXX XX XX",
+        },
+        email: {
+          label: "E-posta",
+          help: "İletişim alanlarında ve yapılandırılmış veride gösterilir.",
+          placeholder: "info@firmaadi.com",
+        },
+        address: {
+          label: "Adres",
+          help: "İletişim alanlarında, harita bağlantısında ve yapılandırılmış veride kullanılır.",
+          placeholder: "İşletme adresini girin",
+        },
+        workingHours: {
+          label: "Çalışma Saatleri",
+          help: "Navbar, Footer ve İletişim alanlarında ziyaretçilere gösterilen çalışma saatleri.",
+          placeholder: "Pazartesi - Pazar: 08:00 - 22:00",
+        },
+        instagramUrl: {
+          label: "Instagram URL",
+          help: "Boş bırakılırsa Instagram bağlantısı gösterilmez.",
+          placeholder: "https://instagram.com/firmahesabi",
+        },
+        facebookUrl: {
+          label: "Facebook URL",
+          help: "Boş bırakılırsa Facebook bağlantısı gösterilmez.",
+          placeholder: "https://facebook.com/firmahesabi",
+        },
+        googlePlaceId: {
+          label: "Google Place ID",
+          help: "Public sitede Google Maps puan ve yorum bilgisini almak için kullanılır.",
+          placeholder: "Google Place ID",
+        },
+        heroAutoplayDelay: {
+          label: "Hero Slider Süresi",
+          help: "Görseller arasındaki bekleme süresi (saniye).",
+        },
+        servicesAutoplayDelay: {
+          label: "Hizmetler Slider Süresi",
+          help: "Hizmetler görselleri arasındaki bekleme süresi (saniye).",
+        },
+        whyUsAutoplayDelay: {
+          label: "Avantajlar Slider Süresi",
+          help: "Avantajlar görselleri arasındaki bekleme süresi (saniye).",
+        },
+        reviewsAutoplayDelay: {
+          label: "Yorum Slider Süresi",
+          help: "Yorum şeridinin bir tur animasyon süresi (saniye).",
+        },
+      },
+      validation: {
+        required: "Bu alan zorunludur.",
+        addressLength: "Adres en fazla 500 karakter olabilir.",
+        workingHoursLength: "Çalışma saatleri en fazla 250 karakter olabilir.",
+        email: "Geçerli bir e-posta adresi girin.",
+        phone: "Geçerli bir Türkiye telefon numarası girin.",
+        instagramUrl: "Geçerli ve güvenli bir Instagram URL'si girin.",
+        facebookUrl: "Geçerli ve güvenli bir Facebook URL'si girin.",
+        googlePlaceId:
+          "Google Place ID en fazla 2048 karakter olabilir; başındaki ve sonundaki boşluklar kaldırılır.",
+        sliderDelay: "Slider süresi 2 ile 120 saniye arasında bir tam sayı olmalıdır.",
+      },
+    },
     siteImages: {
       title: "Site Görselleri",
       description:
-        "Ana sayfa Hero, Hizmetler ve Neden DMR görsellerini yönetin. Kaydetme işlemi taslağı günceller; canlı siteye yansıtmak için 'Canlı Siteyi Güncelle' butonunu kullanın.",
+        "Ana sayfa Hero, Hizmetler ve Avantajlar görsellerini yönetin. Kaydetme işlemi taslağı günceller; canlı siteye yansıtmak için 'Canlı Siteyi Güncelle' butonunu kullanın.",
       heroTitle: "Ana Sayfa Hero Slider Görselleri",
       heroItemTitle: "Hero Görseli {number}",
       heroHelp: "Ana sayfanın üst bölümündeki hero slider görsellerini yönetir. JPEG, PNG veya WebP; en fazla 5 MB.",
@@ -918,13 +1014,13 @@ const adminDict = {
         "DMR İlaçlama profesyonel haşere kontrol hizmeti görseli",
       addHero: "Hero Görseli Ekle",
       removeHero: "Hero Görselini Listeden Kaldır",
-      whyUsTitle: "Genel 'Neden DMR?' / Farkımız Görselleri",
-      whyUsItemTitle: "Neden DMR Görseli {number}",
-      whyUsHelp: "Ana sayfada ve bu bölümü kullanan diğer sayfalarda gösterilen 'Neden DMR?' / 'Farkımız ve Kalitemiz' görsellerini yönetir. JPEG, PNG veya WebP; en fazla 5 MB.",
+      whyUsTitle: "Genel Avantajlar / Farkımız Görselleri",
+      whyUsItemTitle: "Avantajlar Görseli {number}",
+      whyUsHelp: "Ana sayfada ve bu bölümü kullanan diğer sayfalarda gösterilen avantajlar ve farkımız görsellerini yönetir. JPEG, PNG veya WebP; en fazla 5 MB.",
       whyUsAltDefault:
         "DMR İlaçlama uzman ekip ve profesyonel uygulama görseli",
-      addWhyUs: "Neden DMR Görseli Ekle",
-      removeWhyUs: "Neden DMR Görselini Listeden Kaldır",
+      addWhyUs: "Avantajlar Görseli Ekle",
+      removeWhyUs: "Avantajlar Görselini Listeden Kaldır",
       servicesTitle: "Ana Sayfa Hizmetler / Garantili Çözümler Slider Görselleri",
       servicesItemTitle: "Hizmetler Görseli {number}",
       servicesHelp: "Ana sayfadaki 'Hizmetler' ve 'Garantili Çözümler' görsel alanında kullanılan slider görsellerini yönetir. JPEG, PNG veya WebP; en fazla 5 MB.",
@@ -942,7 +1038,7 @@ const adminDict = {
       validationError: "Geçerli bir görsel seçin.",
       error: "Site görselleri kaydedilemedi.",
       incompleteHero: "Eklenen Hero alanı için bir görsel seçin veya alanı kaldırın.",
-      incompleteWhyUs: "Eklenen Neden DMR alanı için bir görsel seçin veya alanı kaldırın.",
+      incompleteWhyUs: "Eklenen Avantajlar alanı için bir görsel seçin veya alanı kaldırın.",
       incompleteServices: "Eklenen Hizmetler alanı için bir görsel seçin veya alanı kaldırın.",
       limitReached: "En fazla {max} görsel eklenebilir.",
       limitCount: "{current} / {max} görsel",
@@ -984,15 +1080,10 @@ const systemErrorsDict = {
       "CRITICAL ERROR: Firebase client environment variables are missing!",
     firebaseAdmin: "CRITICAL ERROR: Firebase Admin .env variables are missing!",
     gemini: "CRITICAL ERROR: GEMINI_API_KEY environment variable is missing.",
-    googlePlaces:
-      "CRITICAL ERROR: GOOGLE_PLACES_API_KEY environment variable is missing.",
     telegram:
       "CRITICAL ERROR: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is missing.",
   },
   api: {
-    googlePlacesFailed: "Google Places API request failed",
-    googlePlacesNoData:
-      "Google Places API warning: No valid data found in response",
     jsonParseFailed: "Failed to extract JSON from AI response. Raw text: ",
     telegramFailed: "Telegram API Error",
   },
@@ -1044,6 +1135,7 @@ const globalDict = {
   },
   contact: {
     address: "İzmir, Karabağlar — 9073. Sk. 15A, 35160",
+    workingHours: "Pazartesi - Pazar: 08:00 - 22:00",
   },
 };
 

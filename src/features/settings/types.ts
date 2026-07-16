@@ -5,14 +5,13 @@ import type {
   SiteImageSlideDoc,
 } from "@/types";
 import { z } from "zod";
-import { saveSiteImagesSchema } from "./schemas";
+import {
+  generalSettingsDraftSchema,
+  saveGeneralSettingsSchema,
+  saveSiteImagesSchema,
+} from "./schemas";
 
 export const SETTINGS_ERRORS = {
-  SETTINGS_NOT_FOUND: "SETTINGS_NOT_FOUND",
-  MISSING_PLACE_ID: "MISSING_PLACE_ID",
-  INVALID_CONFIGURATION: "INVALID_CONFIGURATION",
-  PLACES_API_FAILED: "PLACES_API_FAILED",
-  NO_VALID_DATA: "NO_VALID_DATA",
   FETCH_FAILED: "FETCH_FAILED",
   UNAUTHORIZED: "UNAUTHORIZED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
@@ -21,6 +20,29 @@ export const SETTINGS_ERRORS = {
 
 export type SettingsErrorCode = keyof typeof SETTINGS_ERRORS;
 export type SaveSiteImagesInput = z.infer<typeof saveSiteImagesSchema>;
+export type SaveGeneralSettingsInput = z.input<
+  typeof saveGeneralSettingsSchema
+>;
+export type GeneralSettingsDraftData = z.infer<
+  typeof generalSettingsDraftSchema
+>;
+export type GeneralSettingsFormValues = {
+  phone: string;
+  email: string;
+  address: string;
+  workingHours: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  googlePlaceId: string;
+  heroAutoplayDelay: string;
+  servicesAutoplayDelay: string;
+  whyUsAutoplayDelay: string;
+  reviewsAutoplayDelay: string;
+};
+
+export type AdminGeneralSettingsData = {
+  values: GeneralSettingsFormValues;
+};
 export type SiteImagesCleanupStatus =
   | "not-needed"
   | "success"
@@ -28,6 +50,16 @@ export type SiteImagesCleanupStatus =
 export type PublishSiteImagesResult = {
   published: boolean;
   cleanupStatus: SiteImagesCleanupStatus;
+};
+
+export type PublishGeneralSettingsResult = {
+  published: boolean;
+};
+
+export type GlobalPublishResult = PublishSiteImagesResult & {
+  generalSettingsPublished: boolean;
+  partialFailure: boolean;
+  cacheInvalidationFailed: boolean;
 };
 
 export type SiteImagesData = {

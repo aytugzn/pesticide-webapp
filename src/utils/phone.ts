@@ -24,8 +24,8 @@ export const sanitizePhoneToDigits = (phone: string): string => {
  * @returns Formatted WhatsApp URL
  */
 export const generateWhatsAppUrl = (phone: string): string => {
-  const digits = sanitizePhoneToDigits(phone);
-  return `https://wa.me/${digits}`;
+  const digits = sanitizePhoneToDigits(normalizeTurkishPhone(phone));
+  return digits ? `https://wa.me/${digits}` : "";
 };
 
 /**
@@ -35,8 +35,8 @@ export const generateWhatsAppUrl = (phone: string): string => {
  * @returns Formatted tel protocol URL
  */
 export const generateTelUrl = (phone: string): string => {
-  const digits = sanitizePhoneToDigits(phone);
-  return `tel:+${digits}`;
+  const normalizedPhone = normalizeTurkishPhone(phone);
+  return normalizedPhone === "+" ? "" : `tel:${normalizedPhone}`;
 };
 
 /**
@@ -89,6 +89,9 @@ export const formatTurkishPhoneInput = (value: string): string => {
 /**
  * Normalizes any valid Turkish phone into the canonical E.164 format (+905551234567).
  * Ideal for backend processing and APIs.
+ *
+ * @param value - Raw Turkish phone value
+ * @returns Canonical E.164-like phone value
  */
 export const normalizeTurkishPhone = (value: string): string => {
   const digits = sanitizePhoneToDigits(value);

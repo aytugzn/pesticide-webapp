@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Settings } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
-import { getAdminDb } from "@/lib/firebase-admin";
-import { parseSettingsDoc } from "@/utils/parsers";
+import { ROUTES } from "@/constants/routes";
 import { AdminListPage } from "@/components/layout/AdminListPage";
-import { AdminDataTable } from "@/components/ui/AdminDataTable";
+import { GeneralSettingsForm } from "@/features/settings/components/admin/GeneralSettingsForm";
+import { getAdminGeneralSettingsData } from "@/features/settings/data";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.settings.title} | ${DICTIONARY.global.brand}`,
@@ -14,15 +15,10 @@ export const metadata: Metadata = {
 
 const AdminSettingsPage = async () => {
   await connection();
-  const db = getAdminDb();
-  const generalSnap = await db.collection("settings").doc("general").get();
-  const settings = parseSettingsDoc(generalSnap.data());
-  const rows = [
-    [DICTIONARY.admin.settings.table.phone, settings.phone || "-"],
-    [DICTIONARY.admin.settings.table.email, settings.email || "-"],
-    [DICTIONARY.admin.settings.table.address, settings.address || "-"],
-    [DICTIONARY.admin.settings.table.workingHours, settings.workingHours || "-"],
-  ];
+  const settings = await getAdminGeneralSettingsData();
+  if (!settings) {
+    redirect(ROUTES.login);
+  }
 
   return (
     <AdminListPage
@@ -31,10 +27,9 @@ const AdminSettingsPage = async () => {
       description={DICTIONARY.admin.settings.description}
       icon={Settings}
     >
-      <AdminDataTable
-        emptyText={DICTIONARY.admin.settings.empty}
-        columns={[DICTIONARY.admin.settings.table.field, DICTIONARY.admin.settings.table.value]}
-        rows={rows}
+      <GeneralSettingsForm
+        key={JSON.stringify(settings)}
+        initialValues={settings.values}
       />
     </AdminListPage>
   );

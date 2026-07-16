@@ -41,10 +41,19 @@ const TermsPage = () => (
       title={DICTIONARY.pages.terms.heading}
       description={DICTIONARY.meta.terms.description}
     />
-    <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-text-secondary leading-relaxed">
-      <p>
-        {DICTIONARY.pages.terms.content}
-      </p>
+    <section className="mx-auto max-w-4xl space-y-6 px-4 py-16 leading-relaxed text-text-secondary sm:px-6 lg:px-8">
+      <p>{DICTIONARY.pages.terms.content}</p>
+      <aside className="space-y-2">
+        <p>{DICTIONARY.pages.terms.googleProviderNotice}</p>
+        <a
+          href={DICTIONARY.pages.terms.googleProviderLink.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex font-medium text-brand-primary transition-colors hover:text-brand-primary-hover hover:underline"
+        >
+          {DICTIONARY.pages.terms.googleProviderLink.label}
+        </a>
+      </aside>
     </section>
   </>
 );

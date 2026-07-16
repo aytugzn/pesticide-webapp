@@ -9,6 +9,97 @@ import type {
 import type { GoogleReviewDoc } from "@/features/home/types";
 import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
+import {
+  GOOGLE_PLACE_ID_MAX_LENGTH,
+  SLIDER_AUTOPLAY_DELAY_MAX_SECONDS,
+  SLIDER_AUTOPLAY_DELAY_MIN_SECONDS,
+} from "@/features/settings/constants";
+import { normalizeTurkishPhone } from "@/utils/phone";
+
+/**
+ * Parses a non-empty string while removing surrounding whitespace.
+ *
+ * @param value - Unknown raw value
+ * @returns The trimmed string, or undefined for empty and non-string input
+ */
+const parseTrimmedString = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim() ? value.trim() : undefined;
+
+/**
+ * Treats Google Place ID as an opaque trimmed identifier with a safety cap.
+ *
+ * @param value - Unknown published Place ID value
+ * @returns A trimmed identifier within the technical limit, or undefined
+ */
+const parseGooglePlaceId = (value: unknown): string | undefined => {
+  const placeId = parseTrimmedString(value);
+  return placeId && placeId.length <= GOOGLE_PLACE_ID_MAX_LENGTH
+    ? placeId
+    : undefined;
+};
+
+/**
+ * Parses a conservative public-safe email value.
+ *
+ * @param value - Unknown published email value
+ * @returns A trimmed email with a basic valid shape, or undefined
+ */
+const parseSafeEmail = (value: unknown): string | undefined => {
+  const email = parseTrimmedString(value);
+  return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? email
+    : undefined;
+};
+
+/**
+ * Parses an HTTPS social URL restricted to an allowlisted host.
+ *
+ * @param value - Unknown published social URL
+ * @param allowedHosts - Accepted root domains
+ * @returns A normalized URL, an intentional empty string, or undefined
+ */
+const parseSafeSocialUrl = (
+  value: unknown,
+  allowedHosts: readonly string[],
+): string | undefined => {
+  if (typeof value !== "string") return undefined;
+  const rawUrl = value.trim();
+  if (!rawUrl) return "";
+
+  try {
+    const url = new URL(rawUrl);
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    return url.protocol === "https:" &&
+      allowedHosts.some(
+        (host) => hostname === host || hostname.endsWith(`.${host}`),
+      )
+      ? url.toString()
+      : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Parses legacy numeric strings and canonical slider-delay numbers.
+ *
+ * @param value - Unknown numeric delay value
+ * @returns A bounded integer delay, or undefined
+ */
+const parseSliderDelay = (value: unknown): number | undefined => {
+  const parsedValue =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+$/.test(value.trim())
+        ? Number(value)
+        : Number.NaN;
+
+  return Number.isInteger(parsedValue) &&
+    parsedValue >= SLIDER_AUTOPLAY_DELAY_MIN_SECONDS &&
+    parsedValue <= SLIDER_AUTOPLAY_DELAY_MAX_SECONDS
+    ? parsedValue
+    : undefined;
+};
 
 /**
  * Parses a future object-based Cloudinary image reference from Firestore data.
@@ -74,12 +165,13 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
 
   const d = data as Record<string, unknown>;
 
+  const phone = parseTrimmedString(d.phone);
+  const normalizedPhone = phone ? normalizeTurkishPhone(phone) : "";
   return {
-    phone: typeof d.phone === "string" ? d.phone : undefined,
-    email: typeof d.email === "string" ? d.email : undefined,
-    address: typeof d.address === "string" ? d.address : undefined,
-    workingHours:
-      typeof d.workingHours === "string" ? d.workingHours : undefined,
+    phone: /^\+90[1-9]\d{9}$/.test(normalizedPhone) ? phone : undefined,
+    email: parseSafeEmail(d.email),
+    address: parseTrimmedString(d.address),
+    workingHours: parseTrimmedString(d.workingHours),
     defaultOgImage:
       typeof d.defaultOgImage === "string" ? d.defaultOgImage : undefined,
     whyUsImage: parseAppImage(d.whyUsImage),
@@ -90,43 +182,16 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
     servicesSlides: Array.isArray(d.servicesSlides)
       ? parseSiteImageSlides(d.servicesSlides)
       : undefined,
-    heroAutoplayDelay:
-      typeof d.heroAutoplayDelay === "number" ? d.heroAutoplayDelay : undefined,
-    servicesAutoplayDelay:
-      typeof d.servicesAutoplayDelay === "number"
-        ? d.servicesAutoplayDelay
-        : undefined,
-    reviewsAutoplayDelay:
-      typeof d.reviewsAutoplayDelay === "number"
-        ? d.reviewsAutoplayDelay
-        : undefined,
-    googlePlaceId:
-      typeof d.googlePlaceId === "string" ? d.googlePlaceId : undefined,
-    instagramUrl:
-      typeof d.instagramUrl === "string" ? d.instagramUrl : undefined,
-    facebookUrl: typeof d.facebookUrl === "string" ? d.facebookUrl : undefined,
-    googleStats:
-      d.googleStats && typeof d.googleStats === "object"
-        ? {
-            rating:
-              typeof (d.googleStats as Record<string, unknown>).rating ===
-              "string"
-                ? ((d.googleStats as Record<string, unknown>).rating as string)
-                : "",
-            reviewCount:
-              typeof (d.googleStats as Record<string, unknown>).reviewCount ===
-              "string"
-                ? ((d.googleStats as Record<string, unknown>)
-                    .reviewCount as string)
-                : "",
-            lastUpdatedAt:
-              typeof (d.googleStats as Record<string, unknown>)
-                .lastUpdatedAt === "number"
-                ? ((d.googleStats as Record<string, unknown>)
-                    .lastUpdatedAt as number)
-                : undefined,
-          }
-        : undefined,
+    heroAutoplayDelay: parseSliderDelay(d.heroAutoplayDelay),
+    servicesAutoplayDelay: parseSliderDelay(d.servicesAutoplayDelay),
+    whyUsAutoplayDelay: parseSliderDelay(d.whyUsAutoplayDelay),
+    reviewsAutoplayDelay: parseSliderDelay(d.reviewsAutoplayDelay),
+    googlePlaceId: parseGooglePlaceId(d.googlePlaceId),
+    instagramUrl: parseSafeSocialUrl(d.instagramUrl, ["instagram.com"]),
+    facebookUrl: parseSafeSocialUrl(d.facebookUrl, [
+      "facebook.com",
+      "fb.com",
+    ]),
   };
 };
 

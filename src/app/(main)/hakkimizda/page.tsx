@@ -5,6 +5,8 @@ import { AlternatingSections } from "@/components/layout/AlternatingSections";
 import { PublicPageHeader } from "@/components/layout/PublicPageHeader";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { WhyUsSection } from "@/features/home/components/sections/WhyUsSection";
+import { getGlobalData } from "@/features/settings/data";
+import { WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK } from "@/constants/ui";
 import {
   CalendarCheck,
   CheckCircle2,
@@ -48,8 +50,6 @@ export const metadata: Metadata = {
   },
 };
 
-import { getGlobalData } from "@/features/settings/data";
-
 const AboutPage = async () => {
   const globalData = await getGlobalData();
   const settings = globalData.settings;
@@ -65,6 +65,10 @@ const AboutPage = async () => {
         <WhyUsSection
           slides={settings?.whyUsSlides}
           legacyImage={settings?.whyUsImage}
+          autoplayDelay={
+            (settings?.whyUsAutoplayDelay ||
+              WHY_US_SLIDER_AUTOPLAY_DELAY_FALLBACK) * 1000
+          }
           variant="embedded"
         />
         <AboutApproachSection />

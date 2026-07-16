@@ -11,16 +11,19 @@ export type GoogleReviewDoc = {
   reviewUrl?: string;
 };
 
-export type GoogleStatsDoc = {
-  rating: string;
-  reviewCount: string;
+export type GoogleStatsData = {
+  rating: number;
+  reviewCount: number;
 };
+
+export type GoogleStatsState =
+  | { status: "success"; data: GoogleStatsData }
+  | { status: "empty" | "error"; data: null };
+
+export type GoogleStatsPromise = Promise<GoogleStatsState>;
 
 export const HOME_ERRORS = {
   FETCH_FAILED: "FETCH_FAILED",
-  PLACES_API_FAILED: "PLACES_API_FAILED",
-  NO_VALID_DATA: "NO_VALID_DATA",
-  INVALID_CONFIGURATION: "INVALID_CONFIGURATION"
 } as const;
 
 export type HomeErrorCode = keyof typeof HOME_ERRORS;
