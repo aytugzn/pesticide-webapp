@@ -10,7 +10,11 @@ import { MobileMenu } from "./MobileMenu";
 import { NavbarActions } from "./NavbarActions";
 import { NavbarContactStrip } from "./NavbarContactStrip";
 import { MegaMenuColumns } from "./MegaMenuColumns";
-import { generateWhatsAppUrl, generateTelUrl } from "@/utils/phone";
+import {
+  formatTurkishPhoneDisplay,
+  generateWhatsAppUrl,
+  generateTelUrl,
+} from "@/utils/phone";
 import logoImg from "@/../public/logo.svg";
 import { getGlobalData } from "@/features/settings/data";
 
@@ -18,6 +22,7 @@ export const Navbar = async () => {
   const { pests, regions, settings } = await getGlobalData();
 
   const rawPhone = settings.phone || DEFAULT_PHONE;
+  const displayPhone = formatTurkishPhoneDisplay(rawPhone);
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
   const telUrl = generateTelUrl(rawPhone);
 
@@ -25,7 +30,7 @@ export const Navbar = async () => {
     <>
       {/* Static Top Strip for Contact Info */}
       <NavbarContactStrip
-        phone={rawPhone}
+        phone={displayPhone}
         phoneHref={telUrl}
         workingHours={
           settings.workingHours || DICTIONARY.global.contact.workingHours

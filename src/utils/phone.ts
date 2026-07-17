@@ -18,6 +18,68 @@ export const sanitizePhoneToDigits = (phone: string): string => {
 };
 
 /**
+ * Checks whether a raw phone value contains only supported input characters.
+ *
+ * @param value - Untrusted phone input
+ * @returns Whether the value can be safely parsed by the phone normalizer
+ */
+const hasSupportedPhoneCharacters = (value: string): boolean => {
+  const trimmedValue = value.trim();
+  let plusCount = 0;
+
+  for (let index = 0; index < trimmedValue.length; index++) {
+    const character = trimmedValue[index];
+    const isDigit = character >= "0" && character <= "9";
+    const isFormattingCharacter =
+      character === " " ||
+      character === "-" ||
+      character === "(" ||
+      character === ")";
+
+    if (character === "+") {
+      plusCount += 1;
+      if (index !== 0 || plusCount > 1) return false;
+    } else if (!isDigit && !isFormattingCharacter) {
+      return false;
+    }
+  }
+
+  return trimmedValue.length > 0;
+};
+
+/**
+ * Removes a recognized Turkish country or local prefix without truncating.
+ *
+ * @param value - Raw phone value
+ * @returns All remaining local digits, including any invalid overflow
+ */
+const getLocalPhoneDigits = (value: string): string => {
+  const digits = sanitizePhoneToDigits(value);
+
+  if (digits.startsWith("90")) return digits.slice(2);
+  if (digits.startsWith("0")) return digits.slice(1);
+  return digits;
+};
+
+/**
+ * Groups local digits for display while preserving overflow for validation.
+ *
+ * @param localDigits - Prefix-free local phone digits
+ * @returns Locally formatted digits with any overflow still visible
+ */
+const formatLocalPhoneDigits = (localDigits: string): string => {
+  const groups = [
+    localDigits.slice(0, 3),
+    localDigits.slice(3, 6),
+    localDigits.slice(6, 8),
+    localDigits.slice(8, 10),
+    localDigits.slice(10),
+  ].filter(Boolean);
+
+  return groups.length > 0 ? `0${groups.join(" ")}` : "";
+};
+
+/**
  * Generates a WhatsApp API URL (wa.me) using a raw phone number.
  * 
  * @param phone - Raw phone string
@@ -36,54 +98,36 @@ export const generateWhatsAppUrl = (phone: string): string => {
  */
 export const generateTelUrl = (phone: string): string => {
   const normalizedPhone = normalizeTurkishPhone(phone);
-  return normalizedPhone === "+" ? "" : `tel:${normalizedPhone}`;
+  return normalizedPhone ? `tel:${normalizedPhone}` : "";
 };
 
 /**
- * Formats a phone number input as "0 (5XX) XXX XX XX".
- * Automatically normalizes country codes (+90, 90) into the local '0' prefix.
+ * Formats a phone input progressively as "05XX XXX XX XX".
+ * Country-code and local-prefix variants share the same visible mask.
  * 
  * @param value - The raw input string
  * @returns The formatted string
  */
 export const formatTurkishPhoneInput = (value: string): string => {
   if (!value) return "";
+  const digits = sanitizePhoneToDigits(value);
+  if (!digits) return "";
 
-  // Extract digits only
-  let digits = sanitizePhoneToDigits(value);
+  const localDigits = getLocalPhoneDigits(value);
+  return localDigits ? formatLocalPhoneDigits(localDigits) : "0";
+};
 
-  // Normalize Turkish country code +90 or 90 to 0
-  if (digits.startsWith("90") && digits.length > 2) {
-    digits = "0" + digits.substring(2);
-  }
-  
-  // Prepend 0 if missing (common for TR standard)
-  if (digits.length > 0 && !digits.startsWith("0")) {
-    digits = "0" + digits;
-  }
-
-  // Standard 11 digits for Turkey (05551234567)
-  digits = digits.substring(0, 11);
-
-  // Apply masking: 0 (5XX) XXX XX XX
-  let formatted = "";
-  if (digits.length > 0) {
-    formatted = digits.substring(0, 1);
-  }
-  if (digits.length > 1) {
-    formatted += " (" + digits.substring(1, 4);
-  }
-  if (digits.length >= 4) {
-    formatted += ") " + digits.substring(4, 7);
-  }
-  if (digits.length >= 7) {
-    formatted += " " + digits.substring(7, 9);
-  }
-  if (digits.length >= 9) {
-    formatted += " " + digits.substring(9, 11);
-  }
-
-  return formatted;
+/**
+ * Formats only a valid Turkish mobile number for user-facing display.
+ *
+ * @param value - Raw or canonical Turkish mobile number
+ * @returns Local display value, or an empty string for invalid input
+ */
+export const formatTurkishPhoneDisplay = (value: string): string => {
+  const canonicalPhone = normalizeTurkishPhone(value);
+  return canonicalPhone
+    ? formatLocalPhoneDigits(canonicalPhone.slice(3))
+    : "";
 };
 
 /**
@@ -94,16 +138,20 @@ export const formatTurkishPhoneInput = (value: string): string => {
  * @returns Canonical E.164-like phone value
  */
 export const normalizeTurkishPhone = (value: string): string => {
+  if (!hasSupportedPhoneCharacters(value)) return "";
+
   const digits = sanitizePhoneToDigits(value);
-  
-  if (digits.startsWith("90")) {
-    return "+" + digits;
+  const localDigits = getLocalPhoneDigits(value);
+  const hasKnownPrefix =
+    digits.startsWith("90") || digits.startsWith("0") || digits.length === 10;
+
+  if (
+    !hasKnownPrefix ||
+    localDigits.length !== 10 ||
+    !localDigits.startsWith("5")
+  ) {
+    return "";
   }
-  if (digits.startsWith("0")) {
-    return "+90" + digits.substring(1);
-  }
-  if (digits.length === 10) {
-    return "+90" + digits;
-  }
-  return "+" + digits; 
+
+  return `+90${localDigits}`;
 };

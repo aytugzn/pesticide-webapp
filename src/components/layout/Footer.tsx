@@ -7,7 +7,11 @@ import { ROUTES } from "@/constants/routes";
 import { CopyrightText } from "@/components/ui/CopyrightText";
 import { InstagramIcon, FacebookIcon } from "@/components/ui/Icons";
 import logoImg from "@/../public/logo-wordmark.svg";
-import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
+import {
+  formatTurkishPhoneDisplay,
+  generateTelUrl,
+  generateWhatsAppUrl,
+} from "@/utils/phone";
 import { DEFAULT_PHONE } from "@/constants/ui";
 
 const CORPORATE_LINKS = [
@@ -25,13 +29,14 @@ export const Footer = async () => {
   const footerPests = pests.slice(0, 5);
   const footerRegions = regions.slice(0, 5);
 
-  const phone = settings.phone || DEFAULT_PHONE;
+  const rawPhone = settings.phone || DEFAULT_PHONE;
+  const phone = formatTurkishPhoneDisplay(rawPhone);
   const email = settings.email || DICTIONARY.footer.contact.email;
   const address = settings.address || DICTIONARY.global.contact.address;
   const workingHours =
     settings.workingHours || DICTIONARY.global.contact.workingHours;
-  const phoneHref = generateTelUrl(phone);
-  const whatsappHref = generateWhatsAppUrl(phone);
+  const phoneHref = generateTelUrl(rawPhone);
+  const whatsappHref = generateWhatsAppUrl(rawPhone);
   const finalInstagramUrl =
     settings.instagramUrl ?? DICTIONARY.social.instagram.url;
   const finalFacebookUrl =
@@ -40,16 +45,15 @@ export const Footer = async () => {
   return (
     <footer className="bg-brand-surface border-t border-brand-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-8">
-          
-          <FooterBrand 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-7">
+          <FooterBrand
             instagramUrl={finalInstagramUrl}
             facebookUrl={finalFacebookUrl}
             whatsappHref={whatsappHref}
             phone={phone}
           />
 
-          <FooterContact 
+          <FooterContact
             address={address}
             phone={phone}
             phoneHref={phoneHref}
@@ -57,22 +61,28 @@ export const Footer = async () => {
             email={email}
           />
 
-          <FooterLinksColumn 
+          <FooterLinksColumn
             title={DICTIONARY.footer.sections.corporate}
             links={CORPORATE_LINKS}
           />
 
           {footerPests.length > 0 && (
-            <FooterLinksColumn 
+            <FooterLinksColumn
               title={DICTIONARY.footer.sections.services}
-              links={footerPests.map((p) => ({ href: `${ROUTES.pestBase}/${p.slug}`, label: p.name }))}
+              links={footerPests.map((p) => ({
+                href: `${ROUTES.pestBase}/${p.slug}`,
+                label: p.name,
+              }))}
             />
           )}
 
           {footerRegions.length > 0 && (
-            <FooterLinksColumn 
+            <FooterLinksColumn
               title={DICTIONARY.footer.sections.regions}
-              links={footerRegions.map((r) => ({ href: `${ROUTES.regionBase}/${r.slug}`, label: r.name }))}
+              links={footerRegions.map((r) => ({
+                href: `${ROUTES.regionBase}/${r.slug}`,
+                label: r.name,
+              }))}
             />
           )}
         </div>
@@ -92,7 +102,12 @@ type FooterBrandProps = {
   phone?: string;
 };
 
-const FooterBrand = ({ instagramUrl, facebookUrl, whatsappHref, phone }: FooterBrandProps) => (
+const FooterBrand = ({
+  instagramUrl,
+  facebookUrl,
+  whatsappHref,
+  phone,
+}: FooterBrandProps) => (
   <div className="flex flex-col gap-4 md:col-span-2 lg:col-span-4 xl:col-span-2">
     <div className="w-fit block mb-2">
       <div className="relative w-48 h-12">
@@ -158,21 +173,33 @@ type FooterContactProps = {
   email?: string;
 };
 
-const FooterContact = ({ address, phone, phoneHref, workingHours, email }: FooterContactProps) => (
+const FooterContact = ({
+  address,
+  phone,
+  phoneHref,
+  workingHours,
+  email,
+}: FooterContactProps) => (
   <div className="min-w-0 flex flex-col gap-3 md:col-span-1">
     <h3 className="font-heading font-semibold text-text-primary text-base whitespace-nowrap">
       {DICTIONARY.footer.sections.contact}
     </h3>
     <ul className="flex flex-col gap-3">
       <li className="min-w-0 flex items-start gap-2.5">
-        <MapPin className="w-4 h-4 text-brand-primary shrink-0" aria-hidden="true" />
+        <MapPin
+          className="w-4 h-4 text-brand-primary shrink-0"
+          aria-hidden="true"
+        />
         <span className="min-w-0 break-words text-text-secondary text-sm">
           {address || DICTIONARY.global.contact.address}
         </span>
       </li>
       {phone && (
         <li className="min-w-0 flex items-start gap-2.5">
-          <Phone className="w-4 h-4 text-brand-primary shrink-0" aria-hidden="true" />
+          <Phone
+            className="w-4 h-4 text-brand-primary shrink-0"
+            aria-hidden="true"
+          />
           <a
             href={phoneHref}
             className="min-w-0 break-words text-text-secondary hover:text-brand-primary transition-colors font-medium text-sm"
@@ -183,14 +210,20 @@ const FooterContact = ({ address, phone, phoneHref, workingHours, email }: Foote
       )}
       {workingHours && (
         <li className="min-w-0 flex items-start gap-2.5">
-          <Clock className="w-4 h-4 text-brand-primary shrink-0" aria-hidden="true" />
+          <Clock
+            className="w-4 h-4 text-brand-primary shrink-0"
+            aria-hidden="true"
+          />
           <span className="min-w-0 break-words text-text-secondary text-sm">
             {workingHours}
           </span>
         </li>
       )}
       <li className="min-w-0 flex items-start gap-2.5">
-        <Mail className="w-4 h-4 text-brand-primary shrink-0" aria-hidden="true" />
+        <Mail
+          className="w-4 h-4 text-brand-primary shrink-0"
+          aria-hidden="true"
+        />
         <a
           href={`mailto:${email || DICTIONARY.footer.contact.email}`}
           className="min-w-0 break-all text-text-secondary hover:text-brand-primary transition-colors text-sm"
@@ -243,7 +276,10 @@ const FooterBottomBar = () => {
       {developerName && (
         <p className="text-text-muted text-xs flex items-center gap-1.5">
           <span>{DICTIONARY.footer.developer.title}</span>
-          <span className="w-1 h-1 rounded-full bg-brand-primary" aria-hidden="true"></span>
+          <span
+            className="w-1 h-1 rounded-full bg-brand-primary"
+            aria-hidden="true"
+          ></span>
           <span className="font-medium text-text-secondary">
             {developerName}
           </span>

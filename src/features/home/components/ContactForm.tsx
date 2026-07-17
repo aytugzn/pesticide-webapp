@@ -7,7 +7,10 @@ import { sendContactForm } from "../actions/sendContact";
 import { CONTACT_ERRORS } from "../types";
 import { Button } from "@/components/ui/Button";
 import { Send, Loader2 } from "lucide-react";
-import { formatTurkishPhoneInput } from "@/utils/phone";
+import {
+  formatTurkishPhoneInput,
+  sanitizePhoneToDigits,
+} from "@/utils/phone";
 import { Alert } from "@/components/ui/Alert";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
@@ -33,8 +36,8 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
 
     // Fix backspace trap: if user deletes a formatting symbol, manually remove the preceding digit
     if (nativeEvent.inputType === "deleteContentBackward") {
-      const oldDigits = phone.replace(/\D/g, "");
-      const newDigits = val.replace(/\D/g, "");
+      const oldDigits = sanitizePhoneToDigits(phone);
+      const newDigits = sanitizePhoneToDigits(val);
       if (oldDigits === newDigits && newDigits.length > 0) {
         val = newDigits.slice(0, -1);
       }

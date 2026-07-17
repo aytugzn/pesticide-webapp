@@ -184,7 +184,7 @@ const homeDict = {
       name: "Adınız Soyadınız",
       namePlaceholder: "Örn: Ahmet Demir",
       phone: "Telefon Numaranız",
-      phonePlaceholder: "0 (555) 555 55 55",
+      phonePlaceholder: "0555 555 55 55",
       phoneHint: "(11 Hane)",
       service: "Hangi Hizmetle İlgileniyorsunuz?",
       servicePlaceholder: "Lütfen seçiniz",
@@ -935,12 +935,61 @@ const adminDict = {
     title: "Gelen Mesajlar",
     description: "Son iletişim ve aranma taleplerini buradan takip edin.",
     empty: "Kayıtlı mesaj bulunamadı.",
+    missingValue: "-",
+    controlsAriaLabel: "Mesaj yönetim kontrolleri",
+    dateMissing: "Tarih yok",
+    phoneAriaLabel: "{phone} numarasını ara",
+    filters: {
+      ariaLabel: "Mesaj durumu filtresi",
+      all: "Tümü",
+      resolved: "Arananlar",
+    },
+    statuses: {
+      pending: "Bekleyen",
+      resolved: "Arandı",
+      unknown: "Bilinmeyen durum",
+    },
+    actions: {
+      markResolved: "Arandı olarak işaretle",
+      markPending: "Bekleyene al",
+      updating: "Güncelleniyor",
+    },
+    sorting: {
+      newestFirst: "En yeni",
+      oldestFirst: "En eski",
+      ariaLabel: "Tarihe göre sırala: {direction}",
+    },
+    bulkDelete: {
+      button: "7 günü geçen aranmış istekleri sil",
+      modalTitle: "Eski aranmış istekleri sil",
+      confirm: "Eski istekleri sil",
+      description:
+        "Yedi günden eski aranmış istekler kalıcı olarak silinir. Bekleyen istekler korunur.",
+      deleting: "Eski istekler siliniyor",
+      success: "{count} aranmış istek silindi.",
+      error: "Eski istekler silinemedi.",
+      partial:
+        "Silme işlemi tamamlanamadı. Başarıyla silinen kayıtlar listeye yansıtıldı.",
+      empty: "Silinecek 7 günden eski aranmış istek bulunamadı.",
+      overduePending:
+        "{count} bekleyen arama 7 günü geçti. Silinmeleri için önce Arandı olarak işaretleyin.",
+    },
+    toast: {
+      updateSuccess: "Mesaj durumu güncellendi.",
+      updateError: "Mesaj durumu güncellenemedi.",
+    },
+    emptyStates: {
+      pending: "Bekleyen mesaj bulunamadı.",
+      resolved: "Aranmış mesaj bulunamadı.",
+    },
     table: {
       name: "Ad Soyad",
       phone: "Telefon",
       service: "Hizmet",
       region: "Bölge",
+      date: "Tarih",
       status: "Durum",
+      actions: sharedSeoEntityTableDict.actions,
     },
   },
   settings: {
@@ -973,7 +1022,7 @@ const adminDict = {
         phone: {
           label: "Telefon",
           help: "Telefon ve WhatsApp bağlantılarında kullanılan numara.",
-          placeholder: "+90 5XX XXX XX XX",
+          placeholder: "0555 555 55 55",
         },
         email: {
           label: "E-posta",

@@ -6,11 +6,7 @@ import { z } from "zod";
 import { headers } from "next/headers";
 import { DICTIONARY } from "@/constants/dictionary";
 import { formatTemplate } from "@/utils/template";
-import {
-  formatTurkishPhoneInput,
-  sanitizePhoneToDigits,
-  normalizeTurkishPhone
-} from "@/utils/phone";
+import { normalizeTurkishPhone } from "@/utils/phone";
 import { sendTelegramContactRequest } from "@/lib/telegram";
 import { getAdminDb } from "@/lib/firebase-admin";
 import {
@@ -39,16 +35,29 @@ const contactSchema = z.object({
     message: uiDict.validation.phoneRequired
   })
     .trim()
-    .regex(/^[0-9+\-\s()]+$/, uiDict.validation.phoneRegex)
-    .transform(val => sanitizePhoneToDigits(val))
-    .refine(digits => digits.length === 10 || digits.length === 11, uiDict.validation.phoneInvalid)
-    .transform(digits => formatTurkishPhoneInput(digits)),
+    .transform((value, context) => {
+      const normalizedPhone = normalizeTurkishPhone(value);
+      if (!normalizedPhone) {
+        context.addIssue({
+          code: "custom",
+          message: uiDict.validation.phoneInvalid,
+        });
+        return z.NEVER;
+      }
+      return normalizedPhone;
+    }),
 
   service: z.string().max(100).optional(),
   region: z.string().max(100).optional(),
   website: z.string().optional(), // Honeypot field
 });
 
+/**
+ * Validates and stores a contact request before sending its Telegram notice.
+ *
+ * @param formData - Untrusted contact form fields
+ * @returns A controlled validation, rate-limit, persistence, or success result
+ */
 export const sendContactForm = async (formData: FormData): Promise<ActionResponse<void, ContactErrorCode>> => {
   const rawData = Object.fromEntries(formData);
 
@@ -65,7 +74,7 @@ export const sendContactForm = async (formData: FormData): Promise<ActionRespons
   }
 
   const { name, phone, service, region } = parsed.data;
-  const cleanPhone = normalizeTurkishPhone(phone);
+  const cleanPhone = phone;
 
   // 2. IP Handling & Hashing
   const headersList = await headers();

@@ -25,6 +25,7 @@ import {
   SITE_IMAGES_DRAFT_DOCUMENT_ID,
 } from "./constants";
 import { generalSettingsDraftSchema } from "./schemas";
+import { formatTurkishPhoneDisplay } from "@/utils/phone";
 import type {
   AdminGeneralSettingsData,
   GeneralSettingsDraftData,
@@ -44,7 +45,9 @@ const createGeneralSettingsFormValues = (
   settings: ReturnType<typeof parseSettingsDoc>,
   draft?: GeneralSettingsDraftData,
 ): GeneralSettingsFormValues => ({
-  phone: draft?.phone ?? settings.phone ?? DEFAULT_PHONE,
+  phone: formatTurkishPhoneDisplay(
+    draft?.phone ?? settings.phone ?? DEFAULT_PHONE,
+  ),
   email:
     draft?.email ?? settings.email ?? DICTIONARY.footer.contact.email,
   address:

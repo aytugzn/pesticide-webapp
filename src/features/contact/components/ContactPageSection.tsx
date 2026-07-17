@@ -6,7 +6,11 @@ import { DEFAULT_PHONE } from "@/constants/ui";
 import { ScrollButton } from "@/components/ui/ScrollButton";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ContactForm } from "@/features/home/components/ContactForm";
-import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
+import {
+  formatTurkishPhoneDisplay,
+  generateTelUrl,
+  generateWhatsAppUrl,
+} from "@/utils/phone";
 import { InstagramIcon, FacebookIcon } from "@/components/ui/Icons";
 import {
   ArrowRight,
@@ -48,13 +52,14 @@ export const ContactPageSection = ({
   const data = DICTIONARY.home.contact;
   const channelsDict = data.channels;
   const pageDict = DICTIONARY.pages.contact;
-  const phone = settings?.phone || DEFAULT_PHONE;
+  const rawPhone = settings?.phone || DEFAULT_PHONE;
+  const phone = formatTurkishPhoneDisplay(rawPhone);
   const email = settings?.email || DICTIONARY.footer.contact.email;
   const address = settings?.address || DICTIONARY.global.contact.address;
   const workingHours =
     settings?.workingHours || DICTIONARY.global.contact.workingHours;
-  const phoneHref = generateTelUrl(phone);
-  const whatsappHref = generateWhatsAppUrl(phone);
+  const phoneHref = generateTelUrl(rawPhone);
+  const whatsappHref = generateWhatsAppUrl(rawPhone);
   const directionsHref = address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
     : undefined;

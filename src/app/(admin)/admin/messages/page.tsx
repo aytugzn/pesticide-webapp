@@ -4,8 +4,8 @@ import { MessageSquare } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { AdminListPage } from "@/components/layout/AdminListPage";
-import { AdminDataTable } from "@/components/ui/AdminDataTable";
-import type { ContactRequestDoc } from "@/types";
+import { MessagesManager } from "@/features/messages/components/admin/MessagesManager";
+import { parseAdminMessageRow } from "@/features/messages/utils";
 
 export const metadata: Metadata = {
   title: `${DICTIONARY.admin.messages.title} | ${DICTIONARY.global.brand}`,
@@ -19,16 +19,9 @@ const AdminMessagesPage = async () => {
     .orderBy("createdAt", "desc")
     .limit(50)
     .get();
-  const rows = snap.docs.map((doc) => {
-    const data = doc.data() as Partial<ContactRequestDoc>;
-    return [
-      data.name || "-",
-      data.phone || "-",
-      data.service || "-",
-      data.region || "-",
-      data.status || "-",
-    ];
-  });
+  const rows = snap.docs.map((doc) =>
+    parseAdminMessageRow(doc.id, doc.data()),
+  );
 
   return (
     <AdminListPage
@@ -37,17 +30,7 @@ const AdminMessagesPage = async () => {
       description={DICTIONARY.admin.messages.description}
       icon={MessageSquare}
     >
-      <AdminDataTable
-        emptyText={DICTIONARY.admin.messages.empty}
-        columns={[
-          DICTIONARY.admin.messages.table.name,
-          DICTIONARY.admin.messages.table.phone,
-          DICTIONARY.admin.messages.table.service,
-          DICTIONARY.admin.messages.table.region,
-          DICTIONARY.admin.messages.table.status,
-        ]}
-        rows={rows}
-      />
+      <MessagesManager initialRows={rows} />
     </AdminListPage>
   );
 };

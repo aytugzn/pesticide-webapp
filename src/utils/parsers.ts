@@ -169,7 +169,7 @@ export const parseSettingsDoc = (data: unknown): SettingsDoc => {
   const phone = parseTrimmedString(d.phone);
   const normalizedPhone = phone ? normalizeTurkishPhone(phone) : "";
   return {
-    phone: /^\+90[1-9]\d{9}$/.test(normalizedPhone) ? phone : undefined,
+    phone: normalizedPhone || undefined,
     email: parseSafeEmail(d.email),
     address: parseTrimmedString(d.address),
     workingHours: parseTrimmedString(d.workingHours),

@@ -13,9 +13,14 @@ const validation = DICTIONARY.admin.settings.general.validation;
 
 const requiredTextSchema = z.string().trim().min(1, validation.required);
 const optionalTextSchema = z.string().trim();
-const phoneSchema = requiredTextSchema.refine((value) => {
-  return /^\+90[1-9]\d{9}$/.test(normalizeTurkishPhone(value));
-}, validation.phone);
+const phoneSchema = requiredTextSchema.transform((value, context) => {
+  const normalizedPhone = normalizeTurkishPhone(value);
+  if (!normalizedPhone) {
+    context.addIssue({ code: "custom", message: validation.phone });
+    return z.NEVER;
+  }
+  return normalizedPhone;
+});
 const emailSchema = requiredTextSchema.email(validation.email);
 
 /**
