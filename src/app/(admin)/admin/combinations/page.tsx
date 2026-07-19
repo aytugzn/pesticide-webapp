@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { connection } from "next/server";
-import { getGlobalData } from "@/features/settings/data";
+import { getEditableGlobalData } from "@/features/settings/data";
 import { getAdminCombinationsPage } from "@/features/combinations/actions";
 import { CombinationForm } from "@/features/combinations/components/admin/CombinationForm";
 import { CombinationsTable } from "@/features/combinations/components/admin/CombinationsTable";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const AdminCombinationsPage = async () => {
   await connection();
   const [globalData, combinationsResult] = await Promise.all([
-    getGlobalData(),
+    getEditableGlobalData(),
     getAdminCombinationsPage(50, null),
   ]);
 

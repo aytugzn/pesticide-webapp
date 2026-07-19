@@ -1,4 +1,5 @@
 import type {
+  DraftCommitStatus,
   PestDoc,
   RegionDoc,
   SettingsDoc,
@@ -49,18 +50,38 @@ export type SiteImagesCleanupStatus =
   | "partial-failure";
 export type PublishSiteImagesResult = {
   published: boolean;
+  status: DraftCommitStatus;
   cleanupStatus: SiteImagesCleanupStatus;
 };
 
 export type PublishGeneralSettingsResult = {
   published: boolean;
+  status: DraftCommitStatus;
 };
 
-export type GlobalPublishResult = PublishSiteImagesResult & {
+export type PublicSnapshotStatus =
+  | "not-needed"
+  | "initialized"
+  | "updated"
+  | "stale"
+  | "failed";
+
+export type GlobalPublishResult = Omit<PublishSiteImagesResult, "status"> & {
   generalSettingsPublished: boolean;
   reviewsPublished: boolean;
+  snapshotStatus: PublicSnapshotStatus;
+  domainPartialFailure: boolean;
   partialFailure: boolean;
+  cacheInvalidationAttempted: boolean;
+  cacheInvalidated: boolean;
   cacheInvalidationFailed: boolean;
+  activationPending: boolean;
+  activationDeferred: boolean;
+  draftsFinalized: boolean;
+  draftFinalizationFailed: boolean;
+  newerDraftPreserved: boolean;
+  staleDraftSkipped: boolean;
+  trueNoOp: boolean;
 };
 
 export type SiteImagesData = {

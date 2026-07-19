@@ -46,6 +46,27 @@ export type ActionResponse<T = void, E = string> =
   | { success: true; data?: T }
   | { success: false; error: E; message?: string };
 
+export type PublicActivationStatus =
+  | "activated"
+  | "not-needed"
+  | "deferred";
+
+export type PublicMutationResult = {
+  activationStatus: PublicActivationStatus;
+  publicationRequired?: boolean;
+};
+
+export type DraftCommitStatus =
+  | "published"
+  | "unchanged-current"
+  | "stale-draft-skipped"
+  | "draft-missing";
+
+export type PublicDataResult<T> =
+  | { status: "found"; data: T }
+  | { status: "confirmed-missing" }
+  | { status: "temporarily-unavailable" };
+
 export type ContactRequestStatus = "pending" | "resolved";
 
 export type ContactRequestDoc = {

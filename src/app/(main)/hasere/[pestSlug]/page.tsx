@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { ServiceHero } from "@/components/layout/ServiceHero";
@@ -8,13 +8,18 @@ import { SeoContent } from "@/components/layout/SeoContent";
 import { SeoFaq } from "@/components/layout/SeoFaq";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
 import { CtaSection } from "@/components/layout/CtaSection";
-import { getGlobalData } from "@/features/settings/data";
-import { getAllActiveCombinations } from "@/features/combinations/data";
+import {
+  getGlobalDataMetadataResult,
+  getGlobalDataResult,
+} from "@/features/settings/data";
+import { getAllActiveCombinationsResult } from "@/features/combinations/data";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
 import { Bug } from "lucide-react";
+import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
+import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
 
 type PestPageProps = {
   params: Promise<{ pestSlug: string }>;
@@ -32,25 +37,25 @@ const getRelatedRegionDescription = (
   );
 };
 
-export const generateStaticParams = async () => {
-  const { pests } = await getGlobalData();
-
-  if (!pests || pests.length === 0) {
-    throw new AppError(
-      "No active pests found. At least one active pest is required to build this route. Ensure Firestore quota is not exceeded and active pests exist.",
-      "BUILD_ERROR",
-    );
-  }
-
-  return pests.map((pest) => ({ pestSlug: pest.slug }));
-};
-
 export const generateMetadata = async ({
   params,
 }: PestPageProps): Promise<Metadata> => {
   const { pestSlug } = await params;
-  const { pests } = await getGlobalData();
-  const pest = pests.find((item) => item.slug === pestSlug);
+  const canonicalUrl = `${ROUTES.pestBase}/${pestSlug}`;
+  const globalDataResult = await getGlobalDataMetadataResult();
+  if (globalDataResult.status !== "found") {
+    return {
+      title: DICTIONARY.meta.default.title,
+      description: DICTIONARY.meta.default.description,
+      alternates: { canonical: canonicalUrl },
+    };
+  }
+
+  const pest = globalDataResult.data.pests.find(
+    (item) => item.slug === pestSlug,
+  );
+  if (!pest) notFound();
+
   const title =
     pest?.title ||
     (pest
@@ -60,7 +65,6 @@ export const generateMetadata = async ({
     pest?.metaDesc ||
     pest?.description ||
     DICTIONARY.pages.services.defaultPestDesc;
-  const canonicalUrl = `${ROUTES.pestBase}/${pestSlug}`;
   const resolvedOgImage = pest
     ? resolveAppImage({
         image: pest.image,
@@ -98,14 +102,25 @@ export const generateMetadata = async ({
   };
 };
 
-const PestPage = async ({ params }: PestPageProps) => {
+const PestPageContent = async ({ params }: PestPageProps) => {
   const { pestSlug } = await params;
-  const { pests, regions } = await getGlobalData();
+  const [globalDataResult, combinationsResult] = await Promise.all([
+    getGlobalDataResult(),
+    getAllActiveCombinationsResult(),
+  ]);
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return <PublicDataUnavailable />;
+  }
+
+  const { pests, regions } = globalDataResult.data;
   const pest = pests.find((item) => item.slug === pestSlug);
 
   if (!pest) notFound();
 
-  const activeCombinations = await getAllActiveCombinations();
+  const activeCombinations = combinationsResult.data;
   const sections = pest.content ? parseHtmlIntoSections(pest.content) : [];
   const regionDescriptions = new Map(
     regions.map((region) => [region.slug, region.cardDescription]),
@@ -198,5 +213,12 @@ const PestPage = async ({ params }: PestPageProps) => {
     </div>
   );
 };
+
+/** Keeps runtime pest params inside a Cache Components Suspense boundary. */
+const PestPage = ({ params }: PestPageProps) => (
+  <Suspense fallback={<PublicRouteLoading />}>
+    <PestPageContent params={params} />
+  </Suspense>
+);
 
 export default PestPage;

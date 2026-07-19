@@ -4,7 +4,6 @@ import { SERVICES_SECTION_MAX_ITEMS } from "@/constants/ui";
 import type { AppImage, PestDoc, SiteImageSlideDoc } from "@/types";
 import { ServiceCard } from "@/components/ui/ServiceCard";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
-import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { resolveAppImage } from "@/utils/cloudinary";
 
@@ -14,6 +13,14 @@ type ServicesSectionProps = {
   legacyImage?: AppImage;
   autoplayDelay?: number;
 }
+
+const BACKUP_SERVICES_SLIDES: SliderImage[] = [
+  {
+    id: "backup-services",
+    url: "/backup/services.webp",
+    altText: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
+  },
+];
 
 export const ServicesSection = ({
   pests,
@@ -65,15 +72,6 @@ export const ServicesSection = ({
     }
   }
 
-  if (sliderImages.length === 0) {
-    sliderImages = [
-      {
-        id: "backup-services",
-        url: "/backup/services.webp",
-        altText: DICTIONARY.admin.settings.siteImages.servicesAltDefault,
-      },
-    ];
-  }
   return (
     <section className="relative py-20 md:py-28" id="services" aria-labelledby="services-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -81,18 +79,13 @@ export const ServicesSection = ({
           
           {/* Left Column: Slider (Takes 5 columns) */}
           <div className="relative aspect-video w-full overflow-hidden rounded-3xl shadow-2xl group md:aspect-landscape lg:sticky lg:top-32 lg:col-span-5 lg:aspect-portrait">
-             {sliderImages.length > 0 ? (
-               <>
-                 <ImageSlider
-                   images={sliderImages}
-                   autoplayDelay={autoplayDelay}
-                 />
-                 {/* Elegant inner shadow for premium feel */}
-                 <div className="absolute inset-0 border border-brand-surface/20 rounded-3xl pointer-events-none z-10 mix-blend-overlay" aria-hidden="true" />
-               </>
-             ) : (
-               <ImagePlaceholder />
-             )}
+            <ImageSlider
+              images={sliderImages}
+              fallbackImages={BACKUP_SERVICES_SLIDES}
+              autoplayDelay={autoplayDelay}
+            />
+            {/* Elegant inner shadow for premium feel */}
+            <div className="absolute inset-0 border border-brand-surface/20 rounded-3xl pointer-events-none z-10 mix-blend-overlay" aria-hidden="true" />
           </div>
 
           {/* Right Column: Content (Takes 7 columns) */}

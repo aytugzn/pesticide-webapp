@@ -1,7 +1,16 @@
 import "server-only";
 
-import { getAdminDb } from "@/lib/firebase-admin";
-import { AppError } from "@/lib/exceptions";
+import {
+  getAdminDb,
+  hasFirebaseAdminConfig,
+} from "@/lib/firebase-admin";
+import {
+  getLocalGlobalDataFallback,
+  getLocalSettingsFallback,
+  getPublicSnapshotResolution,
+  getVisibleGlobalData,
+} from "@/lib/publicSnapshot";
+import { getPublishedSnapshotFromFirestoreOrThrow } from "@/lib/firestorePublishedSnapshot";
 import {
   parsePestDoc,
   parseRegionDoc,
@@ -10,7 +19,13 @@ import {
   parseSiteImageSlides,
 } from "@/utils/parsers";
 import { cacheLife, cacheTag } from "next/cache";
-import type { AppImage, SettingsDoc, SiteImageSlideDoc } from "@/types";
+import { connection } from "next/server";
+import type {
+  AppImage,
+  PublicDataResult,
+  SettingsDoc,
+  SiteImageSlideDoc,
+} from "@/types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { DICTIONARY } from "@/constants/dictionary";
 import {
@@ -226,52 +241,132 @@ export const getAdminGeneralSettingsData = async (): Promise<
 };
 
 /**
- * Loads published general settings through the shared public-layout cache.
+ * Loads settings from the authoritative Firestore published envelope.
  * Server helpers reuse this result instead of issuing request-scoped reads.
  *
  * @returns Parsed published settings from the layout-settings cache
  */
-export const getPublicSettings = async (): Promise<SettingsDoc> => {
+export const getPublicSettingsFromFirestore = async (): Promise<SettingsDoc> => {
   "use cache";
   cacheLife("max");
   cacheTag("layout-settings");
 
-  try {
-    const settingsSnap = await getAdminDb()
-      .collection("settings")
-      .doc("general")
-      .get();
-    return parseSettingsDoc(settingsSnap.data());
-  } catch {
-    console.error("Failed to fetch public settings");
-    throw new AppError("Failed to fetch public settings");
-  }
+  const snapshot = await getPublishedSnapshotFromFirestoreOrThrow();
+  return snapshot.data.globalData.settings;
 };
 
 /**
- * Fetches globally shared public data without importing admin auth guards.
+ * Resolves public settings without retaining Redis or local fallbacks in the
+ * long-lived primary Next.js cache.
+ *
+ * @returns Firestore settings, the last-known-good settings, or local defaults
+ */
+export const getPublicSettings = async (): Promise<SettingsDoc> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      return await getPublicSettingsFromFirestore();
+    } catch {
+      console.error("Failed to fetch public settings");
+    }
+  }
+  const snapshot = await getPublicSnapshotResolution();
+  return snapshot.status === "available"
+    ? snapshot.snapshot.data.globalData.settings
+    : getLocalSettingsFallback();
+};
+
+/** Resolves metadata settings through the same published provider chain. */
+export const getPublicSettingsForMetadata = async (): Promise<SettingsDoc> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      return await getPublicSettingsFromFirestore();
+    } catch {
+      console.error("Failed to fetch public metadata settings");
+    }
+  }
+  const snapshot = await getPublicSnapshotResolution();
+  return snapshot.status === "available"
+    ? snapshot.snapshot.data.globalData.settings
+    : getLocalSettingsFallback();
+};
+
+/**
+ * Fetches globally shared data from the Firestore published envelope.
  *
  * @returns Active pests, active regions, and general settings.
  */
-export const getGlobalData = async (): Promise<GlobalData> => {
+export const getGlobalDataFromFirestore = async (): Promise<GlobalData> => {
   "use cache";
   cacheLife("max");
   cacheTag("global-data");
 
-  try {
-    const [pestsSnap, regionsSnap, settingsSnap] = await Promise.all([
-      getAdminDb().collection("pests").where("isActive", "==", true).get(),
-      getAdminDb().collection("regions").where("isActive", "==", true).get(),
-      getAdminDb().collection("settings").doc("general").get(),
-    ]);
+  return getVisibleGlobalData(
+    await getPublishedSnapshotFromFirestoreOrThrow(),
+  );
+};
 
-    return {
-      pests: pestsSnap.docs.map((doc) => parsePestDoc(doc.data())),
-      regions: regionsSnap.docs.map((doc) => parseRegionDoc(doc.data())),
-      settings: parseSettingsDoc(settingsSnap.data()),
-    };
-  } catch {
-    console.error("Failed to fetch global data");
-    throw new AppError("Failed to fetch global data");
+/** Loads editable canonical entities for authenticated admin-only consumers. */
+export const getEditableGlobalData = async (): Promise<GlobalData> => {
+  const [pestsSnap, regionsSnap, settingsSnap] = await Promise.all([
+    getAdminDb().collection("pests").get(),
+    getAdminDb().collection("regions").get(),
+    getAdminDb().collection("settings").doc("general").get(),
+  ]);
+  return {
+    pests: pestsSnap.docs.map((document) => parsePestDoc(document.data())),
+    regions: regionsSnap.docs.map((document) =>
+      parseRegionDoc(document.data()),
+    ),
+    settings: parseSettingsDoc(settingsSnap.data()),
+  };
+};
+
+/**
+ * Resolves authoritative global public data without manufacturing entities.
+ *
+ * @returns Found Firestore/snapshot data or temporary provider unavailability
+ */
+export const getGlobalDataResult = async (): Promise<
+  PublicDataResult<GlobalData>
+> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      return { status: "found", data: await getGlobalDataFromFirestore() };
+    } catch {
+      console.error("Failed to fetch global data");
+    }
   }
+  const snapshot = await getPublicSnapshotResolution();
+  return snapshot.status === "available"
+    ? { status: "found", data: getVisibleGlobalData(snapshot.snapshot) }
+    : { status: "temporarily-unavailable" };
+};
+
+/** Resolves metadata through Firestore published state and request-deduped Redis. */
+export const getGlobalDataMetadataResult = async (): Promise<
+  PublicDataResult<GlobalData>
+> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      return { status: "found", data: await getGlobalDataFromFirestore() };
+    } catch {
+      console.error("Failed to fetch global metadata");
+    }
+  }
+  const snapshot = await getPublicSnapshotResolution();
+  return snapshot.status === "available"
+    ? { status: "found", data: getVisibleGlobalData(snapshot.snapshot) }
+    : { status: "temporarily-unavailable" };
+};
+
+/** Resolves render-safe global data for non-entity public surfaces. */
+export const getGlobalData = async (): Promise<GlobalData> => {
+  const result = await getGlobalDataResult();
+  return result.status === "found"
+    ? result.data
+    : getLocalGlobalDataFallback();
 };

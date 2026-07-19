@@ -263,6 +263,16 @@ export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) =>
         affectedRows: result.data?.affectedRows ?? [],
       });
 
+      if (result.data?.activationStatus === "deferred") {
+        showToast({
+          variant: "warning",
+          message: result.data?.publicationRequired
+            ? DICTIONARY.admin.publicPublicationRequiredWarning
+            : DICTIONARY.admin.publicActivationDeferredWarning,
+        });
+        return;
+      }
+
       if (operation === "restore") {
         const skippedCount = result.data?.skippedCount ?? 0;
 

@@ -16,17 +16,26 @@ export type SliderImage = {
 
 type ImageSliderProps = {
   images: SliderImage[];
+  fallbackImages?: SliderImage[];
   autoplayDelay?: number;
 };
 
 export const ImageSlider = ({
   images,
+  fallbackImages = [],
   autoplayDelay = 5000,
 }: ImageSliderProps) => {
   const [failedImageKeys, setFailedImageKeys] = useState<string[]>([]);
-  const visibleImages = images.filter(
+  const visiblePrimaryImages = images.filter(
     (image) => !failedImageKeys.includes(`${image.id}:${image.url}`),
   );
+  const visibleFallbackImages = fallbackImages.filter(
+    (image) => !failedImageKeys.includes(`${image.id}:${image.url}`),
+  );
+  const visibleImages =
+    visiblePrimaryImages.length > 0
+      ? visiblePrimaryImages
+      : visibleFallbackImages;
   const isSingleImage = visibleImages.length === 1;
 
   const [emblaRef] = useEmblaCarousel(

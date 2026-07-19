@@ -19,6 +19,8 @@
 - **Cache Components (Opt-in)**: Caching is entirely opt-in now. All dynamic code is executed at request time by default.
   - Enabled via `cacheComponents: true` in `next.config.ts` (replacing the old `experimental.ppr` and `experimental.dynamicIO` flags).
   - Use the `"use cache"` directive to cache pages, components, and functions, generating cache keys automatically via the compiler.
+  - A dynamic route MUST NOT export `generateStaticParams` with an empty array. When authoritative params cannot be known safely during a provider outage, omit `generateStaticParams` and read the asynchronous runtime `params` inside a `<Suspense>` boundary. Do not emit placeholder slugs or synthetic SEO pages.
+  - Provider-backed public resolution must call `connection()` before invoking a cached primary read. This keeps provider errors and Redis/local fallbacks out of the long-lived primary cache and defers them beyond build-time prerendering; the surrounding route/layout must provide a `<Suspense>` boundary.
 
 - **Refined Caching APIs**:
   - **`revalidateTag(tag, profile)`**: Now requires a `cacheLife` profile as the second argument (e.g., `'max'`, `'hours'`) for stale-while-revalidate (SWR) behavior.

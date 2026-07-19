@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter, Montserrat } from "next/font/google";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAbsoluteUrl } from "@/utils/getAbsoluteUrl";
 import { DEFAULT_PHONE } from "@/constants/ui";
 import { normalizeTurkishPhone } from "@/utils/phone";
-import { getPublicSettings } from "@/features/settings/data";
+import { getPublicSettingsForMetadata } from "@/features/settings/data";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,7 +21,7 @@ const montserrat = Montserrat({
 });
 
 export const generateMetadata = async (): Promise<Metadata> => {
-  const settings = await getPublicSettings();
+  const settings = await getPublicSettingsForMetadata();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || DICTIONARY.global.siteUrl;
   const cleanSiteUrl = siteUrl.replace(/\/$/, "");
   const legacyDefaultOgImages = [
@@ -72,12 +73,9 @@ export const generateMetadata = async (): Promise<Metadata> => {
   };
 };
 
-const RootLayout = async ({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) => {
-  const settings = await getPublicSettings();
+/** Builds optional LocalBusiness JSON-LD behind a request-safe boundary. */
+const LocalBusinessJsonLd = async () => {
+  const settings = await getPublicSettingsForMetadata();
   const phone = settings.phone || DEFAULT_PHONE;
   const email = settings.email || DICTIONARY.footer.contact.email;
   const address = settings.address || DICTIONARY.global.contact.address;
@@ -107,21 +105,32 @@ const RootLayout = async ({
   };
 
   return (
-    <html
-      lang="tr"
-      className={`${inter.variable} ${montserrat.variable} h-full`}
-    >
-      <body className="min-h-full flex flex-col">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
-          }}
-        />
-        {children}
-      </body>
-    </html>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+      }}
+    />
   );
 };
+
+/** Keeps provider-backed root data inside a Cache Components boundary. */
+const RootLayout = ({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) => (
+  <html
+    lang="tr"
+    className={`${inter.variable} ${montserrat.variable} h-full`}
+  >
+    <body className="min-h-full flex flex-col">
+      <Suspense fallback={null}>
+        <LocalBusinessJsonLd />
+      </Suspense>
+      {children}
+    </body>
+  </html>
+);
 
 export default RootLayout;

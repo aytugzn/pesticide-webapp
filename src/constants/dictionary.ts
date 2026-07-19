@@ -602,6 +602,10 @@ const sharedSeoEntityTableDict = {
 
 const adminDict = {
   ownerShortcut: "DMR",
+  publicActivationDeferredWarning:
+    "Veri kaydedildi ancak canlı aktivasyon tamamlanamadı. Canlı Siteyi Güncelle ile yeniden deneyin.",
+  publicPublicationRequiredWarning:
+    "Bu kaydın daha önce yayımlanmış sürümü bulunamadı. Canlıya almak için Canlı Siteyi Güncelle işlemini çalıştırın.",
   imageUpload: {
     choose: "Görsel Seç",
     replace: "Görseli Değiştir",
@@ -999,9 +1003,21 @@ const adminDict = {
     revalidateBtn: "Canlı Siteyi Güncelle",
     revalidating: "Güncelleniyor...",
     revalidateSuccess: "Site başarıyla güncellendi.",
+    revalidateNoChanges: "Canlı site zaten güncel.",
+    snapshotInitialized: "Güvenli canlı yedek oluşturuldu.",
+    snapshotWarning:
+      "Değişiklikler kaydedildi ancak güvenli canlı yedek yenilenemedi.",
+    snapshotInitializationWarning:
+      "Güvenli canlı yedek oluşturulamadı; mevcut site verileri korunuyor.",
     revalidatePartial: "Bazı değişiklikler yayınlandı, ancak bir bölüm güncellenemedi.",
     cacheInvalidationWarning:
-      "Canlı site önbelleği yenilenemedi; görsel temizliği başlatılmadı.",
+      "Canlı önbellek yenilenemedi; mevcut site verileri korunuyor.",
+    draftFinalizationWarning:
+      "Canlı site güncellendi ancak taslak durumu doğrulanamadı; taslak hâlâ bulunabilir.",
+    newerDraftPreservedWarning:
+      "Canlı site güncellendi. Bu sırada kaydedilen daha yeni değişiklikler taslakta korundu.",
+    staleDraftSkippedWarning:
+      "Daha yeni bir taslak kaydedildiği için eski hazırlanan sürüm yayınlanmadı.",
     revalidateError: "Güncelleme başarısız.",
     general: {
       title: "Genel İşletme Ayarları",
@@ -1155,6 +1171,13 @@ const globalErrorDict = {
   },
 };
 
+const publicUnavailableDict = {
+  title: "Bu Sayfa Geçici Olarak Kullanılamıyor",
+  description:
+    "İçerik şu anda güvenli biçimde doğrulanamıyor. Lütfen kısa bir süre sonra tekrar deneyin.",
+  retry: "Yeniden Dene",
+};
+
 const systemErrorsDict = {
   env: {
     firebaseClient:
@@ -1234,6 +1257,7 @@ export const DICTIONARY = deepFreeze({
   social: socialDict,
   admin: adminDict,
   globalError: globalErrorDict,
+  publicUnavailable: publicUnavailableDict,
   systemErrors: systemErrorsDict,
   cron: cronDict,
 } as const);

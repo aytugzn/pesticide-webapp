@@ -14,6 +14,14 @@ const getAdminAppModule = () =>
 const getAdminFirestoreModule = () =>
   nodeRequire("firebase-admin/firestore") as typeof import("firebase-admin/firestore");
 
+/** Returns whether all Firebase Admin credential variables are configured. */
+export const hasFirebaseAdminConfig = (): boolean =>
+  Boolean(
+    process.env.FIREBASE_PROJECT_ID?.trim() &&
+      process.env.FIREBASE_CLIENT_EMAIL?.trim() &&
+      process.env.FIREBASE_PRIVATE_KEY?.trim(),
+  );
+
 export const getAdminApp = (): App => {
   const { cert, getApps, getApp, initializeApp } = getAdminAppModule();
 
@@ -23,7 +31,7 @@ export const getAdminApp = (): App => {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  if (!projectId || !clientEmail || !privateKey) {
+  if (!hasFirebaseAdminConfig() || !projectId || !clientEmail || !privateKey) {
     throw new AppError(DICTIONARY.systemErrors.env.firebaseAdmin, "ENV_MISSING");
   }
 

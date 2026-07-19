@@ -12,6 +12,7 @@ import type { RegionDoc } from "@/types";
 import { Edit2, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { RegionForm } from "./RegionForm";
+import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
 
 type RegionsTableProps = {
   initialRows: RegionDoc[];
@@ -21,6 +22,7 @@ const ICON_SIZE = 16;
 
 export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
   const d = DICTIONARY.admin.regions;
+  const { showToast } = useCombinationAdminToast();
   const [deletedSlugs, setDeletedSlugs] = useState<Set<string>>(new Set());
   const [activeOverrides, setActiveOverrides] = useState<Record<string, boolean>>({});
   const [pendingToggleIds, setPendingToggleIds] = useState<Set<string>>(new Set());
@@ -29,7 +31,7 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
   const [editError, setEditError] = useState<string | null>(null);
   const [rowToDelete, setRowToDelete] = useState<RegionDoc | null>(null);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
-  const [deleteNotice, setDeleteNotice] = useState<{ variant: "success" | "error"; message: string } | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<{ variant: "success" | "warning" | "error"; message: string } | null>(null);
 
   const rows = initialRows
     .filter((row) => !deletedSlugs.has(row.slug))
@@ -58,6 +60,13 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
           delete next[row.slug];
           return next;
         });
+      } else if (result.data?.activationStatus === "deferred") {
+        showToast({
+          variant: "warning",
+          message: result.data?.publicationRequired
+            ? DICTIONARY.admin.publicPublicationRequiredWarning
+            : DICTIONARY.admin.publicActivationDeferredWarning,
+        });
       }
     } catch {
       setActiveOverrides((prev) => {
@@ -72,7 +81,7 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
         return next;
       });
     }
-  }, [pendingToggleIds]);
+  }, [pendingToggleIds, showToast]);
 
   const handleEdit = useCallback(async (row: RegionDoc) => {
     if (pendingEditSlug) return;
@@ -126,7 +135,18 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
           delete next[rowToDelete.slug];
           return next;
         });
-        setDeleteNotice({ variant: "success", message: d.deleteSuccess });
+        setDeleteNotice({
+          variant:
+            result.data?.activationStatus === "deferred"
+              ? "warning"
+              : "success",
+          message:
+            result.data?.activationStatus === "deferred"
+              ? result.data?.publicationRequired
+                ? DICTIONARY.admin.publicPublicationRequiredWarning
+                : DICTIONARY.admin.publicActivationDeferredWarning
+              : d.deleteSuccess,
+        });
         setRowToDelete(null);
         return;
       }
@@ -236,7 +256,15 @@ export const RegionsTable = ({ initialRows }: RegionsTableProps) => {
         <Alert variant="error" message={editError} className="mb-4" />
       )}
       {deleteNotice && (
-        <Alert variant={deleteNotice.variant} message={deleteNotice.message} className="mb-4" />
+        <Alert
+          variant={
+            deleteNotice.variant === "warning"
+              ? "info"
+              : deleteNotice.variant
+          }
+          message={deleteNotice.message}
+          className="mb-4"
+        />
       )}
 
       <AdminEntityTable

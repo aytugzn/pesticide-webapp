@@ -1,4 +1,4 @@
-import type { CombinationDoc } from "@/types";
+import type { CombinationDoc, PublicMutationResult } from "@/types";
 
 export const COMBINATION_ERRORS = {
   FETCH_FAILED: "FETCH_FAILED",
@@ -68,7 +68,7 @@ export type BulkCombinationMutationInput = {
   operation: BulkCombinationMutationOperation;
 };
 
-export type BulkCombinationMutationResult = {
+export type BulkCombinationMutationResult = PublicMutationResult & {
   affectedCount: number;
   affectedKeys?: string[];
   affectedRows?: CombinationLightRow[];

@@ -2,21 +2,29 @@
 
 import "server-only";
 
-import { updateTag } from "next/cache";
 import type { ActionResponse } from "@/types";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getAdminDb } from "@/lib/firebase-admin";
+import type { DraftFinalizationStatus } from "@/lib/firestoreDraftFinalization";
+import { activatePublicData } from "@/lib/publicActivation";
 import {
-  cleanupPublishedSiteImages,
+  createEmptyPublicSnapshotChanges,
+  mergePublicSnapshotChanges,
+  type PublicSnapshotChanges,
+} from "@/lib/publicSnapshot";
+import {
   commitSiteImagesPublish,
+  finalizeSiteImagesPublish,
   prepareSiteImagesDraftPublish,
 } from "./publishSiteImages";
 import {
   commitGeneralSettingsPublish,
+  finalizeGeneralSettingsPublish,
   prepareGeneralSettingsDraftPublish,
 } from "./publishGeneralSettings";
 import {
   commitReviewsPublish,
+  finalizeReviewsPublish,
   prepareReviewsDraftPublish,
 } from "@/features/reviews/publishReviews";
 import {
@@ -24,37 +32,55 @@ import {
   type GlobalPublishResult,
   type SettingsErrorCode,
 } from "./types";
+import {
+  requiresCanonicalSnapshotComparison,
+} from "./publishActivation";
 
-/**
- * Refreshes each global public cache tag exactly once.
- *
- * @returns Nothing after synchronous tag invalidation
- */
-const updateGlobalCacheTags = (): void => {
-  updateTag("global-data");
-  updateTag("home-data");
-  updateTag("layout-settings");
-  updateTag("all-combinations");
+/** Returns whether a version-checked draft commit may proceed to activation. */
+const isAcceptedDraftCommit = (status: string | undefined): boolean =>
+  status === "published" || status === "unchanged-current";
+
+/** Returns whether a prepared draft was superseded or removed before commit. */
+const isSkippedDraftCommit = (status: string | undefined): boolean =>
+  status === "stale-draft-skipped" || status === "draft-missing";
+
+/** Builds retryable cache ownership for accepted settings-domain drafts. */
+const getRequestedDraftChanges = (input: {
+  siteActivationPending: boolean;
+  siteImagesPublished: boolean;
+  heroImagesPublished: boolean;
+  settingsSlidesPublished: boolean;
+  generalActivationPending: boolean;
+  reviewsActivationPending: boolean;
+}): PublicSnapshotChanges => {
+  const summaries: PublicSnapshotChanges[] = [];
+  if (input.siteActivationPending) {
+    summaries.push({
+      ...createEmptyPublicSnapshotChanges(),
+      heroSlidesChanged:
+        input.heroImagesPublished || !input.siteImagesPublished,
+      settingsChanged:
+        input.settingsSlidesPublished || !input.siteImagesPublished,
+    });
+  }
+  if (input.generalActivationPending) {
+    summaries.push({
+      ...createEmptyPublicSnapshotChanges(),
+      settingsChanged: true,
+    });
+  }
+  if (input.reviewsActivationPending) {
+    summaries.push({
+      ...createEmptyPublicSnapshotChanges(),
+      reviewsChanged: true,
+    });
+  }
+  return mergePublicSnapshotChanges(...summaries);
 };
 
 /**
- * Refreshes layout and combination responsibilities after domain failure.
- *
- * @returns Nothing after synchronous fallback invalidation
- */
-const updateFailureCacheTags = (): void => {
-  updateTag("layout-settings");
-  updateTag("all-combinations");
-};
-
-/** Refreshes only the public data consumed by the review carousel. */
-const updateReviewsCacheTag = (): void => {
-  updateTag("home-data");
-};
-
-/**
- * Runs authorized draft preparation, Firestore commits, cache invalidation,
- * and finally Cloudinary cleanup.
+ * Runs authorization, domain preparation, Firestore commits, canonical
+ * snapshot replacement, and domain-owned cache invalidation in that order.
  *
  * @returns Detailed domain publish and warning state
  */
@@ -101,52 +127,149 @@ export const revalidateAll = async (): Promise<
   ]);
   const siteImagesPublished =
     sitePublish.success && Boolean(sitePublish.data?.published);
+  const siteCommitStatus = sitePublish.success
+    ? sitePublish.data?.status
+    : undefined;
+  const heroImagesPublished = Boolean(
+    siteImagesPublished &&
+      sitePreparation.success &&
+      sitePreparation.data?.heroChanged,
+  );
+  const settingsSlidesPublished = Boolean(
+    siteImagesPublished &&
+      sitePreparation.success &&
+      sitePreparation.data?.settingsSlidesChanged,
+  );
   const generalSettingsPublished =
     generalPublish.success && Boolean(generalPublish.data?.published);
+  const generalCommitStatus = generalPublish.success
+    ? generalPublish.data?.status
+    : undefined;
   const reviewsPublished =
     reviewsPublish.success && Boolean(reviewsPublish.data?.published);
+  const reviewsCommitStatus = reviewsPublish.success
+    ? reviewsPublish.data?.status
+    : undefined;
   const globalDomainPublished =
     siteImagesPublished || generalSettingsPublished;
   const anyPublished = globalDomainPublished || reviewsPublished;
   const anyDomainFailure =
     !sitePublish.success || !generalPublish.success || !reviewsPublish.success;
+  const siteActivationPending = Boolean(
+    sitePublish.success &&
+      sitePreparation.success &&
+      sitePreparation.data?.hasDraft &&
+      isAcceptedDraftCommit(siteCommitStatus),
+  );
+  const generalActivationPending = Boolean(
+    generalPublish.success &&
+      generalPreparation.success &&
+      generalPreparation.data?.hasDraft &&
+      isAcceptedDraftCommit(generalCommitStatus),
+  );
+  const reviewsActivationPending = Boolean(
+    reviewsPublish.success &&
+      reviewsPreparation.success &&
+      reviewsPreparation.data?.hasDraft &&
+      isAcceptedDraftCommit(reviewsCommitStatus),
+  );
+  const anyActivationPending =
+    siteActivationPending ||
+    generalActivationPending ||
+    reviewsActivationPending;
 
-  let cacheInvalidationFailed = false;
-  try {
-    if (globalDomainPublished || (!anyPublished && !anyDomainFailure)) {
-      updateGlobalCacheTags();
-    } else if (reviewsPublished) {
-      updateReviewsCacheTag();
-      if (anyDomainFailure) updateFailureCacheTags();
-    } else {
-      updateFailureCacheTags();
-    }
-  } catch {
-    cacheInvalidationFailed = true;
-    console.error("Failed to update global cache tags");
-  }
-
-  let cleanupStatus: GlobalPublishResult["cleanupStatus"] = "not-needed";
+  const requiresCanonicalComparison =
+    requiresCanonicalSnapshotComparison();
+  const requestedDraftChanges = getRequestedDraftChanges({
+    siteActivationPending,
+    siteImagesPublished,
+    heroImagesPublished,
+    settingsSlidesPublished,
+    generalActivationPending,
+    reviewsActivationPending,
+  });
+  const activation = await activatePublicData(
+    db,
+    requiresCanonicalComparison
+      ? requestedDraftChanges
+      : createEmptyPublicSnapshotChanges(),
+  );
   if (
-    !cacheInvalidationFailed &&
-    siteImagesPublished &&
-    sitePreparation.success &&
-    sitePreparation.data
+    anyDomainFailure &&
+    !anyPublished &&
+    !anyActivationPending &&
+    !activation.cacheInvalidated
   ) {
-    cleanupStatus = await cleanupPublishedSiteImages(
-      db,
-      sitePreparation.data.cleanupCandidates,
-    );
-  }
-
-  if (anyDomainFailure && !anyPublished) {
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
   }
+  const cacheInvalidated = activation.cacheInvalidated;
+  const cacheInvalidationFailed = activation.cacheInvalidationFailed;
 
+  let draftsFinalized = false;
+  let draftFinalizationFailed = false;
+  let newerDraftPreserved = false;
+  if (cacheInvalidated) {
+    const finalizationResults: Array<DraftFinalizationStatus | null> =
+      await Promise.all([
+        siteActivationPending
+          ? finalizeSiteImagesPublish(
+              db,
+              sitePreparation.success
+                ? (sitePreparation.data?.draftVersion ?? null)
+                : null,
+            )
+          : Promise.resolve(null),
+        generalActivationPending
+          ? finalizeGeneralSettingsPublish(
+              db,
+              generalPreparation.success
+                ? (generalPreparation.data?.draftVersion ?? null)
+                : null,
+            )
+          : Promise.resolve(null),
+        reviewsActivationPending
+          ? finalizeReviewsPublish(
+              db,
+              reviewsPreparation.success
+                ? (reviewsPreparation.data?.draftVersion ?? null)
+                : null,
+            )
+          : Promise.resolve(null),
+      ]);
+    const attemptedFinalizations = finalizationResults.filter(
+      (result): result is DraftFinalizationStatus => result !== null,
+    );
+    draftFinalizationFailed = attemptedFinalizations.includes("failed");
+    newerDraftPreserved = attemptedFinalizations.includes(
+      "newer-draft-preserved",
+    );
+    draftsFinalized =
+      attemptedFinalizations.length > 0 &&
+      attemptedFinalizations.every(
+        (result) => result === "deleted" || result === "already-missing",
+      );
+  }
+
+  const cleanupStatus: GlobalPublishResult["cleanupStatus"] = "not-needed";
+  const staleDraftSkipped =
+    isSkippedDraftCommit(siteCommitStatus) ||
+    isSkippedDraftCommit(generalCommitStatus) ||
+    isSkippedDraftCommit(reviewsCommitStatus);
+  const activationDeferred = activation.activationStatus === "deferred";
   const partialFailure =
     anyDomainFailure ||
+    staleDraftSkipped ||
+    activation.firestoreSnapshot.status === "failed" ||
+    activation.firestoreSnapshot.status === "stale" ||
+    activation.snapshot.status === "failed" ||
     cacheInvalidationFailed ||
-    cleanupStatus === "partial-failure";
+    draftFinalizationFailed;
+  const trueNoOp =
+    !anyPublished &&
+    !anyActivationPending &&
+    !anyDomainFailure &&
+    !staleDraftSkipped &&
+    activation.activationStatus === "not-needed";
 
   return {
     success: true,
@@ -155,8 +278,19 @@ export const revalidateAll = async (): Promise<
       cleanupStatus,
       generalSettingsPublished,
       reviewsPublished,
+      snapshotStatus: activation.firestoreSnapshot.status,
+      domainPartialFailure: anyDomainFailure,
       partialFailure,
+      cacheInvalidationAttempted: activation.cacheTags.length > 0,
+      cacheInvalidated,
       cacheInvalidationFailed,
+      activationPending: anyActivationPending,
+      activationDeferred,
+      draftsFinalized,
+      draftFinalizationFailed,
+      newerDraftPreserved,
+      staleDraftSkipped,
+      trueNoOp,
     },
   };
 };

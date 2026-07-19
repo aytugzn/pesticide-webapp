@@ -1,11 +1,14 @@
 import "server-only";
 
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
-import type { ActionResponse } from "@/types";
 import {
-  collectManagedSiteImagePublicIds,
-  deleteManagedSiteImage,
-} from "@/features/image-upload/cloudinary";
+  finalizePreparedDraft,
+  getPreparedDraftVersionStatus,
+  getFirestoreDocumentVersion,
+  type DraftFinalizationStatus,
+  type FirestoreDocumentVersion,
+} from "@/lib/firestoreDraftFinalization";
+import type { ActionResponse } from "@/types";
 import { parseSettingsDoc, parseSiteImageSlides } from "@/utils/parsers";
 import { SITE_IMAGES_DRAFT_DOCUMENT_ID } from "./constants";
 import {
@@ -18,7 +21,6 @@ import {
   type PublishSiteImagesResult,
   type SaveSiteImagesInput,
   type SettingsErrorCode,
-  type SiteImagesCleanupStatus,
 } from "./types";
 
 type SerializedSiteImageSlide = {
@@ -30,11 +32,14 @@ type SerializedSiteImageSlide = {
 };
 
 export type PreparedSiteImagesPublish = {
+  hasDraft: boolean;
+  draftVersion: FirestoreDocumentVersion | null;
   shouldPublish: boolean;
+  heroChanged: boolean;
+  settingsSlidesChanged: boolean;
   heroSlides: SerializedSiteImageSlide[];
   whyUsSlides: SerializedSiteImageSlide[];
   servicesSlides: SerializedSiteImageSlide[];
-  cleanupCandidates: string[];
 };
 
 /**
@@ -56,10 +61,10 @@ const serializeSlides = (
 
 /**
  * Reads and validates the site-image draft without Firestore or Cloudinary
- * mutation, and computes potential stale-image cleanup candidates.
+ * mutation, and identifies which public cache responsibilities changed.
  *
  * @param db - Admin Firestore instance obtained after authorization
- * @returns Prepared canonical slides and cleanup candidates
+ * @returns Prepared canonical slides and per-group change state
  */
 export const prepareSiteImagesDraftPublish = async (
   db: Firestore,
@@ -76,16 +81,24 @@ export const prepareSiteImagesDraftPublish = async (
       return {
         success: true,
         data: {
+          hasDraft: false,
+          draftVersion: null,
           shouldPublish: false,
+          heroChanged: false,
+          settingsSlidesChanged: false,
           heroSlides: [],
           whyUsSlides: [],
           servicesSlides: [],
-          cleanupCandidates: [],
         },
       };
     }
 
     const settings = parseSettingsDoc(generalSnap.data());
+    const draftVersion = getFirestoreDocumentVersion(draftSnap);
+    if (!draftVersion) {
+      console.error("Failed to read site images draft version");
+      return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
+    }
     const generalData = generalSnap.data();
     const publishedHeroSlides = parseSiteImageSlides(heroSnap.data()?.slides);
     const publishedWhyUsSlides = resolvePublishedSiteImageSlides(
@@ -118,28 +131,27 @@ export const prepareSiteImagesDraftPublish = async (
     const heroSlides = serializeSlides(parsedDraft.data.heroSlides);
     const whyUsSlides = serializeSlides(parsedDraft.data.whyUsSlides);
     const servicesSlides = serializeSlides(parsedDraft.data.servicesSlides);
-    const previousPublishedPublicIds = new Set<string>([
-      ...collectManagedSiteImagePublicIds(heroSnap.data()),
-      ...collectManagedSiteImagePublicIds(generalSnap.data()),
-    ]);
-    const nextPublishedPublicIds = new Set<string>([
-      ...collectManagedSiteImagePublicIds({ slides: heroSlides }),
-      ...collectManagedSiteImagePublicIds({
-        whyUsSlides,
-        servicesSlides,
-      }),
-    ]);
+    const heroChanged =
+      JSON.stringify(heroSlides) !==
+      JSON.stringify(serializeSlides(publishedHeroSlides));
+    const settingsSlidesChanged =
+      JSON.stringify(whyUsSlides) !==
+        JSON.stringify(serializeSlides(publishedWhyUsSlides)) ||
+      JSON.stringify(servicesSlides) !==
+        JSON.stringify(serializeSlides(publishedServicesSlides));
+    const shouldPublish = heroChanged || settingsSlidesChanged;
 
     return {
       success: true,
       data: {
-        shouldPublish: true,
+        hasDraft: true,
+        draftVersion,
+        shouldPublish,
+        heroChanged,
+        settingsSlidesChanged,
         heroSlides,
         whyUsSlides,
         servicesSlides,
-        cleanupCandidates: [...previousPublishedPublicIds].filter(
-          (publicId) => !nextPublishedPublicIds.has(publicId),
-        ),
       },
     };
   } catch {
@@ -147,6 +159,22 @@ export const prepareSiteImagesDraftPublish = async (
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
   }
 };
+
+/**
+ * Removes a consumed site-image draft only after snapshot and cache activation.
+ *
+ * @param db - Authorized Admin Firestore instance
+ * @returns Whether pending activation state was cleared
+ */
+export const finalizeSiteImagesPublish = async (
+  db: Firestore,
+  expectedVersion: FirestoreDocumentVersion | null,
+): Promise<DraftFinalizationStatus> =>
+  finalizePreparedDraft(
+    db,
+    db.collection("settings").doc(SITE_IMAGES_DRAFT_DOCUMENT_ID),
+    expectedVersion,
+  );
 
 /**
  * Commits prepared site images without starting Cloudinary cleanup.
@@ -159,76 +187,70 @@ export const commitSiteImagesPublish = async (
   db: Firestore,
   prepared: PreparedSiteImagesPublish,
 ): Promise<ActionResponse<PublishSiteImagesResult, SettingsErrorCode>> => {
-  if (!prepared.shouldPublish) {
-    return {
-      success: true,
-      data: { published: false, cleanupStatus: "not-needed" },
-    };
-  }
-
   try {
     const settingsCollection = db.collection("settings");
-    const batch = db.batch();
-    batch.set(
-      settingsCollection.doc("heroSlider"),
-      { slides: prepared.heroSlides },
-      { merge: true },
-    );
-    batch.set(
-      settingsCollection.doc("general"),
-      {
-        whyUsSlides: prepared.whyUsSlides,
-        servicesSlides: prepared.servicesSlides,
-        whyUsImage: FieldValue.delete(),
-        servicesImage: FieldValue.delete(),
+    const result = await db.runTransaction<PublishSiteImagesResult | null>(
+      async (transaction) => {
+        if (prepared.hasDraft) {
+          const draftRef = settingsCollection.doc(
+            SITE_IMAGES_DRAFT_DOCUMENT_ID,
+          );
+          const currentDraft = await transaction.get(draftRef);
+          const versionStatus = getPreparedDraftVersionStatus(
+            currentDraft,
+            prepared.draftVersion,
+          );
+          if (versionStatus === "failed") return null;
+          if (versionStatus !== "current") {
+            return {
+              published: false,
+              status: versionStatus,
+              cleanupStatus: "not-needed",
+            };
+          }
+        }
+
+        if (!prepared.shouldPublish) {
+          return {
+            published: false,
+            status: "unchanged-current",
+            cleanupStatus: "not-needed",
+          };
+        }
+
+        if (prepared.heroChanged) {
+          transaction.set(
+            settingsCollection.doc("heroSlider"),
+            { slides: prepared.heroSlides },
+            { merge: true },
+          );
+        }
+        if (prepared.settingsSlidesChanged) {
+          transaction.set(
+            settingsCollection.doc("general"),
+            {
+              whyUsSlides: prepared.whyUsSlides,
+              servicesSlides: prepared.servicesSlides,
+              whyUsImage: FieldValue.delete(),
+              servicesImage: FieldValue.delete(),
+            },
+            { merge: true },
+          );
+        }
+        return {
+          published: true,
+          status: "published",
+          cleanupStatus: "not-needed",
+        };
       },
-      { merge: true },
     );
-    await batch.commit();
-    return {
-      success: true,
-      data: { published: true, cleanupStatus: "not-needed" },
-    };
+    if (!result) {
+      console.error("Failed to verify site images draft version");
+      return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
+    }
+    return { success: true, data: result };
   } catch {
     console.error("Failed to publish site images");
     return { success: false, error: SETTINGS_ERRORS.FETCH_FAILED };
-  }
-};
-
-/**
- * Rechecks every settings reference after cache invalidation, then removes
- * only unreferenced assets from managed Cloudinary folders.
- *
- * @param db - Admin Firestore instance obtained after authorization
- * @param cleanupCandidates - Potential stale public IDs from prepare phase
- * @returns Best-effort cleanup status without rolling back a publish
- */
-export const cleanupPublishedSiteImages = async (
-  db: Firestore,
-  cleanupCandidates: readonly string[],
-): Promise<SiteImagesCleanupStatus> => {
-  const uniqueCandidates = [...new Set(cleanupCandidates)];
-  if (uniqueCandidates.length === 0) return "not-needed";
-
-  try {
-    const currentSettingsSnapshot = await db.collection("settings").get();
-    const referencedPublicIds = new Set<string>();
-    currentSettingsSnapshot.docs.forEach((doc) => {
-      collectManagedSiteImagePublicIds(doc.data()).forEach((publicId) =>
-        referencedPublicIds.add(publicId),
-      );
-    });
-    const orphanedPublicIds = uniqueCandidates.filter(
-      (publicId) => !referencedPublicIds.has(publicId),
-    );
-    if (orphanedPublicIds.length === 0) return "not-needed";
-
-    const cleanupResults = await Promise.all(
-      orphanedPublicIds.map(deleteManagedSiteImage),
-    );
-    return cleanupResults.every(Boolean) ? "success" : "partial-failure";
-  } catch {
-    console.error("Failed to verify stale site image references");
-    return "partial-failure";
   }
 };

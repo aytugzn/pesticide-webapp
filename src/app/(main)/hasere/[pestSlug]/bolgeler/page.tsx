@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layout/PublicPageHeader";
@@ -8,9 +8,17 @@ import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
-import { getGlobalData } from "@/features/settings/data";
-import { getAllActiveCombinations } from "@/features/combinations/data";
+import {
+  getGlobalDataMetadataResult,
+  getGlobalDataResult,
+} from "@/features/settings/data";
+import {
+  getAllActiveCombinationsMetadataResult,
+  getAllActiveCombinationsResult,
+} from "@/features/combinations/data";
 import { resolveAppImage } from "@/utils/cloudinary";
+import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
+import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
 
 type PestRegionsHubPageProps = {
   params: Promise<{ pestSlug: string }>;
@@ -59,52 +67,42 @@ const getCombinationRegionTitle = (
 ) => combinationTitle || `${regionName} ${serviceTitle}`;
 
 /**
- * Generates static pest region hub paths only for pests with active combinations.
- */
-export const generateStaticParams = async () => {
-  const activeCombinations = await getAllActiveCombinations();
-
-  if (!activeCombinations || activeCombinations.length === 0) {
-    throw new AppError(
-      "No active combinations found. At least one active combination is required to build pest region hubs.",
-      "BUILD_ERROR",
-    );
-  }
-
-  const pestSlugs = Array.from(
-    new Set(activeCombinations.map((combination) => combination.pest)),
-  );
-
-  return pestSlugs.map((pestSlug) => ({ pestSlug }));
-};
-
-/**
  * Generates SEO metadata for pest-specific region hub pages.
  */
 export const generateMetadata = async ({
   params,
 }: PestRegionsHubPageProps): Promise<Metadata> => {
   const { pestSlug } = await params;
-  const [{ pests }, activeCombinations] = await Promise.all([
-    getGlobalData(),
-    getAllActiveCombinations(),
+  const canonicalUrl = `${ROUTES.pestBase}/${pestSlug}${ROUTES.regions}`;
+  const [globalDataResult, combinationsResult] = await Promise.all([
+    getGlobalDataMetadataResult(),
+    getAllActiveCombinationsMetadataResult(),
   ]);
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return {
+      title: DICTIONARY.meta.default.title,
+      description: DICTIONARY.meta.default.description,
+      alternates: { canonical: canonicalUrl },
+    };
+  }
+
+  const { pests } = globalDataResult.data;
+  const activeCombinations = combinationsResult.data;
   const pest = pests.find((item) => item.slug === pestSlug);
   const hasCombinations = activeCombinations.some(
     (combination) => combination.pest === pestSlug,
   );
 
   if (!pest || !hasCombinations) {
-    return {
-      title: DICTIONARY.global.brand,
-      robots: { index: false },
-    };
+    notFound();
   }
 
   const serviceTitle = getServiceTitle(pest.name);
   const title = `${getPestRegionsHubTitle(serviceTitle)} | ${DICTIONARY.global.brand}`;
   const description = getPestRegionsHubMetaDescription(serviceTitle);
-  const canonicalUrl = `${ROUTES.pestBase}/${pest.slug}${ROUTES.regions}`;
   const resolvedOgImage = resolveAppImage({
     image: pest.image,
     imageUrl: pest.imageUrl,
@@ -142,12 +140,23 @@ export const generateMetadata = async ({
   };
 };
 
-const PestRegionsHubPage = async ({ params }: PestRegionsHubPageProps) => {
+const PestRegionsHubPageContent = async ({
+  params,
+}: PestRegionsHubPageProps) => {
   const { pestSlug } = await params;
-  const [{ pests, regions }, activeCombinations] = await Promise.all([
-    getGlobalData(),
-    getAllActiveCombinations(),
+  const [globalDataResult, combinationsResult] = await Promise.all([
+    getGlobalDataResult(),
+    getAllActiveCombinationsResult(),
   ]);
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return <PublicDataUnavailable />;
+  }
+
+  const { pests, regions } = globalDataResult.data;
+  const activeCombinations = combinationsResult.data;
   const pest = pests.find((item) => item.slug === pestSlug);
 
   if (!pest) notFound();
@@ -218,5 +227,12 @@ const PestRegionsHubPage = async ({ params }: PestRegionsHubPageProps) => {
     </>
   );
 };
+
+/** Keeps runtime hub params inside a Cache Components Suspense boundary. */
+const PestRegionsHubPage = (props: PestRegionsHubPageProps) => (
+  <Suspense fallback={<PublicRouteLoading />}>
+    <PestRegionsHubPageContent {...props} />
+  </Suspense>
+);
 
 export default PestRegionsHubPage;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { DraftCommitStatus } from "@/types";
 import type { reviewItemSchema, saveReviewsDraftSchema } from "./schemas";
 
 export const REVIEW_ERRORS = {
@@ -18,4 +19,5 @@ export type AdminReviewsData = {
 
 export type PublishReviewsResult = {
   published: boolean;
+  status: DraftCommitStatus;
 };

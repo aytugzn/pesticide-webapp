@@ -13,6 +13,14 @@ type WhyUsSectionProps = {
   variant?: "default" | "embedded";
 }
 
+const BACKUP_WHY_US_SLIDES: SliderImage[] = [
+  {
+    id: "backup-why-us",
+    url: "/backup/why-us.webp",
+    altText: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
+  },
+];
+
 export const WhyUsSection = ({
   slides,
   legacyImage = null,
@@ -62,16 +70,6 @@ export const WhyUsSection = ({
     }
   }
 
-  if (sliderImages.length === 0) {
-    sliderImages = [
-      {
-        id: "backup-why-us",
-        url: "/backup/why-us.webp",
-        altText: DICTIONARY.admin.settings.siteImages.whyUsAltDefault,
-      },
-    ];
-  }
-
   return (
     <section
       className={cn(
@@ -98,6 +96,7 @@ export const WhyUsSection = ({
             <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-brand-border shadow-xl shadow-brand-primary/5 group lg:mt-auto">
               <ImageSlider
                 images={sliderImages}
+                fallbackImages={BACKUP_WHY_US_SLIDES}
                 autoplayDelay={autoplayDelay}
               />
               <div

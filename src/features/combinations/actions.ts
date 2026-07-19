@@ -5,15 +5,25 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase-admin";
 
 import { parseCombinationDoc } from "@/utils/parsers";
-import { updateTag } from "next/cache";
 import type { DocumentReference, Query } from "firebase-admin/firestore";
-import type { ActionResponse, CombinationDoc } from "@/types";
+import type {
+  ActionResponse,
+  CombinationDoc,
+  PublicMutationResult,
+} from "@/types";
 import { COMBINATION_ERRORS, type AdminCombinationListFilter, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type BulkCombinationMutationInput, type BulkCombinationMutationResult } from "./types";
-import { getCombinationCacheTag } from "./constants";
 import { bulkCombinationMutationSchema, combinationSlugParamsSchema, saveCombinationSchema, toggleCombinationSchema, unarchiveCombinationSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { getGlobalData } from "@/features/settings/data";
+import { getEditableGlobalData } from "@/features/settings/data";
 import { getErrorInfo } from "./actions/utils";
+import { activatePublishedVisibilityPatch } from "@/lib/publicActivation";
+import {
+  readPublishedSnapshotInTransaction,
+  stagePublishedVisibilityPatch,
+  type PublishedVisibilityPatchResult,
+  type PublishedVisibilityPatch,
+} from "@/lib/firestorePublishedSnapshot";
+import { createEmptyPublicSnapshotChanges } from "@/lib/publicSnapshot";
 
 const BULK_COMBINATION_BATCH_SIZE = 400;
 
@@ -260,7 +270,7 @@ export const toggleCombinationStatus = async (
   regionSlug: string,
   pestSlug: string,
   isActive: boolean
-): Promise<ActionResponse<void, CombinationErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, CombinationErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
   }
@@ -275,14 +285,32 @@ export const toggleCombinationStatus = async (
     const { regionSlug: parsedRegion, pestSlug: parsedPest, isActive: parsedIsActive } = parsed.data;
     const docId = `${parsedRegion}_${parsedPest}`;
 
-    // Using update instead of set with merge to avoid creating orphan docs.
-    // This will throw if the document doesn't exist.
-    await getAdminDb().collection("combinations").doc(docId).update({ isActive: parsedIsActive });
-
-    updateTag(getCombinationCacheTag(parsedRegion, parsedPest));
-    updateTag("all-combinations");
-
-    return { success: true };
+    const db = getAdminDb();
+    const combinationRef = db.collection("combinations").doc(docId);
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const [combination, published] = await Promise.all([
+        transaction.get(combinationRef),
+        readPublishedSnapshotInTransaction(transaction, db),
+      ]);
+      if (!combination.exists) return null;
+      transaction.update(combinationRef, { isActive: parsedIsActive });
+      return stagePublishedVisibilityPatch(transaction, db, published, {
+        combinationStatuses: {
+          [docId]: { isActive: parsedIsActive },
+        },
+      });
+    });
+    if (!transactionResult) {
+      return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
+    }
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult,
+    );
+    return {
+      success: true,
+      data: activation,
+    };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
 
@@ -432,52 +460,151 @@ export const bulkMutateCombinationsByFilter = async (
             skippedCount: skippedMissingRelatedCount + skippedInactiveRelatedCount,
             skippedMissingRelatedCount,
             skippedInactiveRelatedCount,
+            activationStatus: "not-needed",
           },
         };
       }
     }
 
-    for (let index = 0; index < mutationTargets.length; index += BULK_COMBINATION_BATCH_SIZE) {
-      const batch = db.batch();
-      const chunk = mutationTargets.slice(index, index + BULK_COMBINATION_BATCH_SIZE);
-
-      chunk.forEach((target) => {
-        if (operation === "delete") {
-          batch.delete(target.ref);
-          return;
-        }
-
-        if (operation === "archive") {
-          batch.update(target.ref, {
-            isArchived: true,
-            isActive: false,
-            archivedAt: now,
-            updatedAt: now,
-          });
-          return;
-        }
-
-        if (operation === "restore") {
-          batch.update(target.ref, {
-            isArchived: false,
-            isActive: false,
-            updatedAt: now,
-          });
-          return;
-        }
-
-        batch.update(target.ref, {
+    const combinationStatuses: NonNullable<
+      PublishedVisibilityPatch["combinationStatuses"]
+    > = {};
+    mutationTargets.forEach((target) => {
+      if (operation === "archive") {
+        combinationStatuses[target.ref.id] = {
+          isArchived: true,
           isActive: false,
-          updatedAt: now,
-        });
-      });
+        };
+      } else if (operation === "restore") {
+        combinationStatuses[target.ref.id] = {
+          isArchived: false,
+          isActive: false,
+        };
+      } else if (operation === "deactivate") {
+        combinationStatuses[target.ref.id] = { isActive: false };
+      }
+    });
+    const visibilityPatch: PublishedVisibilityPatch =
+      operation === "delete"
+        ? {
+            deletedCombinationIds: mutationTargets.map(
+              (target) => target.ref.id,
+            ),
+          }
+        : { combinationStatuses };
 
-      await batch.commit();
+    let publishedPatch: PublishedVisibilityPatchResult;
+    if (mutationTargets.length <= BULK_COMBINATION_BATCH_SIZE) {
+      publishedPatch = await db.runTransaction(async (transaction) => {
+        const published = await readPublishedSnapshotInTransaction(
+          transaction,
+          db,
+        );
+        mutationTargets.forEach((target) => {
+          if (operation === "delete") {
+            transaction.delete(target.ref);
+          } else if (operation === "archive") {
+            transaction.update(target.ref, {
+              isArchived: true,
+              isActive: false,
+              archivedAt: now,
+              updatedAt: now,
+            });
+          } else if (operation === "restore") {
+            transaction.update(target.ref, {
+              isArchived: false,
+              isActive: false,
+              updatedAt: now,
+            });
+          } else {
+            transaction.update(target.ref, {
+              isActive: false,
+              updatedAt: now,
+            });
+          }
+        });
+        return stagePublishedVisibilityPatch(
+          transaction,
+          db,
+          published,
+          visibilityPatch,
+        );
+      });
+    } else {
+      const completedTargets: BulkCombinationTarget[] = [];
+      for (
+        let index = 0;
+        index < mutationTargets.length;
+        index += BULK_COMBINATION_BATCH_SIZE
+      ) {
+        const batch = db.batch();
+        const chunk = mutationTargets.slice(
+          index,
+          index + BULK_COMBINATION_BATCH_SIZE,
+        );
+        chunk.forEach((target) => {
+          if (operation === "delete") {
+            batch.delete(target.ref);
+          } else if (operation === "archive") {
+            batch.update(target.ref, {
+              isArchived: true,
+              isActive: false,
+              archivedAt: now,
+              updatedAt: now,
+            });
+          } else if (operation === "restore") {
+            batch.update(target.ref, {
+              isArchived: false,
+              isActive: false,
+              updatedAt: now,
+            });
+          } else {
+            batch.update(target.ref, {
+              isActive: false,
+              updatedAt: now,
+            });
+          }
+        });
+        try {
+          await batch.commit();
+          completedTargets.push(...chunk);
+        } catch {
+          return {
+            success: true,
+            data: {
+              affectedCount: completedTargets.length,
+              ...getBulkMutationResultPayload(completedTargets, operation),
+              activationStatus: "deferred",
+              publicationRequired: true,
+            },
+          };
+        }
+      }
+      try {
+        publishedPatch = await db.runTransaction(async (transaction) => {
+          const published = await readPublishedSnapshotInTransaction(
+            transaction,
+            db,
+          );
+          return stagePublishedVisibilityPatch(
+            transaction,
+            db,
+            published,
+            visibilityPatch,
+          );
+        });
+      } catch {
+        publishedPatch = {
+          changes: createEmptyPublicSnapshotChanges(),
+          publicationRequired: true,
+        };
+      }
     }
 
-    const affectedTags = new Set(mutationTargets.map((target) => getCombinationCacheTag(target.region, target.pest)));
-    affectedTags.forEach((tag) => updateTag(tag));
-    updateTag("all-combinations");
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      publishedPatch,
+    );
 
     if (restoreSummary) {
       const resultPayload = getBulkMutationResultPayload(restoreSummary.restoredTargets, operation);
@@ -494,6 +621,8 @@ export const bulkMutateCombinationsByFilter = async (
           skippedCount: restoreSummary.skippedMissingRelatedCount + restoreSummary.skippedInactiveRelatedCount,
           skippedMissingRelatedCount: restoreSummary.skippedMissingRelatedCount,
           skippedInactiveRelatedCount: restoreSummary.skippedInactiveRelatedCount,
+          activationStatus: activation.activationStatus,
+          publicationRequired: activation.publicationRequired,
         },
       };
     }
@@ -503,6 +632,8 @@ export const bulkMutateCombinationsByFilter = async (
       data: {
         affectedCount: mutationTargets.length,
         ...getBulkMutationResultPayload(mutationTargets, operation),
+        activationStatus: activation.activationStatus,
+        publicationRequired: activation.publicationRequired,
       },
     };
   } catch (error: unknown) {
@@ -535,7 +666,7 @@ export const getAdminCombinationsPage = async (
   const validPageSize = Math.min(Math.max(pageSize, 1), 100);
 
   try {
-    const globalData = await getGlobalData();
+    const globalData = await getEditableGlobalData();
 
     // Build lookup maps for display names
     const regionMap = new Map<string, string>();
@@ -625,7 +756,7 @@ export const getAdminCombination = async (
 
     const data = parseCombinationDoc(snap.data());
 
-    const globalData = await getGlobalData();
+    const globalData = await getEditableGlobalData();
     const regionName = globalData.regions.find(r => r.slug === parsedRegion)?.name || data.regionName;
     const pestName = globalData.pests.find(p => p.slug === parsedPest)?.name || data.pestName;
 
@@ -659,7 +790,7 @@ export const getAdminCombination = async (
 export const archiveCombination = async (
   regionSlug: string,
   pestSlug: string
-): Promise<ActionResponse<void, CombinationErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, CombinationErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
   }
@@ -676,24 +807,39 @@ export const archiveCombination = async (
 
   try {
     const docId = `${parsedRegion}_${parsedPest}`;
-    const docRef = getAdminDb().collection("combinations").doc(docId);
+    const db = getAdminDb();
+    const docRef = db.collection("combinations").doc(docId);
 
-    const docSnap = await docRef.get();
-    if (!docSnap.exists) {
+    const now = Date.now();
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const [document, published] = await Promise.all([
+        transaction.get(docRef),
+        readPublishedSnapshotInTransaction(transaction, db),
+      ]);
+      if (!document.exists) return null;
+      transaction.update(docRef, {
+        isArchived: true,
+        isActive: false,
+        archivedAt: now,
+        updatedAt: now,
+      });
+      return stagePublishedVisibilityPatch(transaction, db, published, {
+        combinationStatuses: {
+          [docId]: { isArchived: true, isActive: false },
+        },
+      });
+    });
+    if (!transactionResult) {
       return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
     }
-
-    await docRef.update({
-      isArchived: true,
-      isActive: false,
-      archivedAt: Date.now(),
-      updatedAt: Date.now()
-    });
-
-    updateTag(getCombinationCacheTag(parsedRegion, parsedPest));
-    updateTag("all-combinations");
-
-    return { success: true };
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult,
+    );
+    return {
+      success: true,
+      data: activation,
+    };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
     console.error("Failed to archive combination", {
@@ -715,7 +861,7 @@ export const archiveCombination = async (
 export const unarchiveCombination = async (
   regionSlug: string,
   pestSlug: string
-): Promise<ActionResponse<void, CombinationErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, CombinationErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
   }
@@ -732,37 +878,59 @@ export const unarchiveCombination = async (
     const db = getAdminDb();
     const docId = `${parsedRegion}_${parsedPest}`;
     const combinationRef = db.collection("combinations").doc(docId);
-    const combinationSnap = await combinationRef.get();
+    const pestRef = db.collection("pests").doc(parsedPest);
+    const regionRef = db.collection("regions").doc(parsedRegion);
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const [combination, pest, region, published] = await Promise.all([
+        transaction.get(combinationRef),
+        transaction.get(pestRef),
+        transaction.get(regionRef),
+        readPublishedSnapshotInTransaction(transaction, db),
+      ]);
+      if (!combination.exists) return { status: "missing" as const };
+      if (!pest.exists || !region.exists) {
+        return { status: "related-missing" as const };
+      }
+      const data = parseCombinationDoc(combination.data());
+      if (!data.isArchived) return { status: "not-needed" as const };
 
-    if (!combinationSnap.exists) {
+      transaction.update(combinationRef, {
+        isArchived: false,
+        isActive: false,
+        updatedAt: Date.now(),
+      });
+      return {
+        status: "restored" as const,
+        patch: stagePublishedVisibilityPatch(transaction, db, published, {
+          combinationStatuses: {
+            [docId]: { isArchived: false, isActive: false },
+          },
+        }),
+      };
+    });
+    if (transactionResult.status === "missing") {
       return { success: false, error: COMBINATION_ERRORS.NOT_FOUND };
     }
-
-    const [pestSnap, regionSnap] = await Promise.all([
-      db.collection("pests").doc(parsedPest).get(),
-      db.collection("regions").doc(parsedRegion).get(),
-    ]);
-
-    if (!pestSnap.exists || !regionSnap.exists) {
-      return { success: false, error: COMBINATION_ERRORS.RELATED_ENTITY_MISSING };
+    if (transactionResult.status === "related-missing") {
+      return {
+        success: false,
+        error: COMBINATION_ERRORS.RELATED_ENTITY_MISSING,
+      };
     }
-
-    const data = parseCombinationDoc(combinationSnap.data());
-
-    if (!data.isArchived) {
-      return { success: true };
+    if (transactionResult.status === "not-needed") {
+      return {
+        success: true,
+        data: { activationStatus: "not-needed" },
+      };
     }
-
-    await combinationRef.update({
-      isArchived: false,
-      isActive: false,
-      updatedAt: Date.now(),
-    });
-
-    updateTag(getCombinationCacheTag(parsedRegion, parsedPest));
-    updateTag("all-combinations");
-
-    return { success: true };
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult.patch,
+    );
+    return {
+      success: true,
+      data: activation,
+    };
   } catch (error: unknown) {
     const errorInfo = getErrorInfo(error);
     console.error("Failed to unarchive combination", {

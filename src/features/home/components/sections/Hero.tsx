@@ -59,9 +59,6 @@ export const Hero = ({
 
     return resolvedSlides;
   }, []);
-  const displayImages =
-    sliderImages.length > 0 ? sliderImages : BACKUP_HERO_SLIDES;
-
   return (
     <section className="relative w-full pt-4 pb-16 md:pb-24 md:pt-16" aria-labelledby="hero-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -150,7 +147,8 @@ export const Hero = ({
           {/* Right Column: Slider */}
           <div className="w-full aspect-square md:aspect-landscape lg:aspect-square xl:aspect-landscape rounded-3xl overflow-hidden shadow-2xl relative group">
             <ImageSlider
-              images={displayImages}
+              images={sliderImages}
+              fallbackImages={BACKUP_HERO_SLIDES}
               autoplayDelay={autoplayDelay}
             />
           </div>

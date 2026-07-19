@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { PublicPageHeader } from "@/components/layout/PublicPageHeader";
@@ -8,8 +8,16 @@ import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { ServiceJsonLd } from "@/components/layout/ServiceJsonLd";
 import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
-import { getGlobalData } from "@/features/settings/data";
-import { getAllActiveCombinations } from "@/features/combinations/data";
+import {
+  getGlobalDataMetadataResult,
+  getGlobalDataResult,
+} from "@/features/settings/data";
+import {
+  getAllActiveCombinationsMetadataResult,
+  getAllActiveCombinationsResult,
+} from "@/features/combinations/data";
+import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
+import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
 
 type RegionServicesHubPageProps = {
   params: Promise<{ regionSlug: string }>;
@@ -59,51 +67,41 @@ const getCombinationServiceTitle = (
   `${regionName} ${pestName}${DICTIONARY.pages.regions.pestTitleSuffix}`;
 
 /**
- * Generates static region service hub paths only for regions with active combinations.
- */
-export const generateStaticParams = async () => {
-  const activeCombinations = await getAllActiveCombinations();
-
-  if (!activeCombinations || activeCombinations.length === 0) {
-    throw new AppError(
-      "No active combinations found. At least one active combination is required to build region service hubs.",
-      "BUILD_ERROR",
-    );
-  }
-
-  const regionSlugs = Array.from(
-    new Set(activeCombinations.map((combination) => combination.region)),
-  );
-
-  return regionSlugs.map((regionSlug) => ({ regionSlug }));
-};
-
-/**
  * Generates SEO metadata for region-specific service hub pages.
  */
 export const generateMetadata = async ({
   params,
 }: RegionServicesHubPageProps): Promise<Metadata> => {
   const { regionSlug } = await params;
-  const [{ regions }, activeCombinations] = await Promise.all([
-    getGlobalData(),
-    getAllActiveCombinations(),
+  const canonicalUrl = `${ROUTES.regionBase}/${regionSlug}${ROUTES.services}`;
+  const [globalDataResult, combinationsResult] = await Promise.all([
+    getGlobalDataMetadataResult(),
+    getAllActiveCombinationsMetadataResult(),
   ]);
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return {
+      title: DICTIONARY.meta.default.title,
+      description: DICTIONARY.meta.default.description,
+      alternates: { canonical: canonicalUrl },
+    };
+  }
+
+  const { regions } = globalDataResult.data;
+  const activeCombinations = combinationsResult.data;
   const region = regions.find((item) => item.slug === regionSlug);
   const hasCombinations = activeCombinations.some(
     (combination) => combination.region === regionSlug,
   );
 
   if (!region || !hasCombinations) {
-    return {
-      title: DICTIONARY.global.brand,
-      robots: { index: false },
-    };
+    notFound();
   }
 
   const title = `${getRegionServicesHubTitle(region.name)} | ${DICTIONARY.global.brand}`;
   const description = getRegionServicesHubMetaDescription(region.name);
-  const canonicalUrl = `${ROUTES.regionBase}/${region.slug}${ROUTES.services}`;
 
   return {
     title,
@@ -137,14 +135,23 @@ export const generateMetadata = async ({
   };
 };
 
-const RegionServicesHubPage = async ({
+const RegionServicesHubPageContent = async ({
   params,
 }: RegionServicesHubPageProps) => {
   const { regionSlug } = await params;
-  const [{ regions, pests }, activeCombinations] = await Promise.all([
-    getGlobalData(),
-    getAllActiveCombinations(),
+  const [globalDataResult, combinationsResult] = await Promise.all([
+    getGlobalDataResult(),
+    getAllActiveCombinationsResult(),
   ]);
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return <PublicDataUnavailable />;
+  }
+
+  const { regions, pests } = globalDataResult.data;
+  const activeCombinations = combinationsResult.data;
   const region = regions.find((item) => item.slug === regionSlug);
 
   if (!region) notFound();
@@ -214,5 +221,12 @@ const RegionServicesHubPage = async ({
     </>
   );
 };
+
+/** Keeps runtime hub params inside a Cache Components Suspense boundary. */
+const RegionServicesHubPage = (props: RegionServicesHubPageProps) => (
+  <Suspense fallback={<PublicRouteLoading />}>
+    <RegionServicesHubPageContent {...props} />
+  </Suspense>
+);
 
 export default RegionServicesHubPage;

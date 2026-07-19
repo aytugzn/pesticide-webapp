@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AppError } from "@/lib/exceptions";
 import {
+  getAllActiveCombinationsResult,
   getCombination,
-  getAllActiveCombinations,
+  getCombinationMetadataResult,
 } from "@/features/combinations/data";
 import { parseHtmlIntoSections } from "@/utils/parseHtmlIntoSections";
-import { getGlobalData } from "@/features/settings/data";
+import { getGlobalDataResult } from "@/features/settings/data";
 import { SeoContent } from "@/components/layout/SeoContent";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
@@ -18,6 +19,8 @@ import { CtaSection } from "@/components/layout/CtaSection";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
 import { Bug, MapPin } from "lucide-react";
+import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
+import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
@@ -77,26 +80,6 @@ const getPestRegionsViewAllTitle = (serviceTitle: string) =>
   );
 
 /**
- * Generates static paths for all active combinations at build time.
- * Ensures each unique region-pest combination URL is pre-rendered.
- */
-export const generateStaticParams = async () => {
-  const combinations = await getAllActiveCombinations();
-
-  if (!combinations || combinations.length === 0) {
-    throw new AppError(
-      "No active combinations found. At least one active combination is required to build this route. Ensure Firestore quota is not exceeded and active combinations exist.",
-      "BUILD_ERROR",
-    );
-  }
-
-  return combinations.map((c) => ({
-    regionSlug: c.region,
-    pestSlug: c.pest,
-  }));
-};
-
-/**
  * Generates SEO metadata for each combination page.
  * Pulls title, description, and OG data directly from Firestore.
  */
@@ -104,16 +87,22 @@ export const generateMetadata = async ({
   params,
 }: CombinationPageProps): Promise<Metadata> => {
   const { regionSlug, pestSlug } = await params;
-  const data = await getCombination(regionSlug, pestSlug);
+  const canonicalUrl = `/${regionSlug}/${pestSlug}`;
+  const result = await getCombinationMetadataResult(regionSlug, pestSlug);
 
-  if (!data) {
+  if (result.status === "temporarily-unavailable") {
     return {
       title: DICTIONARY.meta.default.title,
-      robots: { index: false },
+      description: DICTIONARY.meta.default.description,
+      alternates: { canonical: canonicalUrl },
     };
   }
 
-  const canonicalUrl = `/${regionSlug}/${pestSlug}`;
+  if (result.status === "confirmed-missing") {
+    notFound();
+  }
+
+  const data = result.data;
   const ogImage = data.ogImage || DICTIONARY.meta.og.image.fallback;
 
   return {
@@ -152,15 +141,34 @@ export const generateMetadata = async ({
  * Public combination page — the most SEO-valuable page type in this project.
  * Renders AI-generated content with proper semantic structure and JSON-LD.
  */
-const CombinationPage = async ({ params }: CombinationPageProps) => {
+const CombinationPageContent = async ({ params }: CombinationPageProps) => {
   const { regionSlug, pestSlug } = await params;
-  const [data, globalData, activeCombinations] = await Promise.all([
-    getCombination(regionSlug, pestSlug),
-    getGlobalData(),
-    getAllActiveCombinations(),
-  ]);
+  const [combinationResult, globalDataResult, combinationsResult] =
+    await Promise.all([
+      getCombination(regionSlug, pestSlug),
+      getGlobalDataResult(),
+      getAllActiveCombinationsResult(),
+    ]);
 
-  if (!data) notFound();
+  if (
+    combinationResult.status === "temporarily-unavailable" ||
+    globalDataResult.status === "temporarily-unavailable" ||
+    combinationsResult.status === "temporarily-unavailable"
+  ) {
+    return <PublicDataUnavailable />;
+  }
+
+  if (combinationResult.status === "confirmed-missing") notFound();
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return <PublicDataUnavailable />;
+  }
+
+  const data = combinationResult.data;
+  const globalData = globalDataResult.data;
+  const activeCombinations = combinationsResult.data;
 
   // Use the pest's image as priority
   const region = globalData.regions?.find((r) => r.slug === regionSlug);
@@ -324,5 +332,12 @@ const CombinationPage = async ({ params }: CombinationPageProps) => {
     </div>
   );
 };
+
+/** Keeps runtime params behind the Cache Components Suspense boundary. */
+const CombinationPage = ({ params }: CombinationPageProps) => (
+  <Suspense fallback={<PublicRouteLoading />}>
+    <CombinationPageContent params={params} />
+  </Suspense>
+);
 
 export default CombinationPage;

@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { ServiceHero } from "@/components/layout/ServiceHero";
-import { getGlobalData } from "@/features/settings/data";
-import { getAllActiveCombinations } from "@/features/combinations/data";
+import {
+  getGlobalDataMetadataResult,
+  getGlobalDataResult,
+} from "@/features/settings/data";
+import { getAllActiveCombinationsResult } from "@/features/combinations/data";
 import { CtaSection } from "@/components/layout/CtaSection";
 import { SeoContent } from "@/components/layout/SeoContent";
 import { SeoFaq } from "@/components/layout/SeoFaq";
@@ -15,6 +18,8 @@ import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
 import { MapPin } from "lucide-react";
+import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
+import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
 
 type RegionPageProps = {
   params: Promise<{ regionSlug: string }>;
@@ -34,25 +39,25 @@ const getRelatedServiceDescription = (
   );
 };
 
-export const generateStaticParams = async () => {
-  const { regions } = await getGlobalData();
-
-  if (!regions || regions.length === 0) {
-    throw new AppError(
-      "No active regions found. At least one active region is required to build this route. Ensure Firestore quota is not exceeded and active regions exist.",
-      "BUILD_ERROR",
-    );
-  }
-
-  return regions.map((region) => ({ regionSlug: region.slug }));
-};
-
 export const generateMetadata = async ({
   params,
 }: RegionPageProps): Promise<Metadata> => {
   const { regionSlug } = await params;
-  const { regions } = await getGlobalData();
-  const region = regions.find((item) => item.slug === regionSlug);
+  const canonicalUrl = `${ROUTES.regionBase}/${regionSlug}`;
+  const globalDataResult = await getGlobalDataMetadataResult();
+  if (globalDataResult.status !== "found") {
+    return {
+      title: DICTIONARY.meta.default.title,
+      description: DICTIONARY.meta.default.description,
+      alternates: { canonical: canonicalUrl },
+    };
+  }
+
+  const region = globalDataResult.data.regions.find(
+    (item) => item.slug === regionSlug,
+  );
+  if (!region) notFound();
+
   const title =
     region?.title ||
     (region
@@ -62,7 +67,6 @@ export const generateMetadata = async ({
     region?.metaDesc ||
     region?.description ||
     `${region?.name || DICTIONARY.global.city}${DICTIONARY.pages.regions.regionDescSuffix}`;
-  const canonicalUrl = `${ROUTES.regionBase}/${regionSlug}`;
   const resolvedOgImage = region
     ? resolveAppImage({
         image: region.image,
@@ -103,14 +107,25 @@ export const generateMetadata = async ({
   };
 };
 
-const RegionPage = async ({ params }: RegionPageProps) => {
+const RegionPageContent = async ({ params }: RegionPageProps) => {
   const { regionSlug } = await params;
-  const { regions, pests } = await getGlobalData();
+  const [globalDataResult, combinationsResult] = await Promise.all([
+    getGlobalDataResult(),
+    getAllActiveCombinationsResult(),
+  ]);
+  if (
+    globalDataResult.status !== "found" ||
+    combinationsResult.status !== "found"
+  ) {
+    return <PublicDataUnavailable />;
+  }
+
+  const { regions, pests } = globalDataResult.data;
   const region = regions.find((item) => item.slug === regionSlug);
 
   if (!region) notFound();
 
-  const activeCombinations = await getAllActiveCombinations();
+  const activeCombinations = combinationsResult.data;
   const sections = region.content ? parseHtmlIntoSections(region.content) : [];
   const pestDescriptions = new Map(
     pests.map((pest) => [pest.slug, pest.cardDescription]),
@@ -205,5 +220,12 @@ const RegionPage = async ({ params }: RegionPageProps) => {
     </div>
   );
 };
+
+/** Keeps runtime region params inside a Cache Components Suspense boundary. */
+const RegionPage = ({ params }: RegionPageProps) => (
+  <Suspense fallback={<PublicRouteLoading />}>
+    <RegionPageContent params={params} />
+  </Suspense>
+);
 
 export default RegionPage;

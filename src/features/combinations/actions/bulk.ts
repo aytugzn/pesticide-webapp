@@ -4,7 +4,10 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { randomUUID } from "node:crypto";
-import type { ActionResponse, CombinationDoc } from "@/types";
+import type {
+  ActionResponse,
+  CombinationDoc,
+} from "@/types";
 import { 
   COMBINATION_ERRORS, 
   COMBINATION_JOB_ERRORS, 
@@ -29,8 +32,8 @@ const JOB_DOC_PATH = "adminJobs/bulkCombinationGeneration";
 const JOB_STALE_TIMEOUT_MS = 120_000;
 
 /**
- * Saves a bulk-generated combination to Firestore as an active public page
- * without publishing cached public content.
+ * Saves a bulk-generated combination as active canonical Firestore content
+ * without publishing it through Redis or public cache activation.
  *
  * @param regionSlug - The region slug
  * @param pestSlug - The pest slug

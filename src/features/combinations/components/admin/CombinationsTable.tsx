@@ -100,6 +100,14 @@ export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMo
           ...prev,
           rows: prev.loaded ? [archivedRow, ...prev.rows.filter((r) => r.id !== rowToArchive.id)] : prev.rows,
         }));
+        if (result.data?.activationStatus === "deferred") {
+          showToast({
+            variant: "warning",
+            message: result.data?.publicationRequired
+              ? DICTIONARY.admin.publicPublicationRequiredWarning
+              : DICTIONARY.admin.publicActivationDeferredWarning,
+          });
+        }
       } else {
         showToast({ variant: "error", message: d.errorDefault });
       }
@@ -278,7 +286,18 @@ export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMo
               : [restoredRow, ...prev.rows],
           };
         });
-        showToast({ variant: "success", message: d.restoreSuccess });
+        showToast({
+          variant:
+            result.data?.activationStatus === "deferred"
+              ? "warning"
+              : "success",
+          message:
+            result.data?.activationStatus === "deferred"
+              ? result.data?.publicationRequired
+                ? DICTIONARY.admin.publicPublicationRequiredWarning
+                : DICTIONARY.admin.publicActivationDeferredWarning
+              : d.restoreSuccess,
+        });
       } else {
         const message = result.error === COMBINATION_ERRORS.RELATED_ENTITY_MISSING
           ? d.restoreRelatedMissingError
@@ -350,7 +369,18 @@ export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMo
         }));
         showToast({ variant: "error", message: d.updateError });
       } else {
-        showToast({ variant: "success", message: d.updateSuccess });
+        showToast({
+          variant:
+            result.data?.activationStatus === "deferred"
+              ? "warning"
+              : "success",
+          message:
+            result.data?.activationStatus === "deferred"
+              ? result.data?.publicationRequired
+                ? DICTIONARY.admin.publicPublicationRequiredWarning
+                : DICTIONARY.admin.publicActivationDeferredWarning
+              : d.updateSuccess,
+        });
       }
     } catch {
       setStandardState((prev) => ({

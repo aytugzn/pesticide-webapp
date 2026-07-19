@@ -4,10 +4,14 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { updateTag } from "next/cache";
 import { getGeminiModel, getGeminiApiKeys, buildRegionPrompt } from "@/lib/gemini";
 import { extractAndParseJson, parseRegionDoc } from "@/utils/parsers";
-import type { ActionResponse, AppImage, RegionDoc } from "@/types";
+import type {
+  ActionResponse,
+  AppImage,
+  PublicMutationResult,
+  RegionDoc,
+} from "@/types";
 import {
   REGION_ERRORS,
   type RegionErrorCode,
@@ -21,7 +25,12 @@ import {
   slugSchema,
 } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { getCombinationCacheTag } from "@/features/combinations/constants";
+import { activatePublishedVisibilityPatch } from "@/lib/publicActivation";
+import {
+  readPublishedSnapshotInTransaction,
+  stagePublishedVisibilityPatch,
+  type PublishedVisibilityPatchResult,
+} from "@/lib/firestorePublishedSnapshot";
 import type { UpdateRegionInput } from "./types";
 
 const getErrorInfo = (
@@ -322,7 +331,7 @@ export const updateRegion = async (
 export const toggleRegionStatus = async (
   slug: string,
   isActive: boolean
-): Promise<ActionResponse<void, RegionErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, RegionErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
   }
@@ -335,59 +344,82 @@ export const toggleRegionStatus = async (
   try {
     const db = getAdminDb();
     const regionRef = db.collection("regions").doc(parsedSlug.data);
+    const activeCombinationsQuery = db
+      .collection("combinations")
+      .where("region", "==", parsedSlug.data)
+      .where("isActive", "==", true);
+    const oversizedCombinations = !isActive
+      ? await activeCombinationsQuery.get()
+      : null;
+    if ((oversizedCombinations?.size ?? 0) > 400) {
+      const mutationRefs = [
+        regionRef,
+        ...(oversizedCombinations?.docs.map((document) => document.ref) ?? []),
+      ];
+      for (let index = 0; index < mutationRefs.length; index += 400) {
+        const batch = db.batch();
+        mutationRefs.slice(index, index + 400).forEach((reference) => {
+          batch.update(reference, {
+            isActive: reference === regionRef ? isActive : false,
+          });
+        });
+        await batch.commit();
+      }
 
-    const regionDoc = await regionRef.get(); if (!regionDoc.exists) {
+      let publishedPatch: PublishedVisibilityPatchResult;
+      try {
+        publishedPatch = await db.runTransaction(async (transaction) => {
+          const published = await readPublishedSnapshotInTransaction(
+            transaction,
+            db,
+          );
+          return stagePublishedVisibilityPatch(transaction, db, published, {
+            regionStatuses: { [parsedSlug.data]: isActive },
+          });
+        });
+      } catch {
+        return {
+          success: true,
+          data: {
+            activationStatus: "deferred",
+            publicationRequired: true,
+          },
+        };
+      }
+      return {
+        success: true,
+        data: await activatePublishedVisibilityPatch(db, publishedPatch),
+      };
+    }
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const regionDoc = await transaction.get(regionRef);
+      if (!regionDoc.exists) return null;
+      const published = await readPublishedSnapshotInTransaction(
+        transaction,
+        db,
+      );
+      const activeCombinations = !isActive
+        ? await transaction.get(activeCombinationsQuery)
+        : null;
+      transaction.update(regionRef, { isActive });
+      activeCombinations?.docs.forEach((document) => {
+        transaction.update(document.ref, { isActive: false });
+      });
+      return stagePublishedVisibilityPatch(transaction, db, published, {
+        regionStatuses: { [parsedSlug.data]: isActive },
+      });
+    });
+    if (!transactionResult) {
       return { success: false, error: REGION_ERRORS.NOT_FOUND };
     }
-
-    const MAX_BATCH_SIZE = 450;
-    const batches: FirebaseFirestore.WriteBatch[] = [];
-    let currentBatch = db.batch();
-    let currentBatchSize = 0;
-
-    const addToBatch = (operation: (b: FirebaseFirestore.WriteBatch) => void) => {
-      if (currentBatchSize >= MAX_BATCH_SIZE) {
-        batches.push(currentBatch);
-        currentBatch = db.batch();
-        currentBatchSize = 0;
-      }
-      operation(currentBatch);
-      currentBatchSize++;
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult,
+    );
+    return {
+      success: true,
+      data: activation,
     };
-
-    addToBatch((b) => b.update(regionRef, { isActive }));
-
-    const updatedCombinationTags: string[] = [];
-
-    if (!isActive) {
-      const activeCombinationsQuery = await db
-        .collection("combinations")
-        .where("region", "==", parsedSlug.data)
-        .where("isActive", "==", true)
-        .get();
-
-      activeCombinationsQuery.docs.forEach((doc) => {
-        addToBatch((b) => b.update(doc.ref, { isActive: false }));
-        const data = doc.data();
-        updatedCombinationTags.push(getCombinationCacheTag(data.region, data.pest));
-      });
-    }
-
-    if (currentBatchSize > 0) {
-      batches.push(currentBatch);
-    }
-
-    for (const b of batches) {
-      await b.commit();
-    }
-
-    updateTag("global-data");
-    if (!isActive && updatedCombinationTags.length > 0) {
-      updateTag("all-combinations");
-      updatedCombinationTags.forEach((tag) => updateTag(tag));
-    }
-
-    return { success: true };
   } catch {
     console.error("Failed to toggle region status", {
       slug,
@@ -404,7 +436,7 @@ export const toggleRegionStatus = async (
  */
 export const deleteRegion = async (
   slug: string,
-): Promise<ActionResponse<void, RegionErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, RegionErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
   }
@@ -417,26 +449,41 @@ export const deleteRegion = async (
   try {
     const db = getAdminDb();
     const regionRef = db.collection("regions").doc(parsedSlug.data);
-    const regionDoc = await regionRef.get();
-
-    if (!regionDoc.exists) {
-      return { success: false, error: REGION_ERRORS.NOT_FOUND };
-    }
-
-    const linkedCombination = await db
+    const linkedCombinationQuery = db
       .collection("combinations")
       .where("region", "==", parsedSlug.data)
-      .limit(1)
-      .get();
+      .limit(1);
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const [regionDoc, linkedCombination, published] = await Promise.all([
+        transaction.get(regionRef),
+        transaction.get(linkedCombinationQuery),
+        readPublishedSnapshotInTransaction(transaction, db),
+      ]);
+      if (!regionDoc.exists) return { status: "missing" as const };
+      if (!linkedCombination.empty) return { status: "in-use" as const };
 
-    if (!linkedCombination.empty) {
+      transaction.delete(regionRef);
+      return {
+        status: "deleted" as const,
+        patch: stagePublishedVisibilityPatch(transaction, db, published, {
+          deletedRegionSlugs: [parsedSlug.data],
+        }),
+      };
+    });
+    if (transactionResult.status === "missing") {
+      return { success: false, error: REGION_ERRORS.NOT_FOUND };
+    }
+    if (transactionResult.status === "in-use") {
       return { success: false, error: REGION_ERRORS.REGION_IN_USE };
     }
-
-    await regionRef.delete();
-
-    updateTag("global-data");
-    return { success: true };
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult.patch,
+    );
+    return {
+      success: true,
+      data: activation,
+    };
   } catch {
     console.error("Failed to delete region", {
       slug,

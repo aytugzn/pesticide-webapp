@@ -4,10 +4,14 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { updateTag } from "next/cache";
 import { getGeminiModel, getGeminiApiKeys, buildPestPrompt } from "@/lib/gemini";
 import { extractAndParseJson, parsePestDoc } from "@/utils/parsers";
-import type { ActionResponse, AppImage, PestDoc } from "@/types";
+import type {
+  ActionResponse,
+  AppImage,
+  PestDoc,
+  PublicMutationResult,
+} from "@/types";
 import {
   PEST_ERRORS,
   type PestErrorCode,
@@ -21,7 +25,12 @@ import {
   slugSchema,
 } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
-import { getCombinationCacheTag } from "@/features/combinations/constants";
+import { activatePublishedVisibilityPatch } from "@/lib/publicActivation";
+import {
+  readPublishedSnapshotInTransaction,
+  stagePublishedVisibilityPatch,
+  type PublishedVisibilityPatchResult,
+} from "@/lib/firestorePublishedSnapshot";
 import type { UpdatePestInput } from "./types";
 
 const getErrorInfo = (
@@ -323,7 +332,7 @@ export const updatePest = async (
 export const togglePestStatus = async (
   slug: string,
   isActive: boolean
-): Promise<ActionResponse<void, PestErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, PestErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
   }
@@ -336,59 +345,80 @@ export const togglePestStatus = async (
   try {
     const db = getAdminDb();
     const pestRef = db.collection("pests").doc(parsedSlug.data);
+    const activeCombinationsQuery = db
+      .collection("combinations")
+      .where("pest", "==", parsedSlug.data)
+      .where("isActive", "==", true);
+    const oversizedCombinations = !isActive
+      ? await activeCombinationsQuery.get()
+      : null;
+    if ((oversizedCombinations?.size ?? 0) > 400) {
+      const mutationRefs = [
+        pestRef,
+        ...(oversizedCombinations?.docs.map((document) => document.ref) ?? []),
+      ];
+      for (let index = 0; index < mutationRefs.length; index += 400) {
+        const batch = db.batch();
+        mutationRefs.slice(index, index + 400).forEach((reference) => {
+          batch.update(reference, { isActive: reference === pestRef ? isActive : false });
+        });
+        await batch.commit();
+      }
 
-    const pestDoc = await pestRef.get(); if (!pestDoc.exists) {
+      let publishedPatch: PublishedVisibilityPatchResult;
+      try {
+        publishedPatch = await db.runTransaction(async (transaction) => {
+          const published = await readPublishedSnapshotInTransaction(
+            transaction,
+            db,
+          );
+          return stagePublishedVisibilityPatch(transaction, db, published, {
+            pestStatuses: { [parsedSlug.data]: isActive },
+          });
+        });
+      } catch {
+        return {
+          success: true,
+          data: {
+            activationStatus: "deferred",
+            publicationRequired: true,
+          },
+        };
+      }
+      return {
+        success: true,
+        data: await activatePublishedVisibilityPatch(db, publishedPatch),
+      };
+    }
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const pestDoc = await transaction.get(pestRef);
+      if (!pestDoc.exists) return null;
+      const published = await readPublishedSnapshotInTransaction(
+        transaction,
+        db,
+      );
+      const activeCombinations = !isActive
+        ? await transaction.get(activeCombinationsQuery)
+        : null;
+      transaction.update(pestRef, { isActive });
+      activeCombinations?.docs.forEach((document) => {
+        transaction.update(document.ref, { isActive: false });
+      });
+      return stagePublishedVisibilityPatch(transaction, db, published, {
+        pestStatuses: { [parsedSlug.data]: isActive },
+      });
+    });
+    if (!transactionResult) {
       return { success: false, error: PEST_ERRORS.NOT_FOUND };
     }
-
-    const MAX_BATCH_SIZE = 450;
-    const batches: FirebaseFirestore.WriteBatch[] = [];
-    let currentBatch = db.batch();
-    let currentBatchSize = 0;
-
-    const addToBatch = (operation: (b: FirebaseFirestore.WriteBatch) => void) => {
-      if (currentBatchSize >= MAX_BATCH_SIZE) {
-        batches.push(currentBatch);
-        currentBatch = db.batch();
-        currentBatchSize = 0;
-      }
-      operation(currentBatch);
-      currentBatchSize++;
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult,
+    );
+    return {
+      success: true,
+      data: activation,
     };
-
-    addToBatch((b) => b.update(pestRef, { isActive }));
-
-    const updatedCombinationTags: string[] = [];
-
-    if (!isActive) {
-      const activeCombinationsQuery = await db
-        .collection("combinations")
-        .where("pest", "==", parsedSlug.data)
-        .where("isActive", "==", true)
-        .get();
-
-      activeCombinationsQuery.docs.forEach((doc) => {
-        addToBatch((b) => b.update(doc.ref, { isActive: false }));
-        const data = doc.data();
-        updatedCombinationTags.push(getCombinationCacheTag(data.region, data.pest));
-      });
-    }
-
-    if (currentBatchSize > 0) {
-      batches.push(currentBatch);
-    }
-
-    for (const b of batches) {
-      await b.commit();
-    }
-
-    updateTag("global-data");
-    if (!isActive && updatedCombinationTags.length > 0) {
-      updateTag("all-combinations");
-      updatedCombinationTags.forEach((tag) => updateTag(tag));
-    }
-
-    return { success: true };
   } catch {
     console.error("Failed to toggle pest status", {
       slug,
@@ -405,7 +435,7 @@ export const togglePestStatus = async (
  */
 export const deletePest = async (
   slug: string,
-): Promise<ActionResponse<void, PestErrorCode>> => {
+): Promise<ActionResponse<PublicMutationResult, PestErrorCode>> => {
   if (!(await requireAdmin())) {
     return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
   }
@@ -418,26 +448,41 @@ export const deletePest = async (
   try {
     const db = getAdminDb();
     const pestRef = db.collection("pests").doc(parsedSlug.data);
-    const pestDoc = await pestRef.get();
-
-    if (!pestDoc.exists) {
-      return { success: false, error: PEST_ERRORS.NOT_FOUND };
-    }
-
-    const linkedCombination = await db
+    const linkedCombinationQuery = db
       .collection("combinations")
       .where("pest", "==", parsedSlug.data)
-      .limit(1)
-      .get();
+      .limit(1);
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const [pestDoc, linkedCombination, published] = await Promise.all([
+        transaction.get(pestRef),
+        transaction.get(linkedCombinationQuery),
+        readPublishedSnapshotInTransaction(transaction, db),
+      ]);
+      if (!pestDoc.exists) return { status: "missing" as const };
+      if (!linkedCombination.empty) return { status: "in-use" as const };
 
-    if (!linkedCombination.empty) {
+      transaction.delete(pestRef);
+      return {
+        status: "deleted" as const,
+        patch: stagePublishedVisibilityPatch(transaction, db, published, {
+          deletedPestSlugs: [parsedSlug.data],
+        }),
+      };
+    });
+    if (transactionResult.status === "missing") {
+      return { success: false, error: PEST_ERRORS.NOT_FOUND };
+    }
+    if (transactionResult.status === "in-use") {
       return { success: false, error: PEST_ERRORS.PEST_IN_USE };
     }
-
-    await pestRef.delete();
-
-    updateTag("global-data");
-    return { success: true };
+    const activation = await activatePublishedVisibilityPatch(
+      db,
+      transactionResult.patch,
+    );
+    return {
+      success: true,
+      data: activation,
+    };
   } catch {
     console.error("Failed to delete pest", {
       slug,

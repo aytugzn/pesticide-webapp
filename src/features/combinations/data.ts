@@ -1,10 +1,17 @@
 import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
-import { getAdminDb } from "@/lib/firebase-admin";
-import { getGlobalData } from "@/features/settings/data";
-import { parseCombinationDoc } from "@/utils/parsers";
-import type { CombinationDoc } from "@/types";
+import { connection } from "next/server";
+import {
+  hasFirebaseAdminConfig,
+} from "@/lib/firebase-admin";
+import { getPublishedSnapshotFromFirestoreOrThrow } from "@/lib/firestorePublishedSnapshot";
+import {
+  getPublicSnapshotResolution,
+  getVisibleCombinationsById,
+  type PublicDataSnapshot,
+} from "@/lib/publicSnapshot";
+import type { CombinationDoc, PublicDataResult } from "@/types";
 import { getCombinationCacheTag } from "./constants";
 import { getErrorInfo } from "./actions/utils";
 
@@ -18,22 +25,41 @@ export type ActivePublicCombination = {
   metaDesc?: string;
 };
 
-const isAddressableCombination = (
-  docId: string,
+/** Converts one canonical combination document into public list data. */
+const createActivePublicCombination = (
   combination: CombinationDoc,
-) =>
-  !!combination.region &&
-  !!combination.pest &&
-  docId === `${combination.region}_${combination.pest}`;
+): ActivePublicCombination => ({
+  region: combination.region,
+  pest: combination.pest,
+  regionName: combination.regionName || combination.region,
+  pestName: combination.pestName || combination.pest,
+  title: combination.title,
+  h1: combination.h1,
+  metaDesc: combination.metaDesc,
+});
+
+/** Resolves a slug pair only after an authoritative snapshot was read. */
+export const getCombinationFromPublishedSnapshot = (
+  snapshot: PublicDataSnapshot,
+  regionSlug: string,
+  pestSlug: string,
+): PublicDataResult<CombinationDoc> => {
+  const combination = getVisibleCombinationsById(snapshot)[
+    `${regionSlug}_${pestSlug}`
+  ];
+  return combination
+    ? { status: "found", data: combination }
+    : { status: "confirmed-missing" };
+};
 
 /**
- * Fetches a single active public combination without importing admin auth guards.
+ * Fetches a single primary combination for the long-lived Next.js cache.
  *
  * @param regionSlug - Region slug from the public URL.
  * @param pestSlug - Pest slug from the public URL.
  * @returns The active combination document or null.
  */
-export const getCombination = async (
+const getCombinationFromFirestore = async (
   regionSlug: string,
   pestSlug: string,
 ): Promise<CombinationDoc | null> => {
@@ -42,36 +68,85 @@ export const getCombination = async (
   cacheTag(getCombinationCacheTag(regionSlug, pestSlug));
   cacheTag("global-data");
 
-  try {
-    const globalData = await getGlobalData();
-    const isRegionActive = globalData.regions.some(
-      (region) => region.slug === regionSlug,
-    );
-    const isPestActive = globalData.pests.some(
-      (pest) => pest.slug === pestSlug,
-    );
+  const snapshot = await getPublishedSnapshotFromFirestoreOrThrow();
+  const result = getCombinationFromPublishedSnapshot(
+    snapshot,
+    regionSlug,
+    pestSlug,
+  );
+  return result.status === "found" ? result.data : null;
+};
 
-    if (!isRegionActive || !isPestActive) {
-      return null;
+/**
+ * Resolves one public combination through Firestore and the canonical Redis
+ * map, returning null instead of manufacturing local dynamic content.
+ */
+export const getCombination = async (
+  regionSlug: string,
+  pestSlug: string,
+): Promise<PublicDataResult<CombinationDoc>> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      const combination = await getCombinationFromFirestore(
+        regionSlug,
+        pestSlug,
+      );
+      return combination
+        ? { status: "found", data: combination }
+        : { status: "confirmed-missing" };
+    } catch (error: unknown) {
+      console.error("Failed to fetch public combination", {
+        regionSlug,
+        pestSlug,
+        errorCode: getErrorInfo(error).code,
+      });
     }
-
-    const docId = `${regionSlug}_${pestSlug}`;
-    const snap = await getAdminDb().collection("combinations").doc(docId).get();
-
-    if (!snap.exists) return null;
-
-    const data = parseCombinationDoc(snap.data());
-    if (!data.isActive || data.isArchived) return null;
-
-    return data;
-  } catch (error: unknown) {
-    console.error("Failed to fetch public combination", {
-      regionSlug,
-      pestSlug,
-      errorCode: getErrorInfo(error).code,
-    });
-    throw error;
   }
+  const snapshot = await getPublicSnapshotResolution();
+  if (snapshot.status !== "available") {
+    return { status: "temporarily-unavailable" };
+  }
+
+  return getCombinationFromPublishedSnapshot(
+    snapshot.snapshot,
+    regionSlug,
+    pestSlug,
+  );
+};
+
+/** Resolves combination metadata through the published provider chain. */
+export const getCombinationMetadataResult = async (
+  regionSlug: string,
+  pestSlug: string,
+): Promise<PublicDataResult<CombinationDoc>> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      const combination = await getCombinationFromFirestore(
+        regionSlug,
+        pestSlug,
+      );
+      return combination
+        ? { status: "found", data: combination }
+        : { status: "confirmed-missing" };
+    } catch (error: unknown) {
+      console.error("Failed to fetch combination metadata", {
+        regionSlug,
+        pestSlug,
+        errorCode: getErrorInfo(error).code,
+      });
+    }
+  }
+  const snapshot = await getPublicSnapshotResolution();
+  if (snapshot.status !== "available") {
+    return { status: "temporarily-unavailable" };
+  }
+  return getCombinationFromPublishedSnapshot(
+    snapshot.snapshot,
+    regionSlug,
+    pestSlug,
+  );
 };
 
 /**
@@ -79,49 +154,86 @@ export const getCombination = async (
  *
  * @returns Active, non-archived, URL-addressable combinations with active region and pest data.
  */
-export const getAllActiveCombinations = async (): Promise<ActivePublicCombination[]> => {
+const getAllActiveCombinationsFromFirestore = async (): Promise<
+  ActivePublicCombination[]
+> => {
   "use cache";
   cacheLife("max");
   cacheTag("all-combinations");
   cacheTag("global-data");
 
-  try {
-    const snap = await getAdminDb()
-      .collection("combinations")
-      .where("isActive", "==", true)
-      .get();
+  const snapshot = await getPublishedSnapshotFromFirestoreOrThrow();
+  return Object.values(getVisibleCombinationsById(snapshot)).map(
+    createActivePublicCombination,
+  );
+};
 
-    const { regions, pests } = await getGlobalData();
-    const activeRegions = new Map(
-      regions.map((region) => [region.slug, region.name]),
-    );
-    const activePests = new Map(pests.map((pest) => [pest.slug, pest.name]));
-
-    return snap.docs
-      .map((doc) => {
-        const data = parseCombinationDoc(doc.data());
-        return { id: doc.id, data };
-      })
-      .filter(
-        ({ id, data }) =>
-          isAddressableCombination(id, data) &&
-          !data.isArchived &&
-          activeRegions.has(data.region) &&
-          activePests.has(data.pest),
-      )
-      .map(({ data }) => ({
-        region: data.region,
-        pest: data.pest,
-        regionName: data.regionName || activeRegions.get(data.region) || data.region,
-        pestName: data.pestName || activePests.get(data.pest) || data.pest,
-        title: data.title,
-        h1: data.h1,
-        metaDesc: data.metaDesc,
-      }));
-  } catch (error: unknown) {
-    console.error("Failed to fetch active public combinations", {
-      errorCode: getErrorInfo(error).code,
-    });
-    throw error;
+/** Resolves the active public list through Firestore, Redis, and an empty fallback. */
+export const getAllActiveCombinationsResult = async (): Promise<
+  PublicDataResult<ActivePublicCombination[]>
+> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      return {
+        status: "found",
+        data: await getAllActiveCombinationsFromFirestore(),
+      };
+    } catch (error: unknown) {
+      console.error("Failed to fetch active public combinations", {
+        errorCode: getErrorInfo(error).code,
+      });
+    }
   }
+  const snapshot = await getPublicSnapshotResolution();
+  if (snapshot.status !== "available") {
+    return { status: "temporarily-unavailable" };
+  }
+
+  const combinationsById = getVisibleCombinationsById(snapshot.snapshot);
+  return {
+    status: "found",
+    data: Object.keys(combinationsById)
+      .sort()
+      .map((docId) =>
+        createActivePublicCombination(combinationsById[docId]),
+      ),
+  };
+};
+
+/** Resolves combination-list metadata through the published provider chain. */
+export const getAllActiveCombinationsMetadataResult = async (): Promise<
+  PublicDataResult<ActivePublicCombination[]>
+> => {
+  await connection();
+  if (hasFirebaseAdminConfig()) {
+    try {
+      return {
+        status: "found",
+        data: await getAllActiveCombinationsFromFirestore(),
+      };
+    } catch (error: unknown) {
+      console.error("Failed to fetch combination-list metadata", {
+        errorCode: getErrorInfo(error).code,
+      });
+    }
+  }
+  const snapshot = await getPublicSnapshotResolution();
+  if (snapshot.status !== "available") {
+    return { status: "temporarily-unavailable" };
+  }
+  return {
+    status: "found",
+    data: Object.values(getVisibleCombinationsById(snapshot.snapshot)).map(
+      createActivePublicCombination,
+    ),
+  };
+};
+
+/** Preserves the empty-list fallback for non-entity public surfaces. */
+export const getAllActiveCombinations = async (): Promise<
+  ActivePublicCombination[]
+> => {
+  const result = await getAllActiveCombinationsResult();
+  return result.status === "found" ? result.data : [];
 };

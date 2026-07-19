@@ -28,6 +28,7 @@ import type {
   SeoGeneratedContent,
 } from "@/features/seo-content/types";
 import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
+import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
@@ -90,6 +91,7 @@ export const SeoEntityForm = <TError extends string>({
   autoFocusName = false,
 }: SeoEntityFormConfig<TError>) => {
   const router = useRouter();
+  const { showToast } = useCombinationAdminToast();
   const normalizedInitialData = normalizeInitialData(initialData);
   const [formData, setFormData] = useState(() => normalizedInitialData);
   const [appendPestSuffix, setAppendPestSuffix] = useState(
@@ -365,7 +367,15 @@ export const SeoEntityForm = <TError extends string>({
 
         if (res.success) {
           saveOutcome = "succeeded";
-          setFeedback({ type: "success", message: d.updateSuccess });
+          const nextFeedback = {
+            type: "success" as const,
+            message: d.updateSuccess,
+          };
+          setFeedback(nextFeedback);
+          showToast({
+            variant: nextFeedback.type,
+            message: nextFeedback.message,
+          });
           router.refresh();
           onSuccess?.();
           return;
@@ -391,7 +401,15 @@ export const SeoEntityForm = <TError extends string>({
 
       if (res.success) {
         saveOutcome = "succeeded";
-        setFeedback({ type: "success", message: d.successSave });
+        const nextFeedback = {
+          type: "success" as const,
+          message: d.successSave,
+        };
+        setFeedback(nextFeedback);
+        showToast({
+          variant: nextFeedback.type,
+          message: nextFeedback.message,
+        });
 
         if (!initialData) {
           setFormData(normalizeInitialData());
