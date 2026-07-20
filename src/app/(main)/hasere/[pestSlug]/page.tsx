@@ -133,7 +133,7 @@ const PestPageContent = async ({ params }: PestPageProps) => {
     preset: "section",
   });
   const sectionVisuals =
-    sections.length > 1 && resolvedSectionImage
+    sections.length > 0 && resolvedSectionImage
       ? {
           0: {
             id: "pest-section",
@@ -142,7 +142,7 @@ const PestPageContent = async ({ params }: PestPageProps) => {
           },
         }
       : undefined;
-  const sectionFallbackIcons = sections.length > 1 ? { 0: Bug } : undefined;
+  const sectionFallbackIcons = sections.length > 0 ? { 0: Bug } : undefined;
 
   const relatedLinks = activeCombinations
     .filter((combination) => combination.pest === pest.slug)

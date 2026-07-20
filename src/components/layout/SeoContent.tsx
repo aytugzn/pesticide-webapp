@@ -60,7 +60,7 @@ export const SeoContent = ({
                 <div className="w-full lg:w-5/12">
                   <div
                     className={cn(
-                      "w-full h-full min-h-52 lg:min-h-full rounded-lg bg-brand-surface/30 border border-brand-border flex items-center justify-center",
+                      "relative aspect-landscape w-full rounded-lg bg-brand-surface/30 border border-brand-border flex items-center justify-center lg:h-full lg:min-h-full lg:aspect-auto",
                       hasSectionVisual ? "overflow-hidden" : "p-8",
                     )}
                   >

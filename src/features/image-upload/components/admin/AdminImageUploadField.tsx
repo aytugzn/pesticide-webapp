@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type ChangeEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from "react";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
@@ -128,10 +134,12 @@ export const AdminImageUploadField = ({
   };
 
   return (
-    <section className="space-y-4 rounded-brand-lg border border-brand-border bg-surface-neutral p-4 min-w-0">
+    <section className="min-w-0 space-y-4 rounded-brand-lg border border-brand-border bg-surface-neutral p-3 sm:p-4">
       <header className="space-y-1 min-w-0">
-        <h3 className="truncate text-sm font-bold text-text-primary">{label}</h3>
-        <p className="truncate text-xs text-text-muted">{helpText}</p>
+        <h3 className="break-words text-sm font-bold text-text-primary">
+          {label}
+        </h3>
+        <p className="break-words text-xs text-text-muted">{helpText}</p>
       </header>
 
       <div className="flex flex-col gap-4">
@@ -143,7 +151,7 @@ export const AdminImageUploadField = ({
           onKeyDown={handleCardKeyDown}
           aria-label={hasImage ? d.replaceHint : d.dropHint}
           className={cn(
-            "group relative flex min-h-52 md:min-h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-brand-md border-2 border-dashed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+            "group relative flex min-h-44 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-brand-md border-2 border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:min-h-52 md:min-h-64",
             subtleDropzone
               ? "border-brand-border/70 bg-surface-neutral hover:border-brand-border-strong hover:bg-brand-surface-light/40 focus-visible:ring-brand-primary/50"
               : "border-brand-border bg-brand-surface hover:border-brand-primary focus-visible:ring-brand-primary",
@@ -152,13 +160,19 @@ export const AdminImageUploadField = ({
         >
           {previewImage ? (
             <div className="absolute inset-0 w-full h-full pointer-events-none">
-              <ImageSlider images={[previewImage]} autoplayDelay={0} />
+              <ImageSlider
+                images={[previewImage]}
+                autoplayDelay={0}
+                imageFit="contain"
+              />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-2 text-text-muted">
+            <div className="flex min-w-0 max-w-full flex-col items-center justify-center gap-2 text-text-muted">
               <ImagePlus className="h-8 w-8" aria-hidden="true" />
-              <span className="text-sm font-medium">{d.dropHint}</span>
-              <span className="text-xs">{d.formatHint}</span>
+              <span className="break-words text-sm font-medium">
+                {d.dropHint}
+              </span>
+              <span className="break-words text-xs">{d.formatHint}</span>
             </div>
           )}
 
@@ -185,7 +199,7 @@ export const AdminImageUploadField = ({
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
           {selectedFile ? (
-            <p className="truncate rounded-brand-md border border-brand-border bg-brand-surface px-3 py-2 text-xs text-text-secondary min-w-0 flex-1">
+            <p className="min-w-0 flex-1 break-words rounded-brand-md border border-brand-border bg-brand-surface px-3 py-2 text-xs text-text-secondary">
               {d.selectedFile
                 .replace("{name}", selectedFile.name)
                 .replace("{size}", formatFileSize(selectedFile.size))}
@@ -194,14 +208,14 @@ export const AdminImageUploadField = ({
             <div className="min-w-0 flex-1" />
           )}
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:self-auto">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:self-auto">
             {hasImage && onRemove && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={onRemove}
-                className="self-start sm:self-auto"
+                className="w-full sm:w-auto"
               >
                 <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 {d.remove}
@@ -213,7 +227,7 @@ export const AdminImageUploadField = ({
                 variant="danger"
                 size="sm"
                 onClick={onRemoveCard}
-                className="self-start sm:self-auto"
+                className="w-full sm:w-auto"
               >
                 <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 {removeCardLabel || d.remove}

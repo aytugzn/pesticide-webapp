@@ -137,7 +137,7 @@ const RegionPageContent = async ({ params }: RegionPageProps) => {
     preset: "section",
   });
   const sectionVisuals =
-    sections.length > 1 && resolvedSectionImage
+    sections.length > 0 && resolvedSectionImage
       ? {
           0: {
             id: "region-section",
@@ -146,7 +146,7 @@ const RegionPageContent = async ({ params }: RegionPageProps) => {
           },
         }
       : undefined;
-  const sectionFallbackIcons = sections.length > 1 ? { 0: MapPin } : undefined;
+  const sectionFallbackIcons = sections.length > 0 ? { 0: MapPin } : undefined;
 
   const relatedLinks = activeCombinations
     .filter((combination) => combination.region === region.slug)

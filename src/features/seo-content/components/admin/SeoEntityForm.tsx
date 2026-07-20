@@ -32,7 +32,8 @@ import { useCombinationAdminToast } from "@/features/combinations/components/adm
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
-const PEST_SLUG_SUFFIX = "-ilaclama";
+const PEST_SLUG_SUFFIX =
+  DICTIONARY.global.seo?.pestSlugSuffix?.trim() || null;
 
 /**
  * Converts optional entity data into the complete controlled form shape.
@@ -66,13 +67,14 @@ const createEntitySlug = (
 
   if (entity !== "pest" || !baseSlug) return baseSlug;
   if (appendPestSuffix) {
-    if (baseSlug.endsWith(PEST_SLUG_SUFFIX)) return baseSlug;
-    return `${baseSlug}${PEST_SLUG_SUFFIX}`;
+    if (PEST_SLUG_SUFFIX && baseSlug.endsWith(PEST_SLUG_SUFFIX)) return baseSlug;
+    return PEST_SLUG_SUFFIX ? `${baseSlug}${PEST_SLUG_SUFFIX}` : baseSlug;
   }
 
-  const slugWithoutSuffix = baseSlug.endsWith(PEST_SLUG_SUFFIX)
-    ? baseSlug.slice(0, -PEST_SLUG_SUFFIX.length)
-    : baseSlug;
+  const slugWithoutSuffix =
+    PEST_SLUG_SUFFIX && baseSlug.endsWith(PEST_SLUG_SUFFIX)
+      ? baseSlug.slice(0, -PEST_SLUG_SUFFIX.length)
+      : baseSlug;
 
   return slugWithoutSuffix || baseSlug;
 };
@@ -96,11 +98,14 @@ export const SeoEntityForm = <TError extends string>({
   const [formData, setFormData] = useState(() => normalizedInitialData);
   const [appendPestSuffix, setAppendPestSuffix] = useState(
     entity === "pest" &&
+      PEST_SLUG_SUFFIX !== null &&
       (mode === "create" ||
         normalizedInitialData.slug.endsWith(PEST_SLUG_SUFFIX)),
   );
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [imageAlt, setImageAlt] = useState(normalizedInitialData.image?.alt ?? "");
+  const [imageAlt, setImageAlt] = useState(
+    normalizedInitialData.image?.alt ?? "",
+  );
   const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -119,7 +124,7 @@ export const SeoEntityForm = <TError extends string>({
     if (error === "AI_SERVER_BUSY") return d.errorAiBusy;
     if (error === "AI_GENERATION_FAILED") return d.errorAiGen;
     if (error === "VALIDATION_FAILED") return d.errorAiVal;
-    if (error === "AI_QUOTA_EXCEEDED" as TError) return d.errorQuotaExceeded;
+    if (error === ("AI_QUOTA_EXCEEDED" as TError)) return d.errorQuotaExceeded;
     if (error === "SAVE_FAILED") return d.errorSave;
     if (error === "UPDATE_FAILED") return d.updateError;
 
@@ -177,7 +182,6 @@ export const SeoEntityForm = <TError extends string>({
     setIsImageRemoved(
       Boolean(normalizedInitialData.image || normalizedInitialData.imageUrl),
     );
-
   };
 
   const handleGenerate = async () => {
@@ -382,10 +386,7 @@ export const SeoEntityForm = <TError extends string>({
         }
 
         saveOutcome = "failed";
-        await setFailureWithRollback(
-          getErrorMessage(res.error),
-          uploadedImage,
-        );
+        await setFailureWithRollback(getErrorMessage(res.error), uploadedImage);
         return;
       }
 
@@ -425,10 +426,7 @@ export const SeoEntityForm = <TError extends string>({
 
       if (!res.success) {
         saveOutcome = "failed";
-        await setFailureWithRollback(
-          getErrorMessage(res.error),
-          uploadedImage,
-        );
+        await setFailureWithRollback(getErrorMessage(res.error), uploadedImage);
       }
     } catch {
       if (saveOutcome === "not-started") {
@@ -532,7 +530,7 @@ export const SeoEntityForm = <TError extends string>({
         />
       </div>
 
-      {entity === "pest" && d.slugSuffixLabel && (
+      {entity === "pest" && PEST_SLUG_SUFFIX && d.slugSuffixLabel && (
         <div className="space-y-1">
           <Switch
             id="pest-slug-suffix"
@@ -658,10 +656,7 @@ export const SeoEntityForm = <TError extends string>({
           />
         </div>
 
-        <SeoFaqEditor
-          faq={formData.faq}
-          onFaqChange={handleFaqChange}
-        />
+        <SeoFaqEditor faq={formData.faq} onFaqChange={handleFaqChange} />
       </div>
 
       <div
@@ -752,11 +747,16 @@ export const SeoEntityForm = <TError extends string>({
         entity={entity}
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
+        selectedFile={selectedImageFile}
+        selectedFileAlt={imageAlt}
         data={{
           ...formData,
           image:
             !isImageRemoved && formData.image
-              ? { ...formData.image, alt: imageAlt.trim() || getDefaultImageAlt() }
+              ? {
+                  ...formData.image,
+                  alt: imageAlt.trim() || getDefaultImageAlt(),
+                }
               : undefined,
           imageUrl: isImageRemoved ? undefined : formData.imageUrl,
         }}

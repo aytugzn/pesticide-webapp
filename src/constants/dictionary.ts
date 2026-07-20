@@ -1244,6 +1244,9 @@ const globalDict = {
     address: "İzmir, Karabağlar — 9073. Sk. 15A, 35160",
     workingHours: "Pazartesi - Pazar: 08:00 - 22:00",
   },
+  seo: {
+    pestSlugSuffix: "-ilaclama",
+  },
 };
 
 export const DICTIONARY = deepFreeze({

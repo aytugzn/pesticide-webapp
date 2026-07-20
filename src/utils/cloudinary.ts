@@ -74,6 +74,16 @@ export const buildCloudinaryUrl = (
   return `https://res.cloudinary.com/${encodedCloudName}/image/upload/${CLOUDINARY_TRANSFORMATIONS[preset]}${versionSegment}/${encodedPublicId}`;
 };
 
+/** Returns whether a stored original URL is compatible with Next Image. */
+const isCloudinaryOriginalUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Resolves an object-based Cloudinary image first, then a legacy raw URL.
  *
@@ -86,20 +96,27 @@ export const resolveAppImage = ({
   fallbackAlt,
   preset,
 }: ResolveAppImageInput): ResolvedAppImage | null => {
-  if (
-    image?.source === "cloudinary" &&
-    typeof image.publicId === "string" &&
-    typeof image.alt === "string" &&
-    image.publicId.trim() &&
-    image.alt.trim()
-  ) {
-    const cloudinaryUrl = buildCloudinaryUrl(
-      image.publicId,
-      preset,
-      image.version,
-    );
-    if (cloudinaryUrl) {
-      return { url: cloudinaryUrl, alt: image.alt.trim() };
+  if (image?.source === "cloudinary") {
+    const normalizedPublicId = normalizeCloudinaryPublicId(image.publicId);
+    const normalizedAlt = image.alt.trim() || fallbackAlt;
+
+    if (normalizedPublicId) {
+      const cloudinaryUrl = buildCloudinaryUrl(
+        normalizedPublicId,
+        preset,
+        image.version,
+      );
+      if (cloudinaryUrl) {
+        return { url: cloudinaryUrl, alt: normalizedAlt };
+      }
+    }
+
+    const normalizedOriginalUrl = image.originalUrl?.trim();
+    if (
+      normalizedOriginalUrl &&
+      isCloudinaryOriginalUrl(normalizedOriginalUrl)
+    ) {
+      return { url: normalizedOriginalUrl, alt: normalizedAlt };
     }
   }
 

@@ -6,6 +6,7 @@ import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
 import { ImagePlaceholder } from "./ImagePlaceholder";
 import { HERO_IMAGE_SIZES } from "@/constants/ui";
+import { cn } from "@/utils/cn";
 
 export type SliderImage = {
   id: string;
@@ -18,12 +19,14 @@ type ImageSliderProps = {
   images: SliderImage[];
   fallbackImages?: SliderImage[];
   autoplayDelay?: number;
+  imageFit?: "cover" | "contain";
 };
 
 export const ImageSlider = ({
   images,
   fallbackImages = [],
   autoplayDelay = 5000,
+  imageFit = "cover",
 }: ImageSliderProps) => {
   const [failedImageKeys, setFailedImageKeys] = useState<string[]>([]);
   const visiblePrimaryImages = images.filter(
@@ -66,8 +69,11 @@ export const ImageSlider = ({
               title={img.title || img.altText}
               fill
               priority={index === 0}
-              className="object-cover"
+              className={cn(
+                imageFit === "contain" ? "object-contain" : "object-cover",
+              )}
               sizes={HERO_IMAGE_SIZES}
+              unoptimized={img.url.startsWith("blob:")}
               onError={() => {
                 const failedImageKey = `${img.id}:${img.url}`;
                 setFailedImageKeys((current) =>

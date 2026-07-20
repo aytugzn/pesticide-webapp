@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { Bug, MapPin, X } from "lucide-react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +17,8 @@ export type SeoEntityPreviewModalProps = {
   entity: "pest" | "region";
   isOpen: boolean;
   onClose: () => void;
+  selectedFile?: File | null;
+  selectedFileAlt?: string;
   data: {
     name: string;
     slug: string;
@@ -35,22 +38,40 @@ export const SeoEntityPreviewModal = ({
   entity,
   isOpen,
   onClose,
+  selectedFile,
+  selectedFileAlt,
   data,
 }: SeoEntityPreviewModalProps) => {
   useScrollLock(isOpen);
 
+  const selectedPreviewUrl = useMemo(
+    () => (isOpen && selectedFile ? URL.createObjectURL(selectedFile) : null),
+    [isOpen, selectedFile],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (selectedPreviewUrl) URL.revokeObjectURL(selectedPreviewUrl);
+    };
+  }, [selectedPreviewUrl]);
+
   if (!isOpen) return null;
 
   const sections = data.content ? parseHtmlIntoSections(data.content) : [];
-  
-  const resolvedImage = resolveAppImage({
-    image: data.image,
-    imageUrl: data.imageUrl,
-    fallbackAlt: data.h1 || data.name,
-    preset: "section",
-  });
+  const fallbackAlt = data.h1 || data.name;
+  const resolvedImage = selectedPreviewUrl
+    ? {
+        url: selectedPreviewUrl,
+        alt: selectedFileAlt?.trim() || fallbackAlt,
+      }
+    : resolveAppImage({
+        image: data.image,
+        imageUrl: data.imageUrl,
+        fallbackAlt,
+        preset: "section",
+      });
   const sectionVisuals =
-    sections.length > 1 && resolvedImage
+    sections.length > 0 && resolvedImage
       ? {
           0: {
             id: `${entity}-section`,
@@ -60,9 +81,7 @@ export const SeoEntityPreviewModal = ({
         }
       : undefined;
   const sectionFallbackIcons =
-    sections.length > 1
-      ? { 0: entity === "pest" ? Bug : MapPin }
-      : undefined;
+    sections.length > 0 ? { 0: entity === "pest" ? Bug : MapPin } : undefined;
 
   const h1Text =
     data.h1 ||

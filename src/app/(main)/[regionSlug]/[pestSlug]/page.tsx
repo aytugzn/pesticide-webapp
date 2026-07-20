@@ -246,7 +246,7 @@ const CombinationPageContent = async ({ params }: CombinationPageProps) => {
   > = {};
   const sectionFallbackIcons: Record<number, typeof Bug> = {};
 
-  if (sections.length > 1) {
+  if (sections.length > 0) {
     sectionFallbackIcons[0] = Bug;
     if (resolvedPestImage) {
       sectionVisuals[0] = {
@@ -257,7 +257,7 @@ const CombinationPageContent = async ({ params }: CombinationPageProps) => {
     }
   }
 
-  if (sections.length > 2) {
+  if (sections.length > 1) {
     sectionFallbackIcons[1] = MapPin;
     if (resolvedRegionImage) {
       sectionVisuals[1] = {

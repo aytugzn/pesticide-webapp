@@ -44,8 +44,8 @@ export const CombinationPreviewModal = ({
   const sections = data.content ? parseHtmlIntoSections(data.content) : [];
   const sectionFallbackIcons: Record<number, typeof Bug> = {};
 
-  if (sections.length > 1) sectionFallbackIcons[0] = Bug;
-  if (sections.length > 2) sectionFallbackIcons[1] = MapPin;
+  if (sections.length > 0) sectionFallbackIcons[0] = Bug;
+  if (sections.length > 1) sectionFallbackIcons[1] = MapPin;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-brand-surface overflow-hidden">
