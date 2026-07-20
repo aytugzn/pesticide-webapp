@@ -267,7 +267,7 @@ export const getPublicSettings = async (): Promise<SettingsDoc> => {
     try {
       return await getPublicSettingsFromFirestore();
     } catch {
-      console.error("Failed to fetch public settings");
+      console.warn("Failed to fetch public settings");
     }
   }
   const snapshot = await getPublicSnapshotResolution();
@@ -283,7 +283,7 @@ export const getPublicSettingsForMetadata = async (): Promise<SettingsDoc> => {
     try {
       return await getPublicSettingsFromFirestore();
     } catch {
-      console.error("Failed to fetch public metadata settings");
+      console.warn("Failed to fetch public metadata settings");
     }
   }
   const snapshot = await getPublicSnapshotResolution();
@@ -336,7 +336,7 @@ export const getGlobalDataResult = async (): Promise<
     try {
       return { status: "found", data: await getGlobalDataFromFirestore() };
     } catch {
-      console.error("Failed to fetch global data");
+      console.warn("Failed to fetch global data");
     }
   }
   const snapshot = await getPublicSnapshotResolution();
@@ -354,7 +354,7 @@ export const getGlobalDataMetadataResult = async (): Promise<
     try {
       return { status: "found", data: await getGlobalDataFromFirestore() };
     } catch {
-      console.error("Failed to fetch global metadata");
+      console.warn("Failed to fetch global metadata");
     }
   }
   const snapshot = await getPublicSnapshotResolution();

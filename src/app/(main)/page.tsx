@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata, ResolvingMetadata } from "next";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
@@ -16,9 +17,18 @@ import {
   DEFAULT_PHONE,
 } from "@/constants/ui";
 import type { SettingsDoc } from "@/types";
-import type { GoogleReviewDoc, HeroSlideDoc } from "@/features/home/types";
+import type {
+  GoogleStatsPromise,
+  HomeData,
+} from "@/features/home/types";
+import type { GlobalData } from "@/features/settings/types";
 import { getHomeData } from "@/features/home/actions";
 import { getGlobalData } from "@/features/settings/data";
+import { getPublicGoogleStats } from "@/features/home/googlePlaces";
+import {
+  getLocalGlobalDataFallback,
+  getLocalHomeDataFallback,
+} from "@/lib/publicSnapshot";
 import { generateTelUrl, generateWhatsAppUrl } from "@/utils/phone";
 
 export const generateMetadata = async (
@@ -59,30 +69,23 @@ const DEFAULT_SETTINGS: SettingsDoc = {
   reviewsAutoplayDelay: REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK,
 };
 
-const HomePage = async () => {
-  const [homeDataResponse, globalData] = await Promise.all([
-    getHomeData(),
-    getGlobalData(),
-  ]);
+type HomePageViewProps = {
+  homeData: HomeData;
+  globalData: GlobalData;
+  reviewsUnavailable: boolean;
+  googleStatsPromise?: GoogleStatsPromise;
+};
 
-  let slides: HeroSlideDoc[] = [];
-  let customReviews: GoogleReviewDoc[] = [];
-  let viewAllReviewsUrl: string = "#";
-
+const HomePageView = ({
+  homeData,
+  globalData,
+  reviewsUnavailable,
+  googleStatsPromise,
+}: HomePageViewProps) => {
+  const { slides, customReviews, viewAllReviewsUrl } = homeData;
   const pests = globalData.pests || [];
   const regions = globalData.regions || [];
   const settings = globalData.settings || DEFAULT_SETTINGS;
-
-  if (!homeDataResponse.success) {
-    console.error("Failed to fetch home page data", {
-      error: homeDataResponse.error,
-    });
-  } else if (homeDataResponse.data) {
-    const d = homeDataResponse.data;
-    slides = d.slides;
-    customReviews = d.customReviews;
-    viewAllReviewsUrl = d.viewAllReviewsUrl;
-  }
 
   const rawPhone = settings.phone || DEFAULT_PHONE;
   const whatsappUrl = generateWhatsAppUrl(rawPhone);
@@ -111,6 +114,7 @@ const HomePage = async () => {
           autoplayDelay={heroAutoplayDelay}
           instagramUrl={settings.instagramUrl}
           facebookUrl={settings.facebookUrl}
+          googleStatsPromise={googleStatsPromise}
         />
         <ServicesSection
           pests={pests}
@@ -128,6 +132,7 @@ const HomePage = async () => {
           autoplayDelay={reviewsAutoplayDelay}
           reviews={customReviews}
           viewAllUrl={viewAllReviewsUrl}
+          unavailable={reviewsUnavailable}
         />
         <ContactSection pests={pests} regions={regions} />
       </AlternatingSections>
@@ -136,5 +141,42 @@ const HomePage = async () => {
     </div>
   );
 };
+
+const HomePageContent = async () => {
+  const [homeDataResponse, globalData] = await Promise.all([
+    getHomeData(),
+    getGlobalData(),
+  ]);
+  const localHomeData = getLocalHomeDataFallback();
+  const homePageData =
+    homeDataResponse.success && homeDataResponse.data
+      ? homeDataResponse.data
+      : { ...localHomeData, reviewsUnavailable: true };
+  const settings = globalData.settings || DEFAULT_SETTINGS;
+  const googleStatsPromise = getPublicGoogleStats(settings.googlePlaceId);
+
+  return (
+    <HomePageView
+      homeData={homePageData}
+      globalData={globalData}
+      reviewsUnavailable={homePageData.reviewsUnavailable}
+      googleStatsPromise={googleStatsPromise}
+    />
+  );
+};
+
+const HomePageFallback = () => (
+  <HomePageView
+    homeData={getLocalHomeDataFallback()}
+    globalData={getLocalGlobalDataFallback()}
+    reviewsUnavailable
+  />
+);
+
+const HomePage = () => (
+  <Suspense fallback={<HomePageFallback />}>
+    <HomePageContent />
+  </Suspense>
+);
 
 export default HomePage;

@@ -594,7 +594,7 @@ export const createRequestPublicSnapshotResolution = (
       return { status: "available", snapshot: result.snapshot };
     }
     if (result.status === "missing") return { status: "missing" };
-    console.error("Failed to read public fallback snapshot");
+    console.warn("Failed to read public fallback snapshot");
     return { status: "temporarily-unavailable" };
   });
 

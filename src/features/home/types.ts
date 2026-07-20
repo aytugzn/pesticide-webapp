@@ -33,6 +33,10 @@ export type HomeData = {
   customReviews: GoogleReviewDoc[];
   viewAllReviewsUrl: string;
 };
+export type HomePageData = HomeData & {
+  reviewsUnavailable: boolean;
+};
+
 
 export const CONTACT_ERRORS = {
   VALIDATION_FAILED: "VALIDATION_FAILED",

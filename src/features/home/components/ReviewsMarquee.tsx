@@ -1,6 +1,7 @@
 "use client";
 
 import { Star } from "lucide-react";
+import { DICTIONARY } from "@/constants/dictionary";
 import { ReviewCard } from "./ReviewCard";
 import { REVIEWS_SLIDER_AUTOPLAY_DELAY_FALLBACK } from "@/constants/ui";
 import type { GoogleReviewDoc } from "@/features/home/types";
@@ -8,14 +9,27 @@ import type { GoogleReviewDoc } from "@/features/home/types";
 export const ReviewsMarquee = ({
   reviews,
   autoplayDelay,
+  unavailable = false,
 }: {
   reviews: GoogleReviewDoc[];
   autoplayDelay?: number;
+  unavailable?: boolean;
 }) => {
   if (!reviews || reviews.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-brand-primary opacity-20">
-        <Star className="w-16 h-16" aria-hidden="true" />
+      <div
+        className="mx-auto flex max-w-xl flex-col items-center justify-center gap-3 py-8 text-center text-text-secondary"
+        role={unavailable ? "status" : undefined}
+      >
+        <Star
+          className="h-12 w-12 text-brand-primary/35"
+          aria-hidden="true"
+        />
+        {unavailable && (
+          <p className="text-sm leading-relaxed md:text-base">
+            {DICTIONARY.home.googleReviews.unavailable}
+          </p>
+        )}
       </div>
     );
   }

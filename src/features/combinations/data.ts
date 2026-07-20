@@ -96,7 +96,7 @@ export const getCombination = async (
         ? { status: "found", data: combination }
         : { status: "confirmed-missing" };
     } catch (error: unknown) {
-      console.error("Failed to fetch public combination", {
+      console.warn("Failed to fetch public combination", {
         regionSlug,
         pestSlug,
         errorCode: getErrorInfo(error).code,
@@ -131,7 +131,7 @@ export const getCombinationMetadataResult = async (
         ? { status: "found", data: combination }
         : { status: "confirmed-missing" };
     } catch (error: unknown) {
-      console.error("Failed to fetch combination metadata", {
+      console.warn("Failed to fetch combination metadata", {
         regionSlug,
         pestSlug,
         errorCode: getErrorInfo(error).code,
@@ -180,7 +180,7 @@ export const getAllActiveCombinationsResult = async (): Promise<
         data: await getAllActiveCombinationsFromFirestore(),
       };
     } catch (error: unknown) {
-      console.error("Failed to fetch active public combinations", {
+      console.warn("Failed to fetch active public combinations", {
         errorCode: getErrorInfo(error).code,
       });
     }
@@ -213,7 +213,7 @@ export const getAllActiveCombinationsMetadataResult = async (): Promise<
         data: await getAllActiveCombinationsFromFirestore(),
       };
     } catch (error: unknown) {
-      console.error("Failed to fetch combination-list metadata", {
+      console.warn("Failed to fetch combination-list metadata", {
         errorCode: getErrorInfo(error).code,
       });
     }

@@ -223,6 +223,35 @@ const ResolvedGoogleStats = ({
 };
 
 /**
+ * Renders the stats-only loading frame for a server Suspense boundary.
+ *
+ * @param props - Optional published Instagram and Facebook URLs
+ * @returns Google stats skeleton with independently available social links
+ */
+export const GoogleStatsLoading = ({
+  instagramUrl,
+  facebookUrl,
+}: GoogleSocialLinksProps) => {
+  const finalInstagramUrl = instagramUrl ?? DICTIONARY.social.instagram.url;
+  const finalFacebookUrl = facebookUrl ?? DICTIONARY.social.facebook.url;
+  const hasSocialLinks = Boolean(finalInstagramUrl || finalFacebookUrl);
+
+  return (
+    <GoogleStatsFrame
+      statsContent={<GoogleStatsSkeleton />}
+      socialContent={
+        hasSocialLinks ? (
+          <GoogleSocialLinks
+            instagramUrl={finalInstagramUrl}
+            facebookUrl={finalFacebookUrl}
+          />
+        ) : undefined
+      }
+    />
+  );
+};
+
+/**
  * Displays Google stats from the public-layout promise and independent socials.
  * Suspense is limited to the stats slot so the rest of the Hero remains ready.
  *
@@ -235,21 +264,13 @@ export const GoogleStats = ({
 }: GoogleSocialLinksProps) => {
   const finalInstagramUrl = instagramUrl ?? DICTIONARY.social.instagram.url;
   const finalFacebookUrl = facebookUrl ?? DICTIONARY.social.facebook.url;
-  const hasSocialLinks = Boolean(finalInstagramUrl || finalFacebookUrl);
 
   return (
     <Suspense
       fallback={
-        <GoogleStatsFrame
-          statsContent={<GoogleStatsSkeleton />}
-          socialContent={
-            hasSocialLinks ? (
-              <GoogleSocialLinks
-                instagramUrl={finalInstagramUrl}
-                facebookUrl={finalFacebookUrl}
-              />
-            ) : undefined
-          }
+        <GoogleStatsLoading
+          instagramUrl={finalInstagramUrl}
+          facebookUrl={finalFacebookUrl}
         />
       }
     >

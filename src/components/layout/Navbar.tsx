@@ -1,3 +1,4 @@
+import { Suspense, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
@@ -17,9 +18,32 @@ import {
 } from "@/utils/phone";
 import logoImg from "@/../public/logo.svg";
 import { getGlobalData } from "@/features/settings/data";
+import type { GlobalData } from "@/features/settings/types";
+import { getLocalGlobalDataFallback } from "@/lib/publicSnapshot";
 
-export const Navbar = async () => {
-  const { pests, regions, settings } = await getGlobalData();
+const NavbarRouteLink = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) => (
+  <Suspense
+    fallback={
+      <Link
+        href={href}
+        className="text-sm font-medium text-text-primary transition-colors hover:text-brand-primary"
+      >
+        {children}
+      </Link>
+    }
+  >
+    <NavLink href={href}>{children}</NavLink>
+  </Suspense>
+);
+
+const NavbarView = ({ globalData }: { globalData: GlobalData }) => {
+  const { pests, regions, settings } = globalData;
 
   const rawPhone = settings.phone || DEFAULT_PHONE;
   const displayPhone = formatTurkishPhoneDisplay(rawPhone);
@@ -86,12 +110,12 @@ export const Navbar = async () => {
                 </div>
               </div>
 
-              <NavLink href={ROUTES.about}>
+              <NavbarRouteLink href={ROUTES.about}>
                 {DICTIONARY.navbar.links.about}
-              </NavLink>
-              <NavLink href={ROUTES.contact}>
+              </NavbarRouteLink>
+              <NavbarRouteLink href={ROUTES.contact}>
                 {DICTIONARY.navbar.links.contact}
-              </NavLink>
+              </NavbarRouteLink>
             </nav>
 
             {/* Mobile Navigation */}
@@ -110,3 +134,13 @@ export const Navbar = async () => {
     </>
   );
 };
+
+/** Resolves published navigation data inside the layout's local boundary. */
+export const Navbar = async () => (
+  <NavbarView globalData={await getGlobalData()} />
+);
+
+/** Keeps complete navigation visible while published data resolves. */
+export const NavbarFallback = () => (
+  <NavbarView globalData={getLocalGlobalDataFallback()} />
+);

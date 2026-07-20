@@ -9,10 +9,12 @@ export const GoogleReviewsSection = ({
   reviews = [],
   autoplayDelay,
   viewAllUrl = "#",
+  unavailable = false,
 }: {
   reviews?: GoogleReviewDoc[];
   autoplayDelay?: number;
   viewAllUrl?: string;
+  unavailable?: boolean;
 }) => {
   return (
     <section id="google-reviews" aria-labelledby="google-reviews-heading" className="w-full py-20 md:py-28">
@@ -41,7 +43,11 @@ export const GoogleReviewsSection = ({
         />
 
         {/* Reviews Marquee */}
-        <ReviewsMarquee reviews={reviews} autoplayDelay={autoplayDelay} />
+        <ReviewsMarquee
+          reviews={reviews}
+          autoplayDelay={autoplayDelay}
+          unavailable={unavailable}
+        />
 
         {/* View All Action */}
         {viewAllUrl && viewAllUrl !== "#" && (

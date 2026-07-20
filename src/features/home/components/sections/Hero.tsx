@@ -1,11 +1,13 @@
+import { Suspense } from "react";
 import { DICTIONARY } from "@/constants/dictionary";
 import { Button } from "@/components/ui/Button";
 import { ScrollButton } from "@/components/ui/ScrollButton";
 import { Phone, MessageCircle, PhoneCall } from "lucide-react";
-import { GoogleStats } from "../GoogleStats";
+import { GoogleStats, GoogleStatsLoading } from "../GoogleStats";
+import { GoogleStatsProvider } from "../GoogleStatsProvider";
 import { ImageSlider, type SliderImage } from "@/components/ui/ImageSlider";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import type { HeroSlideDoc } from "@/features/home/types";
+import type { GoogleStatsPromise, HeroSlideDoc } from "@/features/home/types";
 import { resolveAppImage } from "@/utils/cloudinary";
 
 const BACKUP_HERO_SLIDES: SliderImage[] = [
@@ -32,6 +34,7 @@ export const Hero = ({
   whatsappUrl,
   autoplayDelay,
   instagramUrl,
+  googleStatsPromise,
   facebookUrl,
 }: {
   slides: HeroSlideDoc[];
@@ -40,6 +43,7 @@ export const Hero = ({
   autoplayDelay?: number;
   instagramUrl?: string;
   facebookUrl?: string;
+  googleStatsPromise?: GoogleStatsPromise;
 }) => {
   const sliderImages = slides.reduce<SliderImage[]>((resolvedSlides, slide) => {
     const resolvedImage = resolveAppImage({
@@ -138,10 +142,28 @@ export const Hero = ({
             </div>
 
             {/* Stats */}
-            <GoogleStats
-              instagramUrl={instagramUrl}
-              facebookUrl={facebookUrl}
-            />
+            {googleStatsPromise ? (
+              <Suspense
+                fallback={
+                  <GoogleStatsLoading
+                    instagramUrl={instagramUrl}
+                    facebookUrl={facebookUrl}
+                  />
+                }
+              >
+                <GoogleStatsProvider statsPromise={googleStatsPromise}>
+                  <GoogleStats
+                    instagramUrl={instagramUrl}
+                    facebookUrl={facebookUrl}
+                  />
+                </GoogleStatsProvider>
+              </Suspense>
+            ) : (
+              <GoogleStatsLoading
+                instagramUrl={instagramUrl}
+                facebookUrl={facebookUrl}
+              />
+            )}
           </div>
 
           {/* Right Column: Slider */}

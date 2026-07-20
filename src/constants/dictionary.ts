@@ -86,6 +86,8 @@ const homeDict = {
     description:
       "Google Haritalar üzerinden işletmemize yapılan müşteri yorumları.",
     viewAllButton: "Tüm Yorumları Google'da Gör",
+    unavailable:
+      "Müşteri yorumları şu anda görüntülenemiyor. Lütfen kısa süre sonra tekrar deneyin.",
     ariaStars: "5 yıldızlı müşteri memnuniyeti",
     ariaRating: "yıldızlı değerlendirme",
     avatarTitleSuffix: "Müşteri Değerlendirmesi",

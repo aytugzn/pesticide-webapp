@@ -1,17 +1,12 @@
 import "server-only";
 
-import {
-  hasFirebaseAdminConfig,
-} from "@/lib/firebase-admin";
+import { hasFirebaseAdminConfig } from "@/lib/firebase-admin";
 import { getPublishedSnapshotFromFirestoreOrThrow } from "@/lib/firestorePublishedSnapshot";
 import {
-  getHomeDataFromSnapshot,
   getLocalHomeDataFallback,
+  getPublicSnapshotResolution,
 } from "@/lib/publicSnapshot";
-import {
-  type HomeData,
-  type HomeErrorCode,
-} from "./types";
+import type { HomeData, HomeErrorCode, HomePageData } from "./types";
 import type { ActionResponse } from "@/types";
 import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
@@ -30,18 +25,38 @@ export const getHomeDataFromFirestore = async (): Promise<HomeData> => {
  * successful primary result.
  */
 export const getHomeData = async (): Promise<
-  ActionResponse<HomeData, HomeErrorCode>
+  ActionResponse<HomePageData, HomeErrorCode>
 > => {
   await connection();
   if (hasFirebaseAdminConfig()) {
     try {
-      return { success: true, data: await getHomeDataFromFirestore() };
+      return {
+        success: true,
+        data: {
+          ...(await getHomeDataFromFirestore()),
+          reviewsUnavailable: false,
+        },
+      };
     } catch {
-      console.error("Failed to fetch home page data");
+      console.warn("Failed to fetch home page data; using public fallback");
     }
   }
+  const snapshotResolution = await getPublicSnapshotResolution();
+  if (snapshotResolution.status === "available") {
+    return {
+      success: true,
+      data: {
+        ...snapshotResolution.snapshot.data.homeData,
+        reviewsUnavailable: false,
+      },
+    };
+  }
+
   return {
     success: true,
-    data: (await getHomeDataFromSnapshot()) ?? getLocalHomeDataFallback(),
+    data: {
+      ...getLocalHomeDataFallback(),
+      reviewsUnavailable: true,
+    },
   };
 };
