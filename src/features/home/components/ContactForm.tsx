@@ -132,6 +132,8 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
             id="phone"
             name="phone"
             type="tel"
+            autoComplete="tel"
+            inputMode="numeric"
             label={dict.phone}
             optionalText={dict.phoneHint}
             placeholder={dict.phonePlaceholder}

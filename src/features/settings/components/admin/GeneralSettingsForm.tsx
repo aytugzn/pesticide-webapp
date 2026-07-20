@@ -144,6 +144,7 @@ export const GeneralSettingsForm = ({
               name="phone"
               type="tel"
               autoComplete="tel"
+              inputMode="numeric"
               label={d.fields.phone.label}
               placeholder={d.fields.phone.placeholder}
               value={values.phone}
