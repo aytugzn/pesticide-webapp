@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Inter, Montserrat } from "next/font/google";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAbsoluteUrl } from "@/utils/getAbsoluteUrl";
@@ -125,9 +124,7 @@ const RootLayout = ({
     className={`${inter.variable} ${montserrat.variable} h-full`}
   >
     <body className="min-h-full flex flex-col">
-      <Suspense fallback={null}>
-        <LocalBusinessJsonLd />
-      </Suspense>
+      <LocalBusinessJsonLd />
       {children}
     </body>
   </html>

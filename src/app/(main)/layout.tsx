@@ -1,25 +1,15 @@
-import { Suspense, type ReactNode } from "react";
-import {
-  Navbar,
-  NavbarFallback,
-} from "@/components/layout/Navbar";
-import {
-  Footer,
-  FooterFallback,
-} from "@/components/layout/Footer";
+import type { ReactNode } from "react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
-/** Renders public chrome with provider reads isolated to their own boundaries. */
+/** Renders public chrome with static provider reads. */
 const MainLayout = ({ children }: { children: ReactNode }) => (
   <div className="min-h-screen flex flex-col">
-    <Suspense fallback={<NavbarFallback />}>
-      <Navbar />
-    </Suspense>
+    <Navbar />
     <main className="flex-1 flex flex-col">
-      <Suspense fallback={null}>{children}</Suspense>
+      {children}
     </main>
-    <Suspense fallback={<FooterFallback />}>
-      <Footer />
-    </Suspense>
+    <Footer />
   </div>
 );
 

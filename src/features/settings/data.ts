@@ -2,15 +2,13 @@ import "server-only";
 
 import {
   getAdminDb,
-  hasFirebaseAdminConfig,
 } from "@/lib/firebase-admin";
 import {
   getLocalGlobalDataFallback,
   getLocalSettingsFallback,
-  getPublicSnapshotResolution,
   getVisibleGlobalData,
 } from "@/lib/publicSnapshot";
-import { getPublishedSnapshotFromFirestoreOrThrow } from "@/lib/firestorePublishedSnapshot";
+import { resolvePublishedSnapshot } from "@/lib/resolvePublishedSnapshot";
 import {
   parsePestDoc,
   parseRegionDoc,
@@ -19,10 +17,8 @@ import {
   parseSiteImageSlides,
 } from "@/utils/parsers";
 import { cacheLife, cacheTag } from "next/cache";
-import { connection } from "next/server";
 import type {
   AppImage,
-  PublicDataResult,
   SettingsDoc,
   SiteImageSlideDoc,
 } from "@/types";
@@ -241,69 +237,53 @@ export const getAdminGeneralSettingsData = async (): Promise<
 };
 
 /**
- * Loads settings from the authoritative Firestore published envelope.
- * Server helpers reuse this result instead of issuing request-scoped reads.
+ * Loads settings from the published provider chain (Firestore → Redis)
+ * for the long-lived Next.js cache.
  *
  * @returns Parsed published settings from the layout-settings cache
  */
-export const getPublicSettingsFromFirestore = async (): Promise<SettingsDoc> => {
+export const getCachedPublishedSettings = async (): Promise<SettingsDoc> => {
   "use cache";
   cacheLife("max");
   cacheTag("layout-settings");
 
-  const snapshot = await getPublishedSnapshotFromFirestoreOrThrow();
+  const snapshot = await resolvePublishedSnapshot();
   return snapshot.data.globalData.settings;
 };
 
 /**
- * Resolves public settings without retaining Redis or local fallbacks in the
- * long-lived primary Next.js cache.
+ * Resolves public settings through the published provider chain.
+ * Falls back to local defaults when all providers fail, so that
+ * non-entity public surfaces (navbar, footer) remain renderable.
  *
- * @returns Firestore settings, the last-known-good settings, or local defaults
+ * @returns Published settings, or local defaults
  */
 export const getPublicSettings = async (): Promise<SettingsDoc> => {
-  await connection();
-  if (hasFirebaseAdminConfig()) {
-    try {
-      return await getPublicSettingsFromFirestore();
-    } catch {
-      console.warn("Failed to fetch public settings");
-    }
+  try {
+    return await getCachedPublishedSettings();
+  } catch {
+    console.warn("Failed to fetch public settings");
+    return getLocalSettingsFallback();
   }
-  const snapshot = await getPublicSnapshotResolution();
-  return snapshot.status === "available"
-    ? snapshot.snapshot.data.globalData.settings
-    : getLocalSettingsFallback();
 };
 
 /** Resolves metadata settings through the same published provider chain. */
-export const getPublicSettingsForMetadata = async (): Promise<SettingsDoc> => {
-  await connection();
-  if (hasFirebaseAdminConfig()) {
-    try {
-      return await getPublicSettingsFromFirestore();
-    } catch {
-      console.warn("Failed to fetch public metadata settings");
-    }
-  }
-  const snapshot = await getPublicSnapshotResolution();
-  return snapshot.status === "available"
-    ? snapshot.snapshot.data.globalData.settings
-    : getLocalSettingsFallback();
-};
+export const getPublicSettingsForMetadata = async (): Promise<SettingsDoc> =>
+  getPublicSettings();
 
 /**
- * Fetches globally shared data from the Firestore published envelope.
+ * Fetches globally shared data from the published provider chain
+ * (Firestore → Redis) for the long-lived Next.js cache.
  *
  * @returns Active pests, active regions, and general settings.
  */
-export const getGlobalDataFromFirestore = async (): Promise<GlobalData> => {
+export const getCachedPublishedGlobalData = async (): Promise<GlobalData> => {
   "use cache";
   cacheLife("max");
   cacheTag("global-data");
 
   return getVisibleGlobalData(
-    await getPublishedSnapshotFromFirestoreOrThrow(),
+    await resolvePublishedSnapshot(),
   );
 };
 
@@ -326,47 +306,27 @@ export const getEditableGlobalData = async (): Promise<GlobalData> => {
 /**
  * Resolves authoritative global public data without manufacturing entities.
  *
- * @returns Found Firestore/snapshot data or temporary provider unavailability
+ * @returns Found published data (provider errors bubble up as AppError)
  */
-export const getGlobalDataResult = async (): Promise<
-  PublicDataResult<GlobalData>
-> => {
-  await connection();
-  if (hasFirebaseAdminConfig()) {
-    try {
-      return { status: "found", data: await getGlobalDataFromFirestore() };
-    } catch {
-      console.warn("Failed to fetch global data");
-    }
-  }
-  const snapshot = await getPublicSnapshotResolution();
-  return snapshot.status === "available"
-    ? { status: "found", data: getVisibleGlobalData(snapshot.snapshot) }
-    : { status: "temporarily-unavailable" };
+export const getGlobalDataResult = async (): Promise<{
+  status: "found";
+  data: GlobalData;
+}> => {
+  return { status: "found", data: await getCachedPublishedGlobalData() };
 };
 
-/** Resolves metadata through Firestore published state and request-deduped Redis. */
-export const getGlobalDataMetadataResult = async (): Promise<
-  PublicDataResult<GlobalData>
-> => {
-  await connection();
-  if (hasFirebaseAdminConfig()) {
-    try {
-      return { status: "found", data: await getGlobalDataFromFirestore() };
-    } catch {
-      console.warn("Failed to fetch global metadata");
-    }
-  }
-  const snapshot = await getPublicSnapshotResolution();
-  return snapshot.status === "available"
-    ? { status: "found", data: getVisibleGlobalData(snapshot.snapshot) }
-    : { status: "temporarily-unavailable" };
-};
+export const getGlobalDataMetadataResult = async (): Promise<{
+  status: "found";
+  data: GlobalData;
+}> => getGlobalDataResult();
 
-/** Resolves render-safe global data for non-entity public surfaces. */
 export const getGlobalData = async (): Promise<GlobalData> => {
-  const result = await getGlobalDataResult();
-  return result.status === "found"
-    ? result.data
-    : getLocalGlobalDataFallback();
+  try {
+    const result = await getGlobalDataResult();
+    return result.status === "found"
+      ? result.data
+      : getLocalGlobalDataFallback();
+  } catch {
+    return getLocalGlobalDataFallback();
+  }
 };

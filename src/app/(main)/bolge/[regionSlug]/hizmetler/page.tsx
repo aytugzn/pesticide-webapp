@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
@@ -16,11 +15,37 @@ import {
   getAllActiveCombinationsMetadataResult,
   getAllActiveCombinationsResult,
 } from "@/features/combinations/data";
-import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
-import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
+import { resolvePublishedSnapshot } from "@/lib/resolvePublishedSnapshot";
+import { getVisibleCombinationsById } from "@/lib/publicSnapshot";
+import { AppError } from "@/lib/exceptions";
 
 type RegionServicesHubPageProps = {
   params: Promise<{ regionSlug: string }>;
+};
+
+/**
+ * Generates static params for region slugs with at least one visible combination.
+ */
+export const generateStaticParams = async (): Promise<
+  { regionSlug: string }[]
+> => {
+  const snapshot = await resolvePublishedSnapshot();
+  const visible = getVisibleCombinationsById(snapshot);
+  const regionSlugs = [
+    ...new Set(Object.values(visible).map((c) => c.region)),
+  ];
+  const params = regionSlugs
+    .sort()
+    .map((slug) => ({ regionSlug: slug }));
+
+  if (params.length === 0) {
+    throw new AppError(
+      "No published region params are available for static generation",
+      "PUBLISHED_STATIC_PARAMS_EMPTY",
+    );
+  }
+
+  return params;
 };
 
 const getRegionServicesHubTitle = (regionName: string) =>
@@ -78,16 +103,6 @@ export const generateMetadata = async ({
     getGlobalDataMetadataResult(),
     getAllActiveCombinationsMetadataResult(),
   ]);
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return {
-      title: DICTIONARY.meta.default.title,
-      description: DICTIONARY.meta.default.description,
-      alternates: { canonical: canonicalUrl },
-    };
-  }
 
   const { regions } = globalDataResult.data;
   const activeCombinations = combinationsResult.data;
@@ -143,12 +158,6 @@ const RegionServicesHubPageContent = async ({
     getGlobalDataResult(),
     getAllActiveCombinationsResult(),
   ]);
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return <PublicDataUnavailable />;
-  }
 
   const { regions, pests } = globalDataResult.data;
   const activeCombinations = combinationsResult.data;
@@ -222,11 +231,4 @@ const RegionServicesHubPageContent = async ({
   );
 };
 
-/** Keeps runtime hub params inside a Cache Components Suspense boundary. */
-const RegionServicesHubPage = (props: RegionServicesHubPageProps) => (
-  <Suspense fallback={<PublicRouteLoading />}>
-    <RegionServicesHubPageContent {...props} />
-  </Suspense>
-);
-
-export default RegionServicesHubPage;
+export default RegionServicesHubPageContent;

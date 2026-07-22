@@ -102,30 +102,30 @@ src/
 
 ## Cache Stratejisi
 
-ISR yok. `use cache` + `updateTag` kullanılıyor.
+Public entity route'ları (kombinasyon, bölge, haşere vb.) tamamen statik üretilir (`generateStaticParams`). Runtime Suspense ile kandırılmaz.
 
 ```typescript
 // Sayfa tarafı
+export const generateStaticParams = async () => {
+  // connection() içermeyen strict resolver
+  const snapshot = await resolvePublishedSnapshot();
+  // ...slug listesi üret
+};
+
 export default async function Page({ params }) {
-  "use cache";
-  cacheTag(`combinations-${params["regionSlug"]}-${params["pestSlug"]}`);
+  // connection() ve Suspense yok.
+  // getCombination kendi içinde "use cache" ve resolvePublishedSnapshot kullanır
   const data = await getCombination(...);
   return <></>;
-}
-
-// Action tarafı — admin kaydettiğinde
-export async function saveCombination(data: CombinationData) {
-  "use server";
-  await adminDb.collection("combinations").doc(...).set(data);
-  updateTag(`combinations-${data.region}-${data.pest}`);
 }
 ```
 
 **Neden bu strateji?**
 
-- Build anında statik üretim → Firestore'a ziyaretçi isteği yok
-- Admin değişiklik yapınca sadece o sayfa anında güncellenir
-- Firestore kotası neredeyse hiç tüketilmez
+- **Tam Prerender**: Bilinen yayınlanmış slug'lar build-time'da HTML olarak üretilir. İlk ziyaretçi loading görmez.
+- **Dinamik Fallback**: `generateStaticParams` ISR sırasında çalışmaz. Yeni bir slug yayınlandığında, varsayılan `dynamicParams = true` davranışı ile ilk ziyarette dinamik olarak statik üretilir ve cache'lenir.
+- **Provider Chain**: `resolvePublishedSnapshot`, Firestore → Redis last-known-good zincirini izler. İkisi de arızalıysa kontrollü `AppError` ile build/render durdurulur, cache'e boş veri yazılmaz.
+- **Granular Invalidation ve cacheLife("max")**: `updateTag`, admin panelinden yapılan yayınlamalarda asıl yenileme mekanizmasıdır. Ancak `cacheLife("max")` profili, 30 günlük bir `revalidate` ve 1 yıllık bir `expire` süresine sahiptir. Yani 30 gün sonra sistem statik sayfayı arka planda otomatik revalidate edebilir. Bu yeniden okuma da yine published snapshot üzerinden yapılır; editördeki taslak (canonical) veriler, açıkça yayınlanana ("Canlı Siteyi Güncelle" tetiklenene) kadar ziyaretçilere yansımaz.
 
 ---
 

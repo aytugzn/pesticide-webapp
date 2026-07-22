@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
@@ -17,11 +16,37 @@ import {
   getAllActiveCombinationsResult,
 } from "@/features/combinations/data";
 import { resolveAppImage } from "@/utils/cloudinary";
-import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
-import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
+import { resolvePublishedSnapshot } from "@/lib/resolvePublishedSnapshot";
+import { getVisibleCombinationsById } from "@/lib/publicSnapshot";
+import { AppError } from "@/lib/exceptions";
 
 type PestRegionsHubPageProps = {
   params: Promise<{ pestSlug: string }>;
+};
+
+/**
+ * Generates static params for pest slugs with at least one visible combination.
+ */
+export const generateStaticParams = async (): Promise<
+  { pestSlug: string }[]
+> => {
+  const snapshot = await resolvePublishedSnapshot();
+  const visible = getVisibleCombinationsById(snapshot);
+  const pestSlugs = [
+    ...new Set(Object.values(visible).map((c) => c.pest)),
+  ];
+  const params = pestSlugs
+    .sort()
+    .map((slug) => ({ pestSlug: slug }));
+
+  if (params.length === 0) {
+    throw new AppError(
+      "No published pest params are available for static generation",
+      "PUBLISHED_STATIC_PARAMS_EMPTY",
+    );
+  }
+
+  return params;
 };
 
 const getServiceTitle = (pestName: string) =>
@@ -78,16 +103,6 @@ export const generateMetadata = async ({
     getGlobalDataMetadataResult(),
     getAllActiveCombinationsMetadataResult(),
   ]);
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return {
-      title: DICTIONARY.meta.default.title,
-      description: DICTIONARY.meta.default.description,
-      alternates: { canonical: canonicalUrl },
-    };
-  }
 
   const { pests } = globalDataResult.data;
   const activeCombinations = combinationsResult.data;
@@ -148,12 +163,6 @@ const PestRegionsHubPageContent = async ({
     getGlobalDataResult(),
     getAllActiveCombinationsResult(),
   ]);
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return <PublicDataUnavailable />;
-  }
 
   const { pests, regions } = globalDataResult.data;
   const activeCombinations = combinationsResult.data;
@@ -228,11 +237,4 @@ const PestRegionsHubPageContent = async ({
   );
 };
 
-/** Keeps runtime hub params inside a Cache Components Suspense boundary. */
-const PestRegionsHubPage = (props: PestRegionsHubPageProps) => (
-  <Suspense fallback={<PublicRouteLoading />}>
-    <PestRegionsHubPageContent {...props} />
-  </Suspense>
-);
-
-export default PestRegionsHubPage;
+export default PestRegionsHubPageContent;

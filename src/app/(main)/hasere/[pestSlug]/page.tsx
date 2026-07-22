@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
@@ -18,11 +17,34 @@ import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
 import { Bug } from "lucide-react";
-import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
-import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
+import { resolvePublishedSnapshot } from "@/lib/resolvePublishedSnapshot";
+import { getVisibleGlobalData } from "@/lib/publicSnapshot";
+import { AppError } from "@/lib/exceptions";
 
 type PestPageProps = {
   params: Promise<{ pestSlug: string }>;
+};
+
+/**
+ * Generates static params for all published, active pest slugs.
+ */
+export const generateStaticParams = async (): Promise<
+  { pestSlug: string }[]
+> => {
+  const snapshot = await resolvePublishedSnapshot();
+  const { pests } = getVisibleGlobalData(snapshot);
+  const params = pests
+    .map((pest) => ({ pestSlug: pest.slug }))
+    .sort((a, b) => a.pestSlug.localeCompare(b.pestSlug));
+
+  if (params.length === 0) {
+    throw new AppError(
+      "No published pest params are available for static generation",
+      "PUBLISHED_STATIC_PARAMS_EMPTY",
+    );
+  }
+
+  return params;
 };
 
 const getRelatedRegionDescription = (
@@ -43,14 +65,6 @@ export const generateMetadata = async ({
   const { pestSlug } = await params;
   const canonicalUrl = `${ROUTES.pestBase}/${pestSlug}`;
   const globalDataResult = await getGlobalDataMetadataResult();
-  if (globalDataResult.status !== "found") {
-    return {
-      title: DICTIONARY.meta.default.title,
-      description: DICTIONARY.meta.default.description,
-      alternates: { canonical: canonicalUrl },
-    };
-  }
-
   const pest = globalDataResult.data.pests.find(
     (item) => item.slug === pestSlug,
   );
@@ -108,12 +122,6 @@ const PestPageContent = async ({ params }: PestPageProps) => {
     getGlobalDataResult(),
     getAllActiveCombinationsResult(),
   ]);
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return <PublicDataUnavailable />;
-  }
 
   const { pests, regions } = globalDataResult.data;
   const pest = pests.find((item) => item.slug === pestSlug);
@@ -214,11 +222,4 @@ const PestPageContent = async ({ params }: PestPageProps) => {
   );
 };
 
-/** Keeps runtime pest params inside a Cache Components Suspense boundary. */
-const PestPage = ({ params }: PestPageProps) => (
-  <Suspense fallback={<PublicRouteLoading />}>
-    <PestPageContent params={params} />
-  </Suspense>
-);
-
-export default PestPage;
+export default PestPageContent;

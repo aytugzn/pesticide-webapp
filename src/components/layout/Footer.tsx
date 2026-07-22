@@ -14,8 +14,6 @@ import {
 } from "@/utils/phone";
 import { DEFAULT_PHONE } from "@/constants/ui";
 import type { GlobalData } from "@/features/settings/types";
-import { getLocalGlobalDataFallback } from "@/lib/publicSnapshot";
-
 const CORPORATE_LINKS = [
   { href: ROUTES.about, label: DICTIONARY.footer.links.about },
   { href: ROUTES.services, label: DICTIONARY.footer.links.services },
@@ -98,11 +96,6 @@ const FooterView = ({ globalData }: { globalData: GlobalData }) => {
 /** Resolves published footer data inside the layout's local boundary. */
 export const Footer = async () => (
   <FooterView globalData={await getGlobalData()} />
-);
-
-/** Keeps the complete footer visible while published data resolves. */
-export const FooterFallback = () => (
-  <FooterView globalData={getLocalGlobalDataFallback()} />
 );
 
 // --- Subcomponents ---

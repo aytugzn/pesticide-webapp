@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
@@ -18,11 +17,34 @@ import { BreadcrumbJsonLd } from "@/components/layout/BreadcrumbJsonLd";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
 import { MapPin } from "lucide-react";
-import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
-import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
+import { resolvePublishedSnapshot } from "@/lib/resolvePublishedSnapshot";
+import { getVisibleGlobalData } from "@/lib/publicSnapshot";
+import { AppError } from "@/lib/exceptions";
 
 type RegionPageProps = {
   params: Promise<{ regionSlug: string }>;
+};
+
+/**
+ * Generates static params for all published, active region slugs.
+ */
+export const generateStaticParams = async (): Promise<
+  { regionSlug: string }[]
+> => {
+  const snapshot = await resolvePublishedSnapshot();
+  const { regions } = getVisibleGlobalData(snapshot);
+  const params = regions
+    .map((region) => ({ regionSlug: region.slug }))
+    .sort((a, b) => a.regionSlug.localeCompare(b.regionSlug));
+
+  if (params.length === 0) {
+    throw new AppError(
+      "No published region params are available for static generation",
+      "PUBLISHED_STATIC_PARAMS_EMPTY",
+    );
+  }
+
+  return params;
 };
 
 const getRelatedServiceDescription = (
@@ -45,13 +67,6 @@ export const generateMetadata = async ({
   const { regionSlug } = await params;
   const canonicalUrl = `${ROUTES.regionBase}/${regionSlug}`;
   const globalDataResult = await getGlobalDataMetadataResult();
-  if (globalDataResult.status !== "found") {
-    return {
-      title: DICTIONARY.meta.default.title,
-      description: DICTIONARY.meta.default.description,
-      alternates: { canonical: canonicalUrl },
-    };
-  }
 
   const region = globalDataResult.data.regions.find(
     (item) => item.slug === regionSlug,
@@ -113,12 +128,6 @@ const RegionPageContent = async ({ params }: RegionPageProps) => {
     getGlobalDataResult(),
     getAllActiveCombinationsResult(),
   ]);
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return <PublicDataUnavailable />;
-  }
 
   const { regions, pests } = globalDataResult.data;
   const region = regions.find((item) => item.slug === regionSlug);
@@ -221,11 +230,4 @@ const RegionPageContent = async ({ params }: RegionPageProps) => {
   );
 };
 
-/** Keeps runtime region params inside a Cache Components Suspense boundary. */
-const RegionPage = ({ params }: RegionPageProps) => (
-  <Suspense fallback={<PublicRouteLoading />}>
-    <RegionPageContent params={params} />
-  </Suspense>
-);
-
-export default RegionPage;
+export default RegionPageContent;

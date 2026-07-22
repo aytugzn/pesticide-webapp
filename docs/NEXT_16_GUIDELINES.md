@@ -19,8 +19,11 @@
 - **Cache Components (Opt-in)**: Caching is entirely opt-in now. All dynamic code is executed at request time by default.
   - Enabled via `cacheComponents: true` in `next.config.ts` (replacing the old `experimental.ppr` and `experimental.dynamicIO` flags).
   - Use the `"use cache"` directive to cache pages, components, and functions, generating cache keys automatically via the compiler.
-  - A dynamic route MUST NOT export `generateStaticParams` with an empty array. When authoritative params cannot be known safely during a provider outage, omit `generateStaticParams` and read the asynchronous runtime `params` inside a `<Suspense>` boundary. Do not emit placeholder slugs or synthetic SEO pages.
-  - Provider-backed public resolution must call `connection()` before invoking a cached primary read. This keeps provider errors and Redis/local fallbacks out of the long-lived primary cache and defers them beyond build-time prerendering; the surrounding route/layout must provide a `<Suspense>` boundary.
+  - **Static Generation with dynamic routes**: Public entity routes should be statically generated. Export `generateStaticParams` to build known published slugs at build time. Do not emit placeholder slugs or synthetic SEO pages.
+  - **Provider Fallback Chain**: Use a strict published snapshot resolver (Firestore primary -> Redis last-known-good fallback) inside `"use cache"` scopes. If both fail, `AppError` is thrown to halt build/render safely.
+  - **New Slugs & `dynamicParams`**: `generateStaticParams` does not re-run during ISR. When a new slug is published, Next.js relies on the default `dynamicParams = true` behavior: the first runtime request generates and caches the static output.
+  - **`connection()` Usage**: Remove `connection()` from cached public data resolvers. Use `connection()` ONLY for paths that truly require request-time execution (e.g., admin routes, auth checks, preview modes).
+  - **Revalidation & Cache Profiles**: Rely strictly on `cacheTag` + `updateTag` following a deployment boundary. Additionally, `cacheLife("max")` has a 30-day server revalidation and 1-year expire behavior. Even if time-based revalidation occurs, it only queries the strict published snapshot. Canonical/editable data never leaks to public without an explicit "Canlı Siteyi Güncelle" action.
 
 - **Refined Caching APIs**:
   - **`revalidateTag(tag, profile)`**: Now requires a `cacheLife` profile as the second argument (e.g., `'max'`, `'hours'`) for stale-while-revalidate (SWR) behavior.

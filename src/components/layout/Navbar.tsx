@@ -19,7 +19,6 @@ import {
 import logoImg from "@/../public/logo.svg";
 import { getGlobalData } from "@/features/settings/data";
 import type { GlobalData } from "@/features/settings/types";
-import { getLocalGlobalDataFallback } from "@/lib/publicSnapshot";
 
 const NavbarRouteLink = ({
   href,
@@ -138,9 +137,4 @@ const NavbarView = ({ globalData }: { globalData: GlobalData }) => {
 /** Resolves published navigation data inside the layout's local boundary. */
 export const Navbar = async () => (
   <NavbarView globalData={await getGlobalData()} />
-);
-
-/** Keeps complete navigation visible while published data resolves. */
-export const NavbarFallback = () => (
-  <NavbarView globalData={getLocalGlobalDataFallback()} />
 );

@@ -42,9 +42,11 @@ We have a centralized, highly strict error handling architecture.
 - **Immutability**: Use the `deepFreeze` utility (`src/utils/deep-freeze.ts`) when exporting constant objects (like `DICTIONARY` or `ROUTES`).
 
 ## 5. Caching & Data Mutation (Next.js 16)
-- **On-Demand Revalidation Only**: We strictly use on-demand revalidation (e.g. `updateTag`, `revalidateTag`) instead of time-based ISR (e.g. `export const revalidate = 86400`). Do NOT use time-based revalidation exports or cron jobs for caching updates unless explicitly required.
+- **Static Generation of Entity Routes**: All public entity routes (combinations, regions, pests) MUST export `generateStaticParams` to resolve published slugs at build time. Do not emit placeholder slugs or empty arrays.
+- **Published Provider Resolution**: Inside `"use cache"` scopes, use the strict published snapshot resolver (`resolvePublishedSnapshot`). This evaluates the Firestore primary and Redis last-known-good fallback without invoking `connection()`. If both providers fail, an `AppError` propagates to halt the build safely.
+- **On-Demand & Time-Based Revalidation (`cacheLife("max")`)**: `updateTag` is the primary invalidation mechanism for user mutations (e.g. publishing new combinations). However, note that `cacheLife("max")` has a built-in server revalidation of 30 days and an expiration of 1 year. This means pages may self-revalidate occasionally without an explicit `updateTag`. This is intentional and safe, as the revalidation still strictly queries the `resolvePublishedSnapshot()` provider chain. Do NOT use explicit `revalidate` exports or custom short-lived `cacheLife` profiles for public entity routes unless strictly required by a new business rule.
 - **Read-Your-Writes**: Inside Server Actions, always use `updateTag("tag-name")` to ensure the cache expires and fresh data is read in the same request. Do NOT use `revalidateTag` for user-triggered mutations.
-- **Cache Components**: Use the top-level `cacheComponents: true` config and the `"use cache"` directive inside page components.
+- **Cache Components**: Use the top-level `cacheComponents: true` config and the `"use cache"` directive inside page components or data fetchers.
 - **Uncached Data**: Use `refresh()` from `next/cache` inside Server Actions to refresh client-side UI without touching the server cache.
 
 ## 6. UI, Design & Tailwind CSS v4
@@ -72,7 +74,7 @@ We have a centralized, highly strict error handling architecture.
 
 ## 10. SEO & Meta Standards (100% SEO Focus)
 > **CORE DIRECTIVE**: SEO is the absolute highest priority of this project. You MUST apply every possible modern SEO best practice, even if not explicitly listed here. This includes optimizing Core Web Vitals (LCP, CLS), ensuring flawless internal linking, using semantic URLs, and maximizing crawlability.
-- **Metadata**: Dynamic SEO pages (e.g., combinations, regions, pests) MUST export `generateMetadata` fetching data directly from Firestore. Fully static public pages (like Home, About, Legal) may safely export static `metadata` objects as long as canonical, robots, and core title/description are correct.
+- **Metadata**: Dynamic SEO routes (e.g., combinations, regions, pests) MUST use `generateMetadata`. Metadata must be retrieved exclusively from the published public snapshot. The primary source must be `system/publicSnapshot` on Firestore. If Firestore fails, the Redis last-known-good fallback must be used. Direct generation of public metadata from editable/canonical collections is strictly prohibited. Fully static public pages (like Home, About, Legal) may safely export static `metadata` objects as long as canonical, robots, and core title/description are correct.
 - **Semantic HTML**: UI must be built with strict HTML5 semantics. Use `<article>`, `<section>`, `<nav>`, `<aside>`, `<main>`, and `<header>` instead of arbitrary `<div>` tags wherever logically appropriate. Heading hierarchy (`<h1>` to `<h4>`) MUST be strictly sequential.
 - **Accessibility (A11y)**: 
   - ALL interactive elements (buttons, links) without readable text MUST have an `aria-label`.

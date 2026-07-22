@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   getAllActiveCombinationsResult,
@@ -19,11 +18,42 @@ import { CtaSection } from "@/components/layout/CtaSection";
 import { RelatedLinksSection } from "@/components/layout/RelatedLinksSection";
 import { resolveAppImage } from "@/utils/cloudinary";
 import { Bug, MapPin } from "lucide-react";
-import { PublicDataUnavailable } from "@/components/layout/PublicDataUnavailable";
-import { PublicRouteLoading } from "@/components/layout/PublicRouteLoading";
+import { resolvePublishedSnapshot } from "@/lib/resolvePublishedSnapshot";
+import { getVisibleCombinationsById } from "@/lib/publicSnapshot";
+import { AppError } from "@/lib/exceptions";
 
 type CombinationPageProps = {
   params: Promise<{ regionSlug: string; pestSlug: string }>;
+};
+
+/**
+ * Generates static params for all visible, active, non-archived combinations
+ * whose parent region and pest are also active.
+ */
+export const generateStaticParams = async (): Promise<
+  { regionSlug: string; pestSlug: string }[]
+> => {
+  const snapshot = await resolvePublishedSnapshot();
+  const visible = getVisibleCombinationsById(snapshot);
+  const params = Object.values(visible)
+    .map((combination) => ({
+      regionSlug: combination.region,
+      pestSlug: combination.pest,
+    }))
+    .sort((a, b) =>
+      `${a.regionSlug}_${a.pestSlug}`.localeCompare(
+        `${b.regionSlug}_${b.pestSlug}`,
+      ),
+    );
+
+  if (params.length === 0) {
+    throw new AppError(
+      "No published combination params are available for static generation",
+      "PUBLISHED_STATIC_PARAMS_EMPTY",
+    );
+  }
+
+  return params;
 };
 
 const getRelatedServiceDescription = (
@@ -81,7 +111,7 @@ const getPestRegionsViewAllTitle = (serviceTitle: string) =>
 
 /**
  * Generates SEO metadata for each combination page.
- * Pulls title, description, and OG data directly from Firestore.
+ * Pulls title, description, and OG data from the published provider chain.
  */
 export const generateMetadata = async ({
   params,
@@ -90,13 +120,7 @@ export const generateMetadata = async ({
   const canonicalUrl = `/${regionSlug}/${pestSlug}`;
   const result = await getCombinationMetadataResult(regionSlug, pestSlug);
 
-  if (result.status === "temporarily-unavailable") {
-    return {
-      title: DICTIONARY.meta.default.title,
-      description: DICTIONARY.meta.default.description,
-      alternates: { canonical: canonicalUrl },
-    };
-  }
+  // Provider errors now propagate as AppError and halt static generation
 
   if (result.status === "confirmed-missing") {
     notFound();
@@ -150,21 +174,7 @@ const CombinationPageContent = async ({ params }: CombinationPageProps) => {
       getAllActiveCombinationsResult(),
     ]);
 
-  if (
-    combinationResult.status === "temporarily-unavailable" ||
-    globalDataResult.status === "temporarily-unavailable" ||
-    combinationsResult.status === "temporarily-unavailable"
-  ) {
-    return <PublicDataUnavailable />;
-  }
-
   if (combinationResult.status === "confirmed-missing") notFound();
-  if (
-    globalDataResult.status !== "found" ||
-    combinationsResult.status !== "found"
-  ) {
-    return <PublicDataUnavailable />;
-  }
 
   const data = combinationResult.data;
   const globalData = globalDataResult.data;
@@ -333,11 +343,4 @@ const CombinationPageContent = async ({ params }: CombinationPageProps) => {
   );
 };
 
-/** Keeps runtime params behind the Cache Components Suspense boundary. */
-const CombinationPage = ({ params }: CombinationPageProps) => (
-  <Suspense fallback={<PublicRouteLoading />}>
-    <CombinationPageContent params={params} />
-  </Suspense>
-);
-
-export default CombinationPage;
+export default CombinationPageContent;
