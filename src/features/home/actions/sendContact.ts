@@ -6,7 +6,10 @@ import { z } from "zod";
 import { headers } from "next/headers";
 import { DICTIONARY } from "@/constants/dictionary";
 import { formatTemplate } from "@/utils/template";
-import { normalizeTurkishPhone } from "@/utils/phone";
+import {
+  parseTurkishPhone,
+  TURKISH_PHONE_INPUT_MAX_LENGTH,
+} from "@/utils/phone";
 import { sendTelegramContactRequest } from "@/lib/telegram";
 import { getAdminDb } from "@/lib/firebase-admin";
 import {
@@ -35,16 +38,21 @@ const contactSchema = z.object({
     message: uiDict.validation.phoneRequired
   })
     .trim()
+    .min(1, uiDict.validation.phoneRequired)
+    .max(TURKISH_PHONE_INPUT_MAX_LENGTH, uiDict.validation.phoneLength)
     .transform((value, context) => {
-      const normalizedPhone = normalizeTurkishPhone(value);
-      if (!normalizedPhone) {
+      const parsedPhone = parseTurkishPhone(value);
+      if (!parsedPhone.success) {
         context.addIssue({
           code: "custom",
-          message: uiDict.validation.phoneInvalid,
+          message:
+            parsedPhone.reason === "too_long"
+              ? uiDict.validation.phoneLength
+              : uiDict.validation.phoneInvalid,
         });
         return z.NEVER;
       }
-      return normalizedPhone;
+      return parsedPhone.canonicalPhone;
     }),
 
   service: z.string().max(100).optional(),

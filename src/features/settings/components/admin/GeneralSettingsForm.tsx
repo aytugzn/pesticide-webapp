@@ -12,7 +12,15 @@ import { saveGeneralSettings } from "@/features/settings/actions";
 import { saveGeneralSettingsSchema } from "@/features/settings/schemas";
 import { GOOGLE_PLACE_ID_MAX_LENGTH } from "@/features/settings/constants";
 import type { GeneralSettingsFormValues } from "@/features/settings/types";
-import { formatTurkishPhoneInput } from "@/utils/phone";
+import { cn } from "@/utils/cn";
+import {
+  formatTurkishNationalPhoneInput,
+  getTurkishNationalPhoneInputUpdate,
+  parseTurkishPhone,
+  TURKISH_PHONE_COUNTRY_PREFIX,
+  TURKISH_PHONE_INPUT_MAX_LENGTH,
+  TURKISH_PHONE_NATIONAL_DIGIT_LENGTH,
+} from "@/utils/phone";
 
 type GeneralSettingsField = keyof GeneralSettingsFormValues;
 type FieldErrors = Partial<Record<GeneralSettingsField, string>>;
@@ -57,14 +65,85 @@ export const GeneralSettingsForm = ({
   const router = useRouter();
   const { showToast } = useCombinationAdminToast();
   const d = DICTIONARY.admin.settings.general;
-  const [values, setValues] = useState(initialValues);
+  const parsedInitialPhone = parseTurkishPhone(initialValues.phone);
+  const initialFormValues = {
+    ...initialValues,
+    phone: parsedInitialPhone.success ? parsedInitialPhone.nationalNumber : "",
+  };
+  const [values, setValues] = useState(initialFormValues);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSaving, setIsSaving] = useState(false);
-  const isDirty = JSON.stringify(values) !== JSON.stringify(initialValues);
+  const isDirty = JSON.stringify(values) !== JSON.stringify(initialFormValues);
+  const phoneDisplayValue = formatTurkishNationalPhoneInput(values.phone);
 
   const updateValue = (field: GeneralSettingsField, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+  };
+
+  const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nativeEvent = event.nativeEvent as InputEvent;
+    const update = getTurkishNationalPhoneInputUpdate(
+      values.phone,
+      event.target.value,
+      nativeEvent.inputType,
+      event.target.selectionStart,
+    );
+
+    if (!update.accepted) {
+      setErrors((current) => ({
+        ...current,
+        phone:
+          update.issue === "too_long"
+            ? d.validation.phoneLength
+            : d.validation.phone,
+      }));
+      return;
+    }
+
+    updateValue("phone", update.value);
+  };
+
+  const handlePhoneBlur = () => {
+    if (
+      values.phone.length > 0 &&
+      values.phone.length < TURKISH_PHONE_NATIONAL_DIGIT_LENGTH
+    ) {
+      setErrors((current) => ({
+        ...current,
+        phone: d.validation.phone,
+      }));
+    }
+  };
+
+  const handlePhonePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const selectionStart = input.selectionStart ?? phoneDisplayValue.length;
+    const selectionEnd = input.selectionEnd ?? selectionStart;
+    const candidateValue =
+      phoneDisplayValue.slice(0, selectionStart) +
+      event.clipboardData.getData("text") +
+      phoneDisplayValue.slice(selectionEnd);
+    const update = getTurkishNationalPhoneInputUpdate(
+      values.phone,
+      candidateValue,
+      "insertFromPaste",
+      selectionStart,
+    );
+
+    event.preventDefault();
+    if (!update.accepted) {
+      setErrors((current) => ({
+        ...current,
+        phone:
+          update.issue === "too_long"
+            ? d.validation.phoneLength
+            : d.validation.phone,
+      }));
+      return;
+    }
+
+    updateValue("phone", update.value);
   };
 
   const validate = (): boolean => {
@@ -139,20 +218,51 @@ export const GeneralSettingsForm = ({
         </legend>
         <div className="grid gap-5 md:grid-cols-2">
           <FormField help={d.fields.phone.help} error={errors.phone}>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              inputMode="numeric"
-              label={d.fields.phone.label}
-              placeholder={d.fields.phone.placeholder}
-              value={values.phone}
-              aria-invalid={Boolean(errors.phone)}
-              onChange={(event) =>
-                updateValue("phone", formatTurkishPhoneInput(event.target.value))
-              }
-            />
+            <div className="flex w-full flex-col space-y-1">
+              <label
+                htmlFor="phone"
+                className="text-sm font-bold text-text-primary"
+              >
+                {d.fields.phone.label}
+              </label>
+              <div
+                className={cn(
+                  "relative w-full rounded-xl border bg-surface-neutral transition-all",
+                  errors.phone
+                    ? "border-error-border focus-within:border-error-border focus-within:ring-2 focus-within:ring-error-border/50"
+                    : "border-brand-border focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/50",
+                )}
+              >
+                <span
+                  className="pointer-events-none absolute inset-y-0 left-4 flex select-none items-center text-text-primary"
+                  aria-hidden="true"
+                >
+                  {TURKISH_PHONE_COUNTRY_PREFIX}
+                </span>
+                {values.phone.length === 0 && (
+                  <span
+                    className="pointer-events-none absolute inset-y-0 left-14 flex select-none items-center pl-1 text-text-muted"
+                    aria-hidden="true"
+                  >
+                    {d.fields.phone.placeholder}
+                  </span>
+                )}
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  maxLength={TURKISH_PHONE_INPUT_MAX_LENGTH}
+                  value={phoneDisplayValue}
+                  aria-invalid={Boolean(errors.phone)}
+                  className="w-full rounded-xl bg-transparent py-3 pr-4 pl-14 text-text-primary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  onBlur={handlePhoneBlur}
+                  onChange={handlePhoneChange}
+                  onPaste={handlePhonePaste}
+                />
+              </div>
+            </div>
           </FormField>
           <FormField help={d.fields.email.help} error={errors.email}>
             <Input

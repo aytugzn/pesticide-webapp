@@ -8,8 +8,8 @@ import { CONTACT_ERRORS } from "../types";
 import { Button } from "@/components/ui/Button";
 import { Send, Loader2 } from "lucide-react";
 import {
-  formatTurkishPhoneInput,
-  sanitizePhoneToDigits,
+  getTurkishPhoneInputUpdate,
+  TURKISH_PHONE_INPUT_MAX_LENGTH,
 } from "@/utils/phone";
 import { Alert } from "@/components/ui/Alert";
 import { Select } from "@/components/ui/Select";
@@ -28,22 +28,56 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [formKey, setFormKey] = useState(0);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nativeEvent = e.nativeEvent as InputEvent;
-    let val = e.target.value;
+    const update = getTurkishPhoneInputUpdate(
+      phone,
+      e.target.value,
+      nativeEvent.inputType,
+      false,
+      e.target.selectionStart,
+    );
 
-    // Fix backspace trap: if user deletes a formatting symbol, manually remove the preceding digit
-    if (nativeEvent.inputType === "deleteContentBackward") {
-      const oldDigits = sanitizePhoneToDigits(phone);
-      const newDigits = sanitizePhoneToDigits(val);
-      if (oldDigits === newDigits && newDigits.length > 0) {
-        val = newDigits.slice(0, -1);
-      }
+    if (!update.accepted) {
+      setPhoneError(
+        update.issue === "too_long"
+          ? DICTIONARY.home.contact.validation.phoneLength
+          : DICTIONARY.home.contact.validation.phoneInvalid,
+      );
+      return;
     }
 
-    setPhone(formatTurkishPhoneInput(val));
+    setPhoneError("");
+    setPhone(update.value);
+  };
+
+  const handlePhonePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const selectionStart = input.selectionStart ?? phone.length;
+    const selectionEnd = input.selectionEnd ?? selectionStart;
+    const candidateValue =
+      phone.slice(0, selectionStart) +
+      event.clipboardData.getData("text") +
+      phone.slice(selectionEnd);
+
+    const update = getTurkishPhoneInputUpdate(
+      phone,
+      candidateValue,
+      "insertFromPaste",
+      false,
+      selectionStart,
+    );
+    if (!update.accepted) {
+      event.preventDefault();
+      setPhoneError(
+        update.issue === "too_long"
+          ? DICTIONARY.home.contact.validation.phoneLength
+          : DICTIONARY.home.contact.validation.phoneInvalid,
+      );
+    }
   };
 
   const handleFormChange = () => {
@@ -61,6 +95,7 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
     if (result.success) {
       setStatus("success");
       setPhone(""); // Reset phone
+      setPhoneError("");
       setFormKey((prev) => prev + 1); // Reset entire form (including Select states)
     } else {
       setStatus("error");
@@ -133,12 +168,15 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
             name="phone"
             type="tel"
             autoComplete="tel"
-            inputMode="numeric"
+            inputMode="tel"
             label={dict.phone}
             optionalText={dict.phoneHint}
             placeholder={dict.phonePlaceholder}
+            maxLength={TURKISH_PHONE_INPUT_MAX_LENGTH}
             value={phone}
+            error={phoneError}
             onChange={handlePhoneChange}
+            onPaste={handlePhonePaste}
             required
           />
         </div>

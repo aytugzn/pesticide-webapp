@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { DICTIONARY } from "@/constants/dictionary";
 import { appImageSchema } from "@/features/image-upload/schemas";
-import { normalizeTurkishPhone } from "@/utils/phone";
+import {
+  parseTurkishPhone,
+  TURKISH_PHONE_INPUT_MAX_LENGTH,
+} from "@/utils/phone";
 import {
   SITE_IMAGE_GROUP_MAX_IMAGES,
   SLIDER_AUTOPLAY_DELAY_MAX_SECONDS,
@@ -13,14 +16,22 @@ const validation = DICTIONARY.admin.settings.general.validation;
 
 const requiredTextSchema = z.string().trim().min(1, validation.required);
 const optionalTextSchema = z.string().trim();
-const phoneSchema = requiredTextSchema.transform((value, context) => {
-  const normalizedPhone = normalizeTurkishPhone(value);
-  if (!normalizedPhone) {
-    context.addIssue({ code: "custom", message: validation.phone });
-    return z.NEVER;
-  }
-  return normalizedPhone;
-});
+const phoneSchema = requiredTextSchema
+  .max(TURKISH_PHONE_INPUT_MAX_LENGTH, validation.phoneLength)
+  .transform((value, context) => {
+    const parsedPhone = parseTurkishPhone(value);
+    if (!parsedPhone.success) {
+      context.addIssue({
+        code: "custom",
+        message:
+          parsedPhone.reason === "too_long"
+            ? validation.phoneLength
+            : validation.phone,
+      });
+      return z.NEVER;
+    }
+    return parsedPhone.canonicalPhone;
+  });
 const emailSchema = requiredTextSchema.email(validation.email);
 
 /**

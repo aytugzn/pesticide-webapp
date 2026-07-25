@@ -1,5 +1,9 @@
 import { deepFreeze } from "../utils/deep-freeze";
 
+const phoneValidationDict = {
+  tooLong: "Telefon numaras\u0131 en fazla 10 haneli olabilir.",
+};
+
 const navbarDict = {
   links: {
     services: "Hizmetlerimiz",
@@ -211,6 +215,7 @@ const homeDict = {
         "Lütfen geçerli bir telefon numarası girin (Sadece rakam, boşluk ve + işareti).",
       phoneInvalid:
         "Lütfen telefon numaranızı eksiksiz (10 veya 11 hane) giriniz.",
+      phoneLength: phoneValidationDict.tooLong,
       invalidFormat: "Lütfen formdaki hataları düzeltin.",
       rateLimit:
         "Çok fazla istek gönderdiniz. Lütfen 1 dakika sonra tekrar deneyin.",
@@ -1040,7 +1045,7 @@ const adminDict = {
         phone: {
           label: "Telefon",
           help: "Telefon ve WhatsApp bağlantılarında kullanılan numara.",
-          placeholder: "0555 555 55 55",
+          placeholder: "555 555 55 55",
         },
         email: {
           label: "E-posta",
@@ -1095,6 +1100,7 @@ const adminDict = {
         workingHoursLength: "Çalışma saatleri en fazla 250 karakter olabilir.",
         email: "Geçerli bir e-posta adresi girin.",
         phone: "Geçerli bir Türkiye telefon numarası girin.",
+        phoneLength: phoneValidationDict.tooLong,
         instagramUrl: "Geçerli ve güvenli bir Instagram URL'si girin.",
         facebookUrl: "Geçerli ve güvenli bir Facebook URL'si girin.",
         googlePlaceId:
