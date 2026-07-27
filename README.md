@@ -12,8 +12,8 @@ Yapay zeka (Gemini API) destekli içerik üretimi ve yeniden oluşturma akışla
 - **Kombinasyon Üretimi:** Bölge + hizmet kombinasyonlarından yüksek dönüşümlü lokal SEO landing page'leri üretimi.
 - **Admin Panel Akışları:** İçeriklerin create, edit, update ve archive akışlarının tek merkezden güvenli yönetimi.
 - **AI Destekli İçerik Üretimi:** Tekil sayfa veya kombinasyonlar için akıllı ve SEO uyumlu içerik üretimi / yeniden oluşturma.
-- **Bulk Content Generation Job Sistemi:** Çoklu kombinasyonları arka planda kuyruğa alarak üreten otomasyon.
-- **Gelişmiş Job Kontrolü:** Cross-tab job state senkronizasyonu, işlemi durdurma (stop) ve quota handling mekanizmaları.
+- **Bulk Content Generation Job Sistemi:** Çoklu kombinasyonları Firestore job kaydı ve GitHub Actions worker ile tarayıcıdan bağımsız üreten otomasyon.
+- **Gelişmiş Job Kontrolü:** Transaction tabanlı claim, fail-fast retry, idempotent recovery, heartbeat, stale ve cooperative stop mekanizmaları.
 - **Gemini Çoklu Key ve Fallback:** Gemini API kotalarını aşmamak için multi-key fallback ve quota handling stratejisi.
 - **Soft Archive:** Verileri kalıcı silmek (hard delete) yerine güvenli soft archive mantığı.
 - **Defensive Public Checks:** Public sayfalarda inactive ve archived kayıtların görünmesini engelleyen güvenli mimari.
@@ -45,7 +45,7 @@ Yapay zeka (Gemini API) destekli içerik üretimi ve yeniden oluşturma akışla
 - **Authorization:** Tüm admin işlemleri `requireAdmin` helper'ı ile sunucu tarafında korunur.
 - **Public Segment Güvenliği:** Public sayfalar inactive veya archived statüsündeki kayıtları hiçbir koşulda göstermez.
 - **Cache Yönetimi:** Mutasyonlardan sonra veriyi tazelemek için `updateTag` kullanılır; `revalidatePath` veya `revalidateTag` kullanımından kaçınılmıştır.
-- **AI İşlem Onayı:** Yapay zeka çıktıları Firestore'a otomatik kaydedilmez, her zaman admin onayı (submit) gerektirir.
+- **AI İşlem Onayı:** Tekil üretimde admin onayı korunur; açıkça başlatılan toplu job ise eksik canonical kombinasyonları create-only olarak otomatik kaydeder ve public snapshot'ı değiştirmez.
 - **Create Flow:** Yeni kayıt oluşturma işlemleri `docRef.create` kullanılarak create-only (üzerine yazmama) prensibiyle çalışır.
 - **Edit Flow:** Düzenlemeler ayrı update action'ları üzerinden ilerler.
 - **Archive Flow:** Veri kaybını önlemek için hard delete yerine soft archive yaklaşımı uygulanır.
@@ -148,3 +148,47 @@ npm run telegram:webhook:set
 Generated deployment URL'si Vercel Authentication arkasındaysa Project Settings → Deployment Protection → Protection Bypass for Automation üzerinden oluşturulan `VERCEL_AUTOMATION_BYPASS_SECRET` kullanılabilir. Script bu değeri URL-safe query parametresi olarak ekler ve terminal çıktısında maskeler. Sabit production alias'ı doğrudan erişilebiliyorsa bypass gerekli değildir.
 
 Webhook origin'i veya secret değiştiğinde komut yeniden çalıştırılır. İleride custom domaine geçildiğinde yalnızca `TELEGRAM_WEBHOOK_ORIGIN` yeni HTTPS origin'i gösterecek şekilde güncellenir; iletişim formu, canonical metadata ve route path'i değişmez. Token ve secret değerleri repoya, terminal komutuna veya ekran görüntüsüne yazılmamalıdır.
+## I) GitHub Actions Background Combination Worker Kurulumu
+
+Toplu combination üretimi Firebase Spark planını korur. Firebase Functions, Cloud Tasks veya Blaze planı kullanılmaz. Admin paneli Firestore'da `queued` job oluşturur ve GitHub REST API ile `.github/workflows/generate-combinations.yml` workflow'unu tetikler. Üretim GitHub runner üzerinde yürüdüğü için admin sekmesi, tarayıcı veya bilgisayar kapatılsa da işlem devam eder.
+
+### 1. Vercel environment variables
+
+Vercel projesinin server environment alanına aşağıdaki değerleri ekleyin. Token'a `NEXT_PUBLIC_` prefix'i vermeyin.
+
+```env
+GITHUB_ACTIONS_TOKEN=
+GITHUB_REPOSITORY=owner/repository
+GITHUB_ACTIONS_REF=main
+GITHUB_ACTIONS_WORKFLOW=generate-combinations.yml
+```
+
+`GITHUB_ACTIONS_TOKEN` için yalnızca bu repository'yi seçen fine-grained personal access token oluşturun ve repository permission olarak yalnızca **Actions: Read and write** verin. Organization geneli veya ilgisiz repository yetkileri vermeyin. Token'ın amacı yalnızca workflow dispatch endpoint'ini çağırmaktır.
+
+### 2. GitHub Actions repository secrets
+
+Repository → Settings → Secrets and variables → Actions alanında şunları tanımlayın:
+
+```text
+FIREBASE_PROJECT_ID
+FIREBASE_CLIENT_EMAIL
+FIREBASE_PRIVATE_KEY
+GEMINI_API_KEYS
+```
+
+Tek Gemini key kullanılıyorsa `GEMINI_API_KEYS` yerine `GEMINI_API_KEY` tanımlanabilir. Multi-key değerinde anahtarları mevcut davranışla uyumlu olarak virgülle ayırın. Firebase private key'i yalnızca encrypted Actions secret olarak saklayın; service account JSON dosyasını veya private key'i repository'ye eklemeyin.
+
+### 3. Workflow erişimi ve çalıştırma
+
+- Workflow dosyası GitHub repository'nin default branch'inde bulunmalıdır.
+- Admin panelindeki **Tüm Eksikleri Üret** butonu önce Firestore job belgesini oluşturur; GitHub dispatch güncel `200` workflow run yanıtıyla veya geriye uyumlu `204` yanıtıyla kabul edilince başlangıç başarılı sayılır. `200` yanıtındaki run kimliği ve URL alanları güvenli biçimde doğrulanır.
+- Runner job'ı transaction içinde claim eder, item'ları sırayla işler ve ilerlemeyi Firestore'a yazar.
+- **Durdur** isteği queued job'ı doğrudan kapatır. Running job'da aktif Gemini isteği zorla kesilmeyebilir; istek döndükten sonra yeni retry veya item başlatılmaz.
+- Başarısız veya durdurulmuş job sonrasında panel mevcut combination anahtarlarını yeniden okur. Yeniden başlatma yalnızca eksikleri gönderir.
+- Toplu kayıt canonical `combinations` koleksiyonuna yapılır. Redis public snapshot ve **Canlı Siteyi Güncelle** yayın sınırı otomatik değiştirilmez.
+
+### 4. Kota ve log güvenliği
+
+Firestore kullanımı Firebase Spark kotasına tabidir; bu mimari Firebase Functions veya Blaze gerektirmez. GitHub Actions'ın aylık ücretsiz kullanım kotası Firebase kotasından ayrıdır ve repository/account ayarlarından ayrıca izlenmelidir.
+
+Workflow loglarında secret, API key, private key, raw Gemini yanıtı veya üretilen AI içeriği bulunmamalıdır. Worker yalnızca kısa İngilizce operasyon logları ve güvenli sınıflandırılmış hata kodları yazar.

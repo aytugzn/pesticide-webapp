@@ -2,419 +2,328 @@
 
 import "server-only";
 
-import { getAdminDb } from "@/lib/firebase-admin";
 import { randomUUID } from "node:crypto";
-import type {
-  ActionResponse,
-  CombinationDoc,
-} from "@/types";
-import { 
-  COMBINATION_ERRORS, 
-  COMBINATION_JOB_ERRORS, 
-  type CombinationErrorCode, 
-  type CombinationJobErrorCode, 
-  type GeneratedContent, 
-  type CombinationBulkJobDoc, 
-  type BulkProgressItem 
-} from "../types";
+import { requireAdmin } from "@/features/auth/requireAdmin";
+import { AppError } from "@/lib/exceptions";
+import { getAdminDb } from "@/lib/firebase-admin";
+import type { ActionResponse } from "@/types";
 import {
   combinationJobIdSchema,
-  finishCombinationJobSchema,
-  saveCombinationSchema,
   startCombinationJobSchema,
-  updateCombinationJobItemSchema,
 } from "../schemas";
-import { AppError } from "@/lib/exceptions";
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import {
+  COMBINATION_ERRORS,
+  COMBINATION_JOB_ERRORS,
+  type BulkJobInputItem,
+  type CombinationBulkJobDoc,
+  type CombinationErrorCode,
+  type CombinationJobErrorCode,
+} from "../types";
+import { dispatchCombinationWorkflow } from "../server/githubActions";
+import { parseCombinationJobDoc } from "../server/jobDoc";
+import {
+  COMBINATION_JOB_DOC_PATH,
+  isCombinationJobHeartbeatStale,
+} from "../server/jobConfig";
 import { getErrorInfo } from "./utils";
 
-const JOB_DOC_PATH = "adminJobs/bulkCombinationGeneration";
-const JOB_STALE_TIMEOUT_MS = 120_000;
 
 /**
- * Saves a bulk-generated combination as active canonical Firestore content
- * without publishing it through Redis or public cache activation.
+ * Fetches lightweight existing combination keys for missing-item calculation.
  *
- * @param regionSlug - The region slug
- * @param pestSlug - The pest slug
- * @param regionName - Display name for the region
- * @param pestName - Display name for the pest
- * @param content - The generated content fields
- * @returns Success or error
+ * @returns Canonical combination identifiers, including archived records
  */
-export const saveCombinationSilently = async (
-  regionSlug: string,
-  pestSlug: string,
-  regionName: string,
-  pestName: string,
-  content: GeneratedContent
-): Promise<ActionResponse<void, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
-  }
-
-  const parsed = saveCombinationSchema.safeParse({
-    regionSlug,
-    pestSlug,
-    regionName,
-    pestName,
-    content,
-    isActive: true,
-  });
-
-  if (!parsed.success) {
-    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
-  }
-
-  try {
-    const {
-      regionSlug: parsedRegionSlug,
-      pestSlug: parsedPestSlug,
-      regionName: parsedRegionName,
-      pestName: parsedPestName,
-      content: parsedContent,
-      isActive: parsedIsActive,
-    } = parsed.data;
-    const docId = `${parsedRegionSlug}_${parsedPestSlug}`;
-
-    const docData: CombinationDoc = {
-      region: parsedRegionSlug,
-      pest: parsedPestSlug,
-      regionName: parsedRegionName,
-      pestName: parsedPestName,
-      title: parsedContent.title,
-      h1: parsedContent.h1,
-      metaDesc: parsedContent.metaDesc,
-      content: parsedContent.content,
-      faq: parsedContent.faq,
-      isActive: parsedIsActive,
-    };
-
-    const docRef = getAdminDb().collection("combinations").doc(docId);
-    const existingSnap = await docRef.get();
-
-    if (existingSnap.exists) {
-      const existingData = existingSnap.data() as Record<string, unknown> | undefined;
-      return {
-        success: false,
-        error: existingData?.isArchived === true
-          ? COMBINATION_ERRORS.ARCHIVED_EXISTS
-          : COMBINATION_ERRORS.ALREADY_EXISTS,
-      };
-    }
-
-    await docRef.create(docData);
-
-    return { success: true };
-  } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    console.error("Failed to create combination", {
-      regionSlug,
-      pestSlug,
-      errorCode: errorInfo.code,
-    });
-
-    if (errorInfo.code === "6" || errorInfo.message?.includes("ALREADY_EXISTS")) {
-      try {
-        const docId = `${regionSlug}_${pestSlug}`;
-        const existingSnap = await getAdminDb().collection("combinations").doc(docId).get();
-        const existingData = existingSnap.data() as Record<string, unknown> | undefined;
-        if (existingSnap.exists && existingData?.isArchived === true) {
-          return { success: false, error: COMBINATION_ERRORS.ARCHIVED_EXISTS };
-        }
-      } catch (lookupError: unknown) {
-        console.error("Failed to inspect existing combination after duplicate silent create", {
-          regionSlug,
-          pestSlug,
-          errorCode: getErrorInfo(lookupError).code,
-        });
-      }
-
-      return { success: false, error: COMBINATION_ERRORS.ALREADY_EXISTS };
-    }
-
-    return { success: false, error: COMBINATION_ERRORS.SAVE_FAILED };
-  }
-};
-
-/**
- * Fetches lightweight existing combination keys for bulk generation missing calculation.
- * Decoupled from table rows to allow independent pagination in the future.
- *
- * @returns Array of string keys in the format "regionSlug_pestSlug"
- */
-export const getExistingCombinationKeys = async (): Promise<ActionResponse<string[], CombinationErrorCode>> => {
+export const getExistingCombinationKeys = async (): Promise<
+  ActionResponse<string[], CombinationErrorCode>
+> => {
   if (!(await requireAdmin())) {
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
   }
 
   try {
-    const snap = await getAdminDb()
+    const snapshot = await getAdminDb()
       .collection("combinations")
       .select("region", "pest")
       .get();
-
-    const keys: string[] = snap.docs.map(doc => {
-      const data = doc.data();
-      return `${data.region}_${data.pest}`;
+    const keys = snapshot.docs.flatMap((document) => {
+      const data = document.data() as Record<string, unknown>;
+      return typeof data.region === "string" && typeof data.pest === "string"
+        ? [`${data.region}_${data.pest}`]
+        : [];
     });
-
     return { success: true, data: keys };
   } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    console.error("Failed to fetch existing combination keys", {
-      errorCode: errorInfo.code,
+    console.error("Combination keys fetch failed", {
+      errorCode: getErrorInfo(error).code,
     });
     return { success: false, error: COMBINATION_ERRORS.FETCH_FAILED };
   }
 };
 
-export const getActiveCombinationJob = async (): Promise<ActionResponse<CombinationBulkJobDoc | null, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+/**
+ * Reads the persisted background job and marks an expired running heartbeat stale.
+ *
+ * @returns Current job document or null when no job has been created
+ */
+export const getActiveCombinationJob = async (): Promise<
+  ActionResponse<CombinationBulkJobDoc | null, CombinationJobErrorCode>
+> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+  }
 
   try {
-    const snap = await getAdminDb().doc(JOB_DOC_PATH).get();
-    if (!snap.exists) return { success: true, data: null };
+    const db = getAdminDb();
+    const jobRef = db.doc(COMBINATION_JOB_DOC_PATH);
+    const snapshot = await jobRef.get();
+    if (!snapshot.exists) return { success: true, data: null };
 
-    const data = snap.data() as CombinationBulkJobDoc;
-    const now = Date.now();
-
-    // Cleanup stale job if running but heartbeat is too old
-    if (data.status === "running") {
-      const isStale = now - data.heartbeatAt > JOB_STALE_TIMEOUT_MS;
-      if (isStale) {
-        const finalStatus = data.abortRequested ? "aborted" : "stale";
-
-        await getAdminDb().runTransaction(async (transaction) => {
-          const tSnap = await transaction.get(getAdminDb().doc(JOB_DOC_PATH));
-          if (!tSnap.exists) return;
-          const tData = tSnap.data() as CombinationBulkJobDoc;
-          if (tData.id === data.id && tData.status === "running") {
-            transaction.update(getAdminDb().doc(JOB_DOC_PATH), {
-              status: finalStatus,
-              updatedAt: now,
-            });
-          }
-        });
-
-        // Return the updated data to the client immediately
-        return { success: true, data: { ...data, status: finalStatus, updatedAt: now } };
-      }
+    const job = parseCombinationJobDoc(snapshot.data());
+    if (!job) {
+      return { success: false, error: COMBINATION_JOB_ERRORS.INVALID_JOB };
     }
 
-    return { success: true, data };
-  } catch (error) {
-    console.error("Failed to fetch active combination job", {
+    const now = Date.now();
+    if (
+      job.status !== "running" ||
+      !isCombinationJobHeartbeatStale(job.heartbeatAt, now)
+    ) {
+      return { success: true, data: job };
+    }
+
+    const staleJob = await db.runTransaction(async (transaction) => {
+      const currentSnapshot = await transaction.get(jobRef);
+      if (!currentSnapshot.exists) return null;
+      const current = parseCombinationJobDoc(currentSnapshot.data());
+      if (
+        !current ||
+        current.id !== job.id ||
+        current.status !== "running" ||
+        !isCombinationJobHeartbeatStale(current.heartbeatAt, now)
+      ) {
+        return current;
+      }
+
+      const updated: CombinationBulkJobDoc = {
+        ...current,
+        status: "stale",
+        updatedAt: now,
+        finishedAt: now,
+      };
+      transaction.update(jobRef, {
+        status: updated.status,
+        updatedAt: updated.updatedAt,
+        finishedAt: updated.finishedAt,
+      });
+      return updated;
+    });
+
+    return { success: true, data: staleJob };
+  } catch (error: unknown) {
+    console.error("Combination job fetch failed", {
       errorCode: getErrorInfo(error).code,
     });
     return { success: false, error: COMBINATION_JOB_ERRORS.UNKNOWN_ERROR };
   }
 };
 
-export const startCombinationJob = async (items: BulkProgressItem[]): Promise<ActionResponse<CombinationBulkJobDoc, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+/**
+ * Creates a queued Firestore job and dispatches the GitHub Actions worker.
+ *
+ * @param items - Missing region-pest pairs to generate
+ * @returns Queued job only after GitHub accepts the workflow dispatch
+ */
+export const startCombinationJob = async (
+  items: BulkJobInputItem[],
+): Promise<ActionResponse<CombinationBulkJobDoc, CombinationJobErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+  }
 
   const parsedItems = startCombinationJobSchema.safeParse(items);
   if (!parsedItems.success) {
-    return { success: false, error: COMBINATION_JOB_ERRORS.VALIDATION_FAILED };
+    return {
+      success: false,
+      error: COMBINATION_JOB_ERRORS.VALIDATION_FAILED,
+    };
   }
 
-  try {
-    const docRef = getAdminDb().doc(JOB_DOC_PATH);
+  const db = getAdminDb();
+  const jobRef = db.doc(COMBINATION_JOB_DOC_PATH);
+  let newJob: CombinationBulkJobDoc;
 
-    const newJob = await getAdminDb().runTransaction(async (transaction) => {
-      const snap = await transaction.get(docRef);
+  try {
+    newJob = await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(jobRef);
       const now = Date.now();
 
-      if (snap.exists) {
-        const data = snap.data() as CombinationBulkJobDoc;
-        if (data.status === "running") {
-          const isStale = now - data.heartbeatAt > JOB_STALE_TIMEOUT_MS;
-          if (!isStale) {
-             throw new AppError(COMBINATION_JOB_ERRORS.ALREADY_RUNNING, COMBINATION_JOB_ERRORS.ALREADY_RUNNING);
-          }
+      if (snapshot.exists) {
+        const current = parseCombinationJobDoc(snapshot.data());
+        if (!current) {
+          throw new AppError(
+            COMBINATION_JOB_ERRORS.INVALID_JOB,
+            COMBINATION_JOB_ERRORS.INVALID_JOB,
+          );
+        }
+        const hasActiveJob =
+          current.status === "queued" ||
+          (current.status === "running" &&
+            !isCombinationJobHeartbeatStale(current.heartbeatAt, now));
+        if (hasActiveJob) {
+          throw new AppError(
+            COMBINATION_JOB_ERRORS.ALREADY_RUNNING,
+            COMBINATION_JOB_ERRORS.ALREADY_RUNNING,
+          );
         }
       }
 
-      const jobId = randomUUID();
-      const newDoc: CombinationBulkJobDoc = {
-        id: jobId,
+      const job: CombinationBulkJobDoc = {
+        id: randomUUID(),
         type: "bulkCombinationGeneration",
-        status: "running",
+        status: "queued",
         createdAt: now,
         updatedAt: now,
-        heartbeatAt: now,
         total: parsedItems.data.length,
         doneCount: 0,
         errorCount: 0,
+        currentIndex: 0,
         abortRequested: false,
-        items: parsedItems.data,
+        items: parsedItems.data.map((item) => ({
+          ...item,
+          status: "pending",
+          attemptCount: 0,
+        })),
       };
-
-      transaction.set(docRef, newDoc);
-      return newDoc;
+      transaction.set(jobRef, job);
+      return job;
     });
-
-    return { success: true, data: newJob };
   } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.ALREADY_RUNNING || errorInfo.message === COMBINATION_JOB_ERRORS.ALREADY_RUNNING) {
+    const errorCode = getErrorInfo(error).code;
+    if (errorCode === COMBINATION_JOB_ERRORS.ALREADY_RUNNING) {
       return { success: false, error: COMBINATION_JOB_ERRORS.ALREADY_RUNNING };
     }
-    console.error("Failed to start combination job", {
-      errorCode: errorInfo.code,
-    });
+    if (errorCode === COMBINATION_JOB_ERRORS.INVALID_JOB) {
+      return { success: false, error: COMBINATION_JOB_ERRORS.INVALID_JOB };
+    }
+    console.error("Combination job create failed", { errorCode });
     return { success: false, error: COMBINATION_JOB_ERRORS.UNKNOWN_ERROR };
-  }
-};
-
-export const updateCombinationJobItem = async (
-  jobId: string,
-  index: number,
-  patch: Partial<BulkProgressItem>
-): Promise<ActionResponse<{ abortRequested: boolean }, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
-
-  const parsedInput = updateCombinationJobItemSchema.safeParse({
-    jobId,
-    index,
-    patch,
-  });
-  if (!parsedInput.success) {
-    return { success: false, error: COMBINATION_JOB_ERRORS.VALIDATION_FAILED };
   }
 
   try {
-    const docRef = getAdminDb().doc(JOB_DOC_PATH);
-    const result = await getAdminDb().runTransaction(async (transaction) => {
-      const snap = await transaction.get(docRef);
-      if (!snap.exists) throw new AppError(COMBINATION_JOB_ERRORS.NOT_FOUND, COMBINATION_JOB_ERRORS.NOT_FOUND);
-
-      const data = snap.data() as CombinationBulkJobDoc;
-      if (data.id !== parsedInput.data.jobId) throw new AppError(COMBINATION_JOB_ERRORS.NOT_FOUND, COMBINATION_JOB_ERRORS.NOT_FOUND);
-      if (data.status !== "running") throw new AppError(COMBINATION_JOB_ERRORS.INVALID_JOB_STATE, COMBINATION_JOB_ERRORS.INVALID_JOB_STATE);
-
-      if (parsedInput.data.index >= data.items.length) {
-        throw new AppError(
-          COMBINATION_JOB_ERRORS.INVALID_JOB_STATE,
-          COMBINATION_JOB_ERRORS.INVALID_JOB_STATE,
-        );
-      }
-
-      const updatedItems = [...data.items];
-      updatedItems[parsedInput.data.index] = {
-        ...updatedItems[parsedInput.data.index],
-        ...parsedInput.data.patch,
-      };
-
-      const doneCount = updatedItems.filter(i => i.status === "done").length;
-      const errorCount = updatedItems.filter(i => i.status === "error").length;
-      const now = Date.now();
-
-      transaction.update(docRef, {
-        items: updatedItems,
-        doneCount,
-        errorCount,
-        updatedAt: now,
-        heartbeatAt: now,
-      });
-
-      return { abortRequested: data.abortRequested };
-    });
-
-    return { success: true, data: result };
+    await dispatchCombinationWorkflow(newJob.id);
+    return { success: true, data: newJob };
   } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.NOT_FOUND || errorInfo.message === COMBINATION_JOB_ERRORS.NOT_FOUND) return { success: false, error: COMBINATION_JOB_ERRORS.NOT_FOUND };
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE || errorInfo.message === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE) return { success: false, error: COMBINATION_JOB_ERRORS.INVALID_JOB_STATE };
+    const errorCode = getErrorInfo(error).code;
+    const failureCode =
+      errorCode === COMBINATION_JOB_ERRORS.GITHUB_CONFIG_INVALID
+        ? COMBINATION_JOB_ERRORS.GITHUB_CONFIG_INVALID
+        : COMBINATION_JOB_ERRORS.DISPATCH_FAILED;
+    const now = Date.now();
 
-    console.error("Failed to update combination job item", {
-      jobId,
-      index,
-      errorCode: errorInfo.code,
+    try {
+      await db.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(jobRef);
+        if (!snapshot.exists) return;
+        const current = parseCombinationJobDoc(snapshot.data());
+        if (current?.id !== newJob.id || current.status !== "queued") return;
+        transaction.update(jobRef, {
+          status: "failed",
+          updatedAt: now,
+          finishedAt: now,
+          failureCode,
+        });
+      });
+    } catch (updateError: unknown) {
+      console.error("Dispatch failure state update failed", {
+        jobId: newJob.id,
+        errorCode: getErrorInfo(updateError).code,
+      });
+    }
+
+    console.error("Combination workflow dispatch failed", {
+      jobId: newJob.id,
+      failureCode,
     });
-    return { success: false, error: COMBINATION_JOB_ERRORS.UNKNOWN_ERROR };
+    return { success: false, error: failureCode };
   }
 };
 
-export const requestAbortCombinationJob = async (jobId: string): Promise<ActionResponse<void, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+/**
+ * Aborts a queued job immediately or requests cooperative stop from a worker.
+ *
+ * @param jobId - Current job identifier
+ * @returns Typed action result
+ */
+export const requestAbortCombinationJob = async (
+  jobId: string,
+): Promise<ActionResponse<void, CombinationJobErrorCode>> => {
+  if (!(await requireAdmin())) {
+    return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+  }
 
   const parsedJobId = combinationJobIdSchema.safeParse(jobId);
   if (!parsedJobId.success) {
-    return { success: false, error: COMBINATION_JOB_ERRORS.VALIDATION_FAILED };
+    return {
+      success: false,
+      error: COMBINATION_JOB_ERRORS.VALIDATION_FAILED,
+    };
   }
 
   try {
-    const docRef = getAdminDb().doc(JOB_DOC_PATH);
-    await getAdminDb().runTransaction(async (transaction) => {
-      const snap = await transaction.get(docRef);
-      if (!snap.exists) throw new AppError(COMBINATION_JOB_ERRORS.NOT_FOUND, COMBINATION_JOB_ERRORS.NOT_FOUND);
-
-      const data = snap.data() as CombinationBulkJobDoc;
-      if (data.id !== parsedJobId.data) throw new AppError(COMBINATION_JOB_ERRORS.NOT_FOUND, COMBINATION_JOB_ERRORS.NOT_FOUND);
-      if (data.status !== "running") throw new AppError(COMBINATION_JOB_ERRORS.INVALID_JOB_STATE, COMBINATION_JOB_ERRORS.INVALID_JOB_STATE);
-
-      transaction.update(docRef, {
-        abortRequested: true,
-        updatedAt: Date.now(),
-      });
-    });
-
-    return { success: true };
-  } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.NOT_FOUND || errorInfo.message === COMBINATION_JOB_ERRORS.NOT_FOUND) return { success: false, error: COMBINATION_JOB_ERRORS.NOT_FOUND };
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE || errorInfo.message === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE) return { success: false, error: COMBINATION_JOB_ERRORS.INVALID_JOB_STATE };
-
-    console.error("Failed to request abort for combination job", {
-      jobId,
-      errorCode: errorInfo.code,
-    });
-    return { success: false, error: COMBINATION_JOB_ERRORS.UNKNOWN_ERROR };
-  }
-};
-
-export const finishCombinationJob = async (
-  jobId: string,
-  status: "completed" | "aborted" | "failed"
-): Promise<ActionResponse<void, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
-
-  const parsedInput = finishCombinationJobSchema.safeParse({ jobId, status });
-  if (!parsedInput.success) {
-    return { success: false, error: COMBINATION_JOB_ERRORS.VALIDATION_FAILED };
-  }
-
-  try {
-    const docRef = getAdminDb().doc(JOB_DOC_PATH);
-    await getAdminDb().runTransaction(async (transaction) => {
-      const snap = await transaction.get(docRef);
-      if (!snap.exists) throw new AppError(COMBINATION_JOB_ERRORS.NOT_FOUND, COMBINATION_JOB_ERRORS.NOT_FOUND);
-
-      const data = snap.data() as CombinationBulkJobDoc;
-      if (data.id !== parsedInput.data.jobId) throw new AppError(COMBINATION_JOB_ERRORS.NOT_FOUND, COMBINATION_JOB_ERRORS.NOT_FOUND);
-      if (data.status !== "running") throw new AppError(COMBINATION_JOB_ERRORS.INVALID_JOB_STATE, COMBINATION_JOB_ERRORS.INVALID_JOB_STATE);
+    const db = getAdminDb();
+    const jobRef = db.doc(COMBINATION_JOB_DOC_PATH);
+    await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(jobRef);
+      if (!snapshot.exists) {
+        throw new AppError(
+          COMBINATION_JOB_ERRORS.NOT_FOUND,
+          COMBINATION_JOB_ERRORS.NOT_FOUND,
+        );
+      }
+      const current = parseCombinationJobDoc(snapshot.data());
+      if (!current || current.id !== parsedJobId.data) {
+        throw new AppError(
+          COMBINATION_JOB_ERRORS.NOT_FOUND,
+          COMBINATION_JOB_ERRORS.NOT_FOUND,
+        );
+      }
 
       const now = Date.now();
-      transaction.update(docRef, {
-        status: parsedInput.data.status,
-        updatedAt: now,
-        heartbeatAt: now,
-      });
-    });
+      if (current.status === "queued") {
+        transaction.update(jobRef, {
+          status: "aborted",
+          abortRequested: true,
+          updatedAt: now,
+          finishedAt: now,
+        });
+        return;
+      }
+      if (current.status === "running") {
+        transaction.update(jobRef, {
+          abortRequested: true,
+          updatedAt: now,
+        });
+        return;
+      }
 
+      throw new AppError(
+        COMBINATION_JOB_ERRORS.INVALID_JOB_STATE,
+        COMBINATION_JOB_ERRORS.INVALID_JOB_STATE,
+      );
+    });
     return { success: true };
   } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.NOT_FOUND || errorInfo.message === COMBINATION_JOB_ERRORS.NOT_FOUND) return { success: false, error: COMBINATION_JOB_ERRORS.NOT_FOUND };
-    if (errorInfo.code === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE || errorInfo.message === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE) return { success: false, error: COMBINATION_JOB_ERRORS.INVALID_JOB_STATE };
-
-    console.error("Failed to finish combination job", {
-      jobId,
-      status,
-      errorCode: errorInfo.code,
-    });
+    const errorCode = getErrorInfo(error).code;
+    if (errorCode === COMBINATION_JOB_ERRORS.NOT_FOUND) {
+      return { success: false, error: COMBINATION_JOB_ERRORS.NOT_FOUND };
+    }
+    if (errorCode === COMBINATION_JOB_ERRORS.INVALID_JOB_STATE) {
+      return {
+        success: false,
+        error: COMBINATION_JOB_ERRORS.INVALID_JOB_STATE,
+      };
+    }
+    console.error("Combination abort request failed", { jobId, errorCode });
     return { success: false, error: COMBINATION_JOB_ERRORS.UNKNOWN_ERROR };
   }
 };

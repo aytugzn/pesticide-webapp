@@ -12,7 +12,7 @@ import type {
   PublicMutationResult,
 } from "@/types";
 import { COMBINATION_ERRORS, type AdminCombinationListFilter, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type BulkCombinationMutationInput, type BulkCombinationMutationResult } from "./types";
-import { bulkCombinationMutationSchema, combinationSlugParamsSchema, saveCombinationSchema, toggleCombinationSchema, unarchiveCombinationSchema, updateCombinationSchema } from "./schemas";
+import { bulkCombinationMutationSchema, combinationSlugParamsSchema, toggleCombinationSchema, unarchiveCombinationSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
 import { getEditableGlobalData } from "@/features/settings/data";
 import { getErrorInfo } from "./actions/utils";
@@ -24,6 +24,7 @@ import {
   type PublishedVisibilityPatch,
 } from "@/lib/firestorePublishedSnapshot";
 import { createEmptyPublicSnapshotChanges } from "@/lib/publicSnapshot";
+import { saveCombinationCore } from "./server/generationCore";
 
 const BULK_COMBINATION_BATCH_SIZE = 400;
 
@@ -113,7 +114,7 @@ export const saveCombination = async (
     return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
   }
 
-  const parsed = saveCombinationSchema.safeParse({
+  return saveCombinationCore(getAdminDb(), {
     regionSlug,
     pestSlug,
     regionName,
@@ -121,79 +122,6 @@ export const saveCombination = async (
     content,
     isActive,
   });
-
-  if (!parsed.success) {
-    return { success: false, error: COMBINATION_ERRORS.VALIDATION_FAILED };
-  }
-
-  try {
-    const {
-      regionSlug: parsedRegionSlug,
-      pestSlug: parsedPestSlug,
-      regionName: parsedRegionName,
-      pestName: parsedPestName,
-      content: parsedContent,
-      isActive: parsedIsActive,
-    } = parsed.data;
-    const docId = `${parsedRegionSlug}_${parsedPestSlug}`;
-
-    const docData: CombinationDoc = {
-      region: parsedRegionSlug,
-      pest: parsedPestSlug,
-      regionName: parsedRegionName,
-      pestName: parsedPestName,
-      title: parsedContent.title,
-      h1: parsedContent.h1,
-      metaDesc: parsedContent.metaDesc,
-      content: parsedContent.content,
-      faq: parsedContent.faq,
-      isActive: parsedIsActive,
-    };
-
-    const docRef = getAdminDb().collection("combinations").doc(docId);
-    const existingSnap = await docRef.get();
-
-    if (existingSnap.exists) {
-      const existingData = parseCombinationDoc(existingSnap.data());
-      return {
-        success: false,
-        error: existingData.isArchived
-          ? COMBINATION_ERRORS.ARCHIVED_EXISTS
-          : COMBINATION_ERRORS.ALREADY_EXISTS,
-      };
-    }
-
-    await docRef.create(docData);
-
-    return { success: true };
-  } catch (error: unknown) {
-    const errorInfo = getErrorInfo(error);
-    console.error("Failed to create combination", {
-      regionSlug,
-      pestSlug,
-      errorCode: errorInfo.code,
-    });
-
-    if (errorInfo.code === "6" || errorInfo.message?.includes("ALREADY_EXISTS")) {
-      try {
-        const docId = `${regionSlug}_${pestSlug}`;
-        const existingSnap = await getAdminDb().collection("combinations").doc(docId).get();
-        if (existingSnap.exists && parseCombinationDoc(existingSnap.data()).isArchived) {
-          return { success: false, error: COMBINATION_ERRORS.ARCHIVED_EXISTS };
-        }
-      } catch (lookupError: unknown) {
-        console.error("Failed to inspect existing combination after duplicate create", {
-          regionSlug,
-          pestSlug,
-          errorCode: getErrorInfo(lookupError).code,
-        });
-      }
-
-      return { success: false, error: COMBINATION_ERRORS.ALREADY_EXISTS };
-    }
-
-    return { success: false, error: COMBINATION_ERRORS.SAVE_FAILED };
-  }
 };
 
 /**

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { SEO_LIMITS } from "./constants";
 import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
+import {
+  COMBINATION_ERRORS,
+  COMBINATION_JOB_ERRORS,
+  type CombinationJobFailureCode,
+} from "./types";
 
 const slugSchema = z
   .string()
@@ -64,43 +69,66 @@ const bulkJobStatusSchema = z.enum([
   "error",
 ]);
 
-const bulkProgressItemSchema = z
+const bulkJobInputItemSchema = z
   .object({
     regionSlug: slugSchema,
     regionName: z.string().trim().min(1).max(120),
     pestSlug: slugSchema,
     pestName: z.string().trim().min(1).max(120),
-    status: bulkJobStatusSchema,
-    error: z.string().trim().min(1).max(120).optional(),
   })
   .strict();
 
-const jobIdSchema = z.uuid();
+const bulkProgressItemSchema = bulkJobInputItemSchema.extend({
+  status: bulkJobStatusSchema,
+  attemptCount: z.number().int().nonnegative().max(3).default(0),
+  error: z.string().trim().min(1).max(120).optional(),
+});
+
+const combinationJobFailureCodeSchema = z.enum(
+  [
+    ...Object.values(COMBINATION_ERRORS),
+    ...Object.values(COMBINATION_JOB_ERRORS),
+  ] as [CombinationJobFailureCode, ...CombinationJobFailureCode[]],
+);
+
+const combinationJobStatusSchema = z.enum([
+  "queued",
+  "running",
+  "completed",
+  "aborted",
+  "failed",
+  "stale",
+]);
+
+export const combinationJobIdSchema = z.uuid();
 
 export const startCombinationJobSchema = z
-  .array(bulkProgressItemSchema)
+  .array(bulkJobInputItemSchema)
   .min(1)
   .max(1000);
 
-export const updateCombinationJobItemSchema = z
+export const combinationBulkJobDocSchema = z
   .object({
-    jobId: jobIdSchema,
-    index: z.number().int().nonnegative().max(999),
-    patch: z
-      .object({
-        status: bulkJobStatusSchema.optional(),
-        error: z.string().trim().min(1).max(120).optional(),
-      })
-      .strict()
-      .refine((value) => Object.keys(value).length > 0),
+    id: combinationJobIdSchema,
+    type: z.literal("bulkCombinationGeneration"),
+    status: combinationJobStatusSchema,
+    createdAt: z.number().int().nonnegative(),
+    updatedAt: z.number().int().nonnegative(),
+    startedAt: z.number().int().nonnegative().optional(),
+    finishedAt: z.number().int().nonnegative().optional(),
+    heartbeatAt: z.number().int().nonnegative().optional(),
+    total: z.number().int().positive().max(1000),
+    doneCount: z.number().int().nonnegative().max(1000),
+    errorCount: z.number().int().nonnegative().max(1000),
+    currentIndex: z.number().int().nonnegative().max(1000).default(0),
+    abortRequested: z.boolean(),
+    failedIndex: z.number().int().nonnegative().max(999).optional(),
+    failureCode: combinationJobFailureCodeSchema.optional(),
+    workerRunId: z.string().trim().min(1).max(160).optional(),
+    items: z.array(bulkProgressItemSchema).min(1).max(1000),
   })
   .strict();
 
-export const combinationJobIdSchema = jobIdSchema;
-
-export const finishCombinationJobSchema = z
-  .object({
-    jobId: jobIdSchema,
-    status: z.enum(["completed", "aborted", "failed"]),
-  })
-  .strict();
+export const workerArgumentsSchema = z.object({
+  jobId: combinationJobIdSchema,
+});

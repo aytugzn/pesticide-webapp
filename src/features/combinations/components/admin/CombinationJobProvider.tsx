@@ -1,30 +1,42 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, useCallback, useEffect, ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { DICTIONARY } from "@/constants/dictionary";
-import { AdminToast, type AdminToastVariant } from "@/components/ui/AdminToast";
-import { AppError } from "@/lib/exceptions";
-import { generateCombinationContent } from "../../actions/ai";
 import {
-  saveCombinationSilently,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { usePathname } from "next/navigation";
+import { AdminToast, type AdminToastVariant } from "@/components/ui/AdminToast";
+import { DICTIONARY } from "@/constants/dictionary";
+import { AppError } from "@/lib/exceptions";
+import {
   getActiveCombinationJob,
-  startCombinationJob,
-  updateCombinationJobItem,
   requestAbortCombinationJob,
-  finishCombinationJob
+  startCombinationJob,
 } from "../../actions/bulk";
 import {
-  COMBINATION_ERRORS,
+  COMBINATION_JOB_ERRORS,
   type BulkCombinationMutationOperation,
+  type BulkJobInputItem,
   type BulkProgressItem,
+  type CombinationBulkJobDoc,
+  type CombinationJobStatus,
   type CombinationLightRow,
 } from "../../types";
 
-const RATE_LIMIT_DELAY_MS = 1500;
-const RUNNING_POLL_INTERVAL_MS = 10_000;
-const TOAST_INFO_DURATION_MS = 3500;
-const TOAST_ERROR_DURATION_MS = 5500;
+const ACTIVE_POLL_INTERVAL_MS = 7_000;
+const TOAST_INFO_DURATION_MS = 3_500;
+const TOAST_ERROR_DURATION_MS = 5_500;
+const TERMINAL_JOB_STATUSES = new Set<CombinationJobStatus>([
+  "completed",
+  "aborted",
+  "failed",
+  "stale",
+]);
 
 type AdminToastInput = {
   variant: AdminToastVariant;
@@ -46,35 +58,41 @@ type BulkMutationHandler = (notice: BulkMutationNotice) => void;
 
 type CombinationJobContextType = {
   progress: BulkProgressItem[];
+  jobStatus: CombinationJobStatus | null;
   isRunning: boolean;
   doneCount: number;
   total: number;
   hasFinished: boolean;
   allDone: boolean;
-  isOwner: boolean;
   isAbortRequested: boolean;
-  hasStartedJobInSession: boolean;
+  failedIndex?: number;
+  failureCode?: string;
   showToast: (toast: AdminToastInput) => void;
   showToastSequence: (toasts: AdminToastInput[]) => void;
   notifyBulkMutation: (notice: Omit<BulkMutationNotice, "id">) => void;
   subscribeBulkMutation: (handler: BulkMutationHandler) => () => void;
-  startBulkGenerate: (missingItems: BulkProgressItem[]) => Promise<void>;
+  refreshJob: () => Promise<void>;
+  startBulkGenerate: (missingItems: BulkJobInputItem[]) => Promise<void>;
   abortBulkGenerate: () => Promise<void>;
 };
 
-const CombinationJobContext = createContext<CombinationJobContextType | null>(null);
+const CombinationJobContext = createContext<CombinationJobContextType | null>(
+  null,
+);
 
-export const useCombinationJob = () => {
+/** Returns the shared combination job and admin notification context. */
+export const useCombinationJob = (): CombinationJobContextType => {
   const context = useContext(CombinationJobContext);
   if (!context) {
     throw new AppError(
       "useCombinationJob must be used within a CombinationJobProvider",
-      "COMBINATION_JOB_PROVIDER_MISSING"
+      "COMBINATION_JOB_PROVIDER_MISSING",
     );
   }
   return context;
 };
 
+/** Returns only the admin toast helpers for unrelated admin features. */
 export const useCombinationAdminToast = () => {
   const context = useCombinationJob();
   return {
@@ -83,67 +101,53 @@ export const useCombinationAdminToast = () => {
   };
 };
 
-const getToastDuration = (variant: AdminToastVariant) =>
+const getToastDuration = (variant: AdminToastVariant): number =>
   variant === "error" || variant === "warning"
     ? TOAST_ERROR_DURATION_MS
     : TOAST_INFO_DURATION_MS;
 
-const getToastTitle = (variant: AdminToastVariant) => {
-  const d = DICTIONARY.admin.combinations.toast;
-  if (variant === "success") return d.successTitle;
-  if (variant === "warning") return d.warningTitle;
-  if (variant === "error") return d.errorTitle;
-  return d.infoTitle;
+const getToastTitle = (variant: AdminToastVariant): string => {
+  const dictionary = DICTIONARY.admin.combinations.toast;
+  if (variant === "success") return dictionary.successTitle;
+  if (variant === "warning") return dictionary.warningTitle;
+  if (variant === "error") return dictionary.errorTitle;
+  return dictionary.infoTitle;
 };
 
-const getFatalAiErrorMessage = (errorCode: string) => {
-  const d = DICTIONARY.admin.combinations;
-  if (errorCode === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED) {
-    return d.bulkGenerate.errorQuotaExceeded;
+const getStartErrorMessage = (errorCode: string): string => {
+  const dictionary = DICTIONARY.admin.combinations;
+  if (errorCode === COMBINATION_JOB_ERRORS.ALREADY_RUNNING) {
+    return dictionary.bulkGenerate.errorAlreadyRunning;
   }
-  if (errorCode === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE) {
-    return d.bulkGenerate.errorProviderUnavailable;
+  if (errorCode === COMBINATION_JOB_ERRORS.GITHUB_CONFIG_INVALID) {
+    return dictionary.bulkGenerate.errorGithubConfig;
   }
-  return d.errorDefault;
+  if (errorCode === COMBINATION_JOB_ERRORS.DISPATCH_FAILED) {
+    return dictionary.bulkGenerate.errorDispatch;
+  }
+  return dictionary.errorDefault;
 };
 
-const isFatalAiError = (errorCode: string) =>
-  errorCode === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED ||
-  errorCode === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE;
-
-export const CombinationJobProvider = ({ children }: { children: ReactNode }) => {
-  const router = useRouter();
+/**
+ * Provides Firestore-polled background job state and shared admin notifications.
+ *
+ * @param children - Admin application content
+ */
+export const CombinationJobProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const pathname = usePathname();
   const isCombinationsPage = pathname === "/admin/combinations";
-  
-  // Local state
-  const abortRef = useRef(false);
-  const runningRef = useRef(false);
-  const progressRef = useRef<BulkProgressItem[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isAbortRequested, setIsAbortRequested] = useState(false);
-  const [progress, setProgress] = useState<BulkProgressItem[]>([]);
-  const [hasStartedJobInSession, setHasStartedJobInSession] = useState(false);
+  const [job, setJob] = useState<CombinationBulkJobDoc | null>(null);
   const [toast, setToast] = useState<AdminToastState | null>(null);
-  
-  // Job Sync State
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
-  const [dbJobStatus, setDbJobStatus] = useState<string | null>(null);
-
-  const jobIdRef = useRef<string | null>(null);
-  const channelRef = useRef<BroadcastChannel | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastSequenceTimeoutRefs = useRef(
     new Set<ReturnType<typeof setTimeout>>(),
   );
   const bulkMutationNoticeIdRef = useRef(0);
   const bulkMutationHandlersRef = useRef(new Set<BulkMutationHandler>());
-
-  const doneCount = progress.filter((p) => p.status === "done").length;
-  const total = progress.length;
-  const hasFinished = !isRunning && (dbJobStatus === "completed" || dbJobStatus === "aborted" || dbJobStatus === "failed" || dbJobStatus === "stale");
-  const allDone = hasFinished && doneCount === total && total > 0;
 
   const dismissToast = useCallback(() => {
     if (toastTimeoutRef.current) {
@@ -154,13 +158,9 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
   }, []);
 
   const displayToast = useCallback((nextToast: AdminToastInput) => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     const id = Date.now();
     setToast({ ...nextToast, id });
-
     toastTimeoutRef.current = setTimeout(() => {
       setToast((current) => (current?.id === id ? null : current));
       toastTimeoutRef.current = null;
@@ -172,389 +172,152 @@ export const CombinationJobProvider = ({ children }: { children: ReactNode }) =>
     toastSequenceTimeoutRefs.current.clear();
   }, []);
 
-  const showToast = useCallback((nextToast: AdminToastInput) => {
-    clearToastSequence();
-    displayToast(nextToast);
-  }, [clearToastSequence, displayToast]);
+  const showToast = useCallback(
+    (nextToast: AdminToastInput) => {
+      clearToastSequence();
+      displayToast(nextToast);
+    },
+    [clearToastSequence, displayToast],
+  );
 
-  const showToastSequence = useCallback((toasts: AdminToastInput[]) => {
-    clearToastSequence();
-    if (toasts.length === 0) return;
+  const showToastSequence = useCallback(
+    (toasts: AdminToastInput[]) => {
+      clearToastSequence();
+      if (toasts.length === 0) return;
+      displayToast(toasts[0]);
+      let delayMs = 0;
+      toasts.slice(1).forEach((nextToast, index) => {
+        delayMs += getToastDuration(toasts[index].variant);
+        const timeout = setTimeout(() => {
+          toastSequenceTimeoutRefs.current.delete(timeout);
+          displayToast(nextToast);
+        }, delayMs);
+        toastSequenceTimeoutRefs.current.add(timeout);
+      });
+    },
+    [clearToastSequence, displayToast],
+  );
 
-    displayToast(toasts[0]);
-    let delayMs = 0;
-    toasts.slice(1).forEach((nextToast, index) => {
-      delayMs += getToastDuration(toasts[index].variant);
-      const timeout = setTimeout(() => {
-        toastSequenceTimeoutRefs.current.delete(timeout);
-        displayToast(nextToast);
-      }, delayMs);
-      toastSequenceTimeoutRefs.current.add(timeout);
-    });
-  }, [clearToastSequence, displayToast]);
+  const notifyBulkMutation = useCallback(
+    (notice: Omit<BulkMutationNotice, "id">) => {
+      bulkMutationNoticeIdRef.current += 1;
+      const nextNotice = { ...notice, id: bulkMutationNoticeIdRef.current };
+      bulkMutationHandlersRef.current.forEach((handler) =>
+        handler(nextNotice),
+      );
+    },
+    [],
+  );
 
-  const notifyBulkMutation = useCallback((notice: Omit<BulkMutationNotice, "id">) => {
-    bulkMutationNoticeIdRef.current += 1;
-    const nextNotice = { ...notice, id: bulkMutationNoticeIdRef.current };
-    bulkMutationHandlersRef.current.forEach((handler) => handler(nextNotice));
+  const subscribeBulkMutation = useCallback(
+    (handler: BulkMutationHandler) => {
+      const handlers = bulkMutationHandlersRef.current;
+      handlers.add(handler);
+      return () => handlers.delete(handler);
+    },
+    [],
+  );
+
+  const refreshJob = useCallback(async () => {
+    const response = await getActiveCombinationJob();
+    if (response.success) setJob(response.data || null);
   }, []);
 
-  const subscribeBulkMutation = useCallback((handler: BulkMutationHandler) => {
-    const handlers = bulkMutationHandlersRef.current;
-    handlers.add(handler);
-
-    return () => {
-      handlers.delete(handler);
-    };
-  }, []);
-
-  useEffect(() => () => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    toastSequenceTimeoutRefs.current.forEach(clearTimeout);
-    toastSequenceTimeoutRefs.current.clear();
-  }, []);
-
-  // BroadcastChannel Setup
-  useEffect(() => {
-    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-      const channel = new BroadcastChannel("combination_job_sync");
-      channelRef.current = channel;
-
-      channel.onmessage = (event) => {
-        const data = event.data;
-        if (data && typeof data === "object" && data.type === "SYNC_STATE" && data.payload) {
-          if (!isOwner) { // Only spectators accept sync
-            setJobId(data.payload.jobId);
-            setProgress(data.payload.progress);
-            setIsRunning(data.payload.isRunning);
-            setDbJobStatus(data.payload.dbJobStatus);
-            setIsAbortRequested(data.payload.isAbortRequested);
-          }
-        }
-      };
-
-      return () => {
-        channel.close();
-      };
-    }
-  }, [isOwner]);
-
-  // Sync state from Firestore polling
-  useEffect(() => {
-    // 1. Owner loop handles itself, no need to poll (receives aborts via item updates)
-    if (isOwner) return;
-
-    // 2. Do not poll if we are not on the combinations page
-    if (!isCombinationsPage) return;
-
-    const fetchJob = async () => {
-      const res = await getActiveCombinationJob();
-      if (res.success && res.data) {
-        const doc = res.data;
-        setJobId(doc.id);
-        setProgress(doc.items);
-        
-        if (doc.status === "running") {
-          setIsRunning(true);
-          setDbJobStatus(null);
-          setIsAbortRequested(doc.abortRequested || false);
-        } else {
-          setIsRunning(false);
-          setDbJobStatus(doc.status);
-          setIsAbortRequested(false);
-          runningRef.current = false;
-          abortRef.current = false;
-        }
-      } else if (res.success && !res.data) {
-        setIsRunning(false);
-        setDbJobStatus(null);
-        setIsAbortRequested(false);
-        runningRef.current = false;
-        abortRef.current = false;
-      }
-    };
-
-    // 3. Fetch immediately on mount/path change
-    fetchJob();
-
-    // 4. Setup window listeners for idle/visibility updates
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") fetchJob();
-    };
-    const handleFocus = () => fetchJob();
-
-    window.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("focus", handleFocus);
-
-    // 5. Poll with low frequency only if running
-    let interval: NodeJS.Timeout | null = null;
-    if (isRunning) {
-      interval = setInterval(fetchJob, RUNNING_POLL_INTERVAL_MS);
-    }
-
-    return () => {
-      window.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("focus", handleFocus);
-      if (interval) clearInterval(interval);
-    };
-  }, [isOwner, isCombinationsPage, isRunning]);
-
-  const updateItem = useCallback((index: number, patch: Partial<BulkProgressItem>) => {
-    setProgress((prev) => {
-      const newProgress = prev.map((item, i) => (i === index ? { ...item, ...patch } : item));
-      progressRef.current = newProgress;
-      if (channelRef.current && runningRef.current) {
-        channelRef.current.postMessage({
-          type: "SYNC_STATE",
-          payload: {
-            jobId: jobIdRef.current,
-            progress: newProgress,
-            isRunning: true,
-            dbJobStatus: null,
-            isAbortRequested: abortRef.current
-          }
+  const startBulkGenerate = useCallback(
+    async (missingItems: BulkJobInputItem[]) => {
+      if (missingItems.length === 0) return;
+      const response = await startCombinationJob(missingItems);
+      if (!response.success || !response.data) {
+        showToast({
+          variant: "error",
+          message: getStartErrorMessage(
+            response.success
+              ? COMBINATION_JOB_ERRORS.UNKNOWN_ERROR
+              : response.error,
+          ),
         });
+        await refreshJob();
+        return;
       }
-      return newProgress;
-    });
-  }, []);
 
-  const waitWithAbort = async (ms: number) => {
-    const step = 100;
-    let elapsed = 0;
-    while (elapsed < ms && !abortRef.current) {
-      await new Promise((resolve) => setTimeout(resolve, step));
-      elapsed += step;
-    }
-  };
-
-  const startBulkGenerate = useCallback(async (missingItems: BulkProgressItem[]) => {
-    if (missingItems.length === 0 || runningRef.current || isRunning) return;
-
-    const startRes = await startCombinationJob(missingItems);
-    if (!startRes.success) {
-      const message = startRes.error === "ALREADY_RUNNING"
-        ? DICTIONARY.admin.combinations.bulkGenerate.errorAlreadyRunning
-        : DICTIONARY.admin.combinations.errorDefault;
-      showToast({ variant: "error", message });
-      return;
-    }
-
-    const newJobId = startRes.data!.id;
-    setJobId(newJobId);
-    jobIdRef.current = newJobId;
-    setIsOwner(true);
-    setDbJobStatus(null);
-    setHasStartedJobInSession(true);
-
-    runningRef.current = true;
-    abortRef.current = false;
-    setIsRunning(true);
-    setIsAbortRequested(false);
-
-    const initialProgress = startRes.data!.items;
-    progressRef.current = initialProgress;
-    setProgress(initialProgress);
-
-    if (channelRef.current) {
-      channelRef.current.postMessage({
-        type: "SYNC_STATE",
-        payload: {
-          jobId: newJobId,
-          progress: initialProgress,
-          isRunning: true,
-          dbJobStatus: null,
-          isAbortRequested: false
-        }
+      setJob(response.data);
+      showToast({
+        variant: "info",
+        message: DICTIONARY.admin.combinations.bulkGenerate.queuedToast,
       });
-    }
+    },
+    [refreshJob, showToast],
+  );
 
-    let fatalAiErrorLocal: string | null = null;
-    let hasShownBulkErrorToast = false;
-    showToast({
-      variant: "info",
-      message: DICTIONARY.admin.combinations.bulkGenerate.startToast,
-    });
-
-    try {
-      for (let i = 0; i < initialProgress.length; i++) {
-        if (abortRef.current) break;
-
-        const item = initialProgress[i];
-        updateItem(i, { status: "generating" });
-        
-        const generatingUpdate = await updateCombinationJobItem(newJobId, i, { status: "generating" });
-        if (generatingUpdate.success && generatingUpdate.data?.abortRequested) {
-           abortRef.current = true;
-           setIsAbortRequested(true);
-           break;
-        }
-
-        try {
-          const genResult = await generateCombinationContent(item.regionSlug, item.pestSlug);
-
-          if (abortRef.current) break;
-
-          if (!genResult.success || !genResult.data) {
-            const errCode = !genResult.success ? genResult.error : "UNKNOWN_ERROR";
-            updateItem(i, { status: "error", error: errCode });
-            
-            const errUpdate = await updateCombinationJobItem(newJobId, i, { status: "error", error: errCode });
-            if (errUpdate.success && errUpdate.data?.abortRequested) {
-               abortRef.current = true;
-               setIsAbortRequested(true);
-            }
-
-            if (isFatalAiError(errCode)) {
-               abortRef.current = true;
-               setIsAbortRequested(true);
-               fatalAiErrorLocal = errCode;
-               showToast({ variant: "error", message: getFatalAiErrorMessage(errCode) });
-               break;
-            }
-
-            if (!hasShownBulkErrorToast) {
-              hasShownBulkErrorToast = true;
-              showToast({
-                variant: "error",
-                message: DICTIONARY.admin.combinations.bulkGenerate.itemErrorToast,
-              });
-            }
-
-            await waitWithAbort(RATE_LIMIT_DELAY_MS);
-            continue;
-          }
-
-          const saveResult = await saveCombinationSilently(
-            item.regionSlug,
-            item.pestSlug,
-            item.regionName,
-            item.pestName,
-            genResult.data
-          );
-
-          if (saveResult.success) {
-            updateItem(i, { status: "done" });
-            const doneUpdate = await updateCombinationJobItem(newJobId, i, { status: "done" });
-            if (doneUpdate.success && doneUpdate.data?.abortRequested) {
-               abortRef.current = true;
-               setIsAbortRequested(true);
-            }
-          } else {
-            updateItem(i, { status: "error", error: saveResult.error });
-            const errUpdate2 = await updateCombinationJobItem(newJobId, i, { status: "error", error: saveResult.error });
-            if (errUpdate2.success && errUpdate2.data?.abortRequested) {
-               abortRef.current = true;
-            }
-            if (!hasShownBulkErrorToast) {
-              hasShownBulkErrorToast = true;
-              showToast({
-                variant: "error",
-                message: DICTIONARY.admin.combinations.bulkGenerate.itemErrorToast,
-              });
-            }
-          }
-        } catch {
-          console.error("Unexpected error during bulk generation item", {
-            regionSlug: item.regionSlug,
-            pestSlug: item.pestSlug,
-            reason: "unknown_ai_error",
-          });
-          updateItem(i, { status: "error", error: "UNEXPECTED_ERROR" });
-          await updateCombinationJobItem(newJobId, i, { status: "error", error: "UNEXPECTED_ERROR" });
-          if (!hasShownBulkErrorToast) {
-            hasShownBulkErrorToast = true;
-            showToast({
-              variant: "error",
-              message: DICTIONARY.admin.combinations.bulkGenerate.itemErrorToast,
-            });
-          }
-        }
-
-        if (i < initialProgress.length - 1 && !abortRef.current) {
-          await waitWithAbort(RATE_LIMIT_DELAY_MS);
-        }
-      }
-      
-      if (abortRef.current) {
-         const finalStatus = fatalAiErrorLocal ? "failed" : "aborted";
-         await finishCombinationJob(newJobId, finalStatus);
-         setDbJobStatus(finalStatus);
-      } else {
-         await finishCombinationJob(newJobId, "completed");
-         setDbJobStatus("completed");
-         const finalProgress = progressRef.current;
-         const finalDoneCount = finalProgress.filter((p) => p.status === "done").length;
-         const finalTotal = finalProgress.length;
-         const message = finalDoneCount === finalTotal
-           ? `${DICTIONARY.admin.combinations.bulkGenerate.doneAll} ${DICTIONARY.admin.combinations.bulkGenerate.draftNote}`
-           : `${DICTIONARY.admin.combinations.bulkGenerate.partialDone.replace("{done}", String(finalDoneCount)).replace("{total}", String(finalTotal))} ${DICTIONARY.admin.combinations.bulkGenerate.draftNote}`;
-         showToast({
-           variant: finalDoneCount === finalTotal ? "success" : "info",
-           message,
-         });
-      }
-    } catch {
-      console.error("Top-level error in bulk generation loop", {
-        reason: "unknown_ai_error",
-      });
+  const abortBulkGenerate = useCallback(async () => {
+    if (!job || (job.status !== "queued" && job.status !== "running")) return;
+    setJob((current) =>
+      current ? { ...current, abortRequested: true } : current,
+    );
+    const response = await requestAbortCombinationJob(job.id);
+    if (!response.success) {
       showToast({
         variant: "error",
         message: DICTIONARY.admin.combinations.errorDefault,
       });
-      await finishCombinationJob(newJobId, "failed");
-      setDbJobStatus("failed");
-    } finally {
-      runningRef.current = false;
-      setIsRunning(false);
-      setIsAbortRequested(false);
-      setIsOwner(false);
-
-      if (channelRef.current) {
-        channelRef.current.postMessage({
-          type: "SYNC_STATE",
-          payload: {
-            jobId: jobIdRef.current,
-            progress: progressRef.current,
-            isRunning: false,
-            dbJobStatus: abortRef.current ? (fatalAiErrorLocal ? "failed" : "aborted") : "completed",
-            isAbortRequested: false
-          }
-        });
-      }
-
-      router.refresh();
     }
-  }, [isRunning, updateItem, router, showToast]);
+    await refreshJob();
+  }, [job, refreshJob, showToast]);
 
-  const abortBulkGenerate = useCallback(async () => {
-    setIsAbortRequested(true);
-    if (isOwner) {
-       abortRef.current = true;
-    }
-    if (jobId) {
-       await requestAbortCombinationJob(jobId);
-    }
-  }, [isOwner, jobId]);
+  const jobStatus = job?.status || null;
+  const isRunning = jobStatus === "queued" || jobStatus === "running";
+  const hasFinished = jobStatus ? TERMINAL_JOB_STATUSES.has(jobStatus) : false;
+  const allDone =
+    jobStatus === "completed" &&
+    Boolean(job && job.total > 0 && job.doneCount === job.total);
+
+  useEffect(() => {
+    if (!isCombinationsPage) return;
+    const refreshTimer = setTimeout(() => void refreshJob(), 0);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void refreshJob();
+    };
+    const handleFocus = () => void refreshJob();
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    const interval = isRunning
+      ? setInterval(() => void refreshJob(), ACTIVE_POLL_INTERVAL_MS)
+      : null;
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+      clearTimeout(refreshTimer);
+      if (interval) clearInterval(interval);
+    };
+  }, [isCombinationsPage, isRunning, refreshJob]);
+
+  useEffect(
+    () => () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      toastSequenceTimeoutRefs.current.forEach(clearTimeout);
+      toastSequenceTimeoutRefs.current.clear();
+    },
+    [],
+  );
 
   return (
     <CombinationJobContext.Provider
       value={{
-        progress,
+        progress: job?.items || [],
+        jobStatus,
         isRunning,
-        doneCount,
-        total,
+        doneCount: job?.doneCount || 0,
+        total: job?.total || 0,
         hasFinished,
         allDone,
-        isOwner,
-        isAbortRequested,
-        hasStartedJobInSession,
+        isAbortRequested: job?.abortRequested || false,
+        failedIndex: job?.failedIndex,
+        failureCode: job?.failureCode,
         showToast,
         showToastSequence,
         notifyBulkMutation,
         subscribeBulkMutation,
+        refreshJob,
         startBulkGenerate,
         abortBulkGenerate,
       }}

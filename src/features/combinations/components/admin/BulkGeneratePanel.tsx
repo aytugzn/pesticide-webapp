@@ -1,14 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Loader2, Sparkles, Square, CheckCircle2, AlertCircle, Clock } from "lucide-react";
-import { DICTIONARY } from "@/constants/dictionary";
-import { Button } from "@/components/ui/Button";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Sparkles,
+  Square,
+} from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
-import { useCombinationJob } from "./CombinationJobProvider";
+import { Button } from "@/components/ui/Button";
+import { DICTIONARY } from "@/constants/dictionary";
+import type { PestDoc, RegionDoc } from "@/types";
 import { getExistingCombinationKeys } from "../../actions/bulk";
-import type { RegionDoc, PestDoc } from "@/types";
-import { COMBINATION_ERRORS, type BulkProgressItem, type BulkJobStatus } from "../../types";
+import {
+  COMBINATION_ERRORS,
+  type BulkJobInputItem,
+  type BulkJobStatus,
+} from "../../types";
+import { useCombinationJob } from "./CombinationJobProvider";
 
 const ICON_SIZE = 14;
 
@@ -17,15 +28,23 @@ type BulkGeneratePanelProps = {
   pests: PestDoc[];
 };
 
-/** Icon and label for each bulk job status. */
-const statusConfig: Record<BulkJobStatus, { icon: React.ReactNode; label: string; className: string }> = {
+const STATUS_CONFIG: Record<
+  BulkJobStatus,
+  { icon: React.ReactNode; label: string; className: string }
+> = {
   pending: {
     icon: <Clock size={ICON_SIZE} aria-hidden="true" />,
     label: DICTIONARY.admin.combinations.bulkGenerate.statusPending,
     className: "text-text-muted",
   },
   generating: {
-    icon: <Loader2 size={ICON_SIZE} className="animate-spin" aria-hidden="true" />,
+    icon: (
+      <Loader2
+        size={ICON_SIZE}
+        className="animate-spin"
+        aria-hidden="true"
+      />
+    ),
     label: DICTIONARY.admin.combinations.bulkGenerate.statusGenerating,
     className: "text-brand-primary",
   },
@@ -42,110 +61,143 @@ const statusConfig: Record<BulkJobStatus, { icon: React.ReactNode; label: string
 };
 
 /**
- * Admin panel section for bulk-generating all missing region × pest combinations.
- * Displays missing count, starts/stops the generation run, and shows per-item progress.
- * All generated combinations are saved as active public pages.
+ * Starts and monitors GitHub-backed bulk generation without running AI in-browser.
+ *
+ * @param regions - Active region options
+ * @param pests - Active pest options
  */
-export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) => {
-  const d = DICTIONARY.admin.combinations.bulkGenerate;
+export const BulkGeneratePanel = ({
+  regions,
+  pests,
+}: BulkGeneratePanelProps) => {
+  const dictionary = DICTIONARY.admin.combinations.bulkGenerate;
   const {
     progress,
+    jobStatus,
     isRunning,
     doneCount,
     total: jobTotal,
-    hasFinished,
     allDone,
     isAbortRequested,
-    hasStartedJobInSession,
+    failedIndex,
+    failureCode,
     showToast,
     startBulkGenerate,
     abortBulkGenerate,
   } = useCombinationJob();
-
   const [existingKeys, setExistingKeys] = useState<Set<string> | null>(null);
   const [keysLoading, setKeysLoading] = useState(false);
   const [keysError, setKeysError] = useState(false);
 
-  const missingItems = useMemo<BulkProgressItem[]>(() => {
-    if (!existingKeys) return [];
-    const missing: BulkProgressItem[] = [];
+  const loadExistingKeys = useCallback(async (): Promise<Set<string> | null> => {
+    setKeysLoading(true);
+    setKeysError(false);
+    const response = await getExistingCombinationKeys();
+    setKeysLoading(false);
+    if (!response.success || !response.data) {
+      setKeysError(true);
+      return null;
+    }
+    const keys = new Set(response.data);
+    setExistingKeys(keys);
+    return keys;
+  }, []);
 
-    for (const region of regions) {
-      for (const pest of pests) {
-        const id = `${region.slug}_${pest.slug}`;
-        if (!existingKeys.has(id)) {
+  useEffect(() => {
+    const refreshTimer = setTimeout(() => void loadExistingKeys(), 0);
+    return () => clearTimeout(refreshTimer);
+  }, [loadExistingKeys]);
+
+  useEffect(() => {
+    if (
+      jobStatus !== "completed" &&
+      jobStatus !== "failed" &&
+      jobStatus !== "aborted" &&
+      jobStatus !== "stale"
+    ) {
+      return;
+    }
+    const refreshTimer = setTimeout(() => void loadExistingKeys(), 0);
+    return () => clearTimeout(refreshTimer);
+  }, [jobStatus, loadExistingKeys]);
+
+  const missingItems = useMemo<BulkJobInputItem[]>(() => {
+    if (!existingKeys) return [];
+    const missing: BulkJobInputItem[] = [];
+    regions.forEach((region) => {
+      pests.forEach((pest) => {
+        if (!existingKeys.has(`${region.slug}_${pest.slug}`)) {
           missing.push({
             regionSlug: region.slug,
             regionName: region.name,
             pestSlug: pest.slug,
             pestName: pest.name,
-            status: "pending",
           });
         }
-      }
-    }
+      });
+    });
     return missing;
-  }, [regions, pests, existingKeys]);
+  }, [existingKeys, pests, regions]);
 
-  const total = isRunning || hasFinished ? jobTotal : missingItems.length;
+  const total = jobStatus ? jobTotal : missingItems.length;
+  const progressStyle = {
+    width: total > 0 ? `${(doneCount / total) * 100}%` : "0%",
+  };
+  const failedItem =
+    failedIndex !== undefined
+      ? progress[failedIndex]
+      : progress.find((item) => item.status === "error");
+  const failedItemName = failedItem
+    ? `${failedItem.regionName} — ${failedItem.pestName}`
+    : dictionary.failedUnknownItem;
+  const failedSummary = failedItem
+    ? dictionary.failedSummary
+        .replace("{item}", failedItemName)
+        .replace("{done}", String(doneCount))
+        .replace("{total}", String(jobTotal))
+    : dictionary.failedBeforeWorker;
+  const failureDetail =
+    failureCode === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED
+      ? dictionary.errorQuotaExceeded
+      : failureCode === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE
+        ? dictionary.errorProviderUnavailable
+        : "";
 
-  const shouldShowJobResult = hasStartedJobInSession && hasFinished;
-  const hasQuotaError = shouldShowJobResult && progress.some((p) => p.error === COMBINATION_ERRORS.AI_QUOTA_EXCEEDED);
-  const hasProviderUnavailableError = shouldShowJobResult && progress.some((p) => p.error === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE);
-
-  const statusText = isRunning
-    ? isAbortRequested
-      ? d.stoppingStatus.replace("{done}", String(doneCount)).replace("{total}", String(total))
-      : d.running.replace("{done}", String(doneCount)).replace("{total}", String(total))
-    : null;
-
-  const activeProgress = isRunning ? progress : [];
-
-  const progressStyle = { width: total > 0 ? `${(doneCount / total) * 100}%` : "0%" };
+  const activeStatusText =
+    jobStatus === "queued"
+      ? dictionary.queuedStatus
+      : isAbortRequested
+        ? dictionary.stoppingStatus
+            .replace("{done}", String(doneCount))
+            .replace("{total}", String(jobTotal))
+        : dictionary.running
+            .replace("{done}", String(doneCount))
+            .replace("{total}", String(jobTotal));
 
   const handleStart = async () => {
-    let currentKeys = existingKeys;
-
-    if (!currentKeys) {
-      setKeysLoading(true);
-      setKeysError(false);
-      const res = await getExistingCombinationKeys();
-      setKeysLoading(false);
-
-      if (res.success && res.data) {
-        currentKeys = new Set(res.data);
-        setExistingKeys(currentKeys);
-      } else {
-        setKeysError(true);
-        showToast({
-          variant: "error",
-          message: DICTIONARY.admin.combinations.errorDefault,
-        });
-        return;
-      }
-    }
-
-    const missing: BulkProgressItem[] = [];
-    for (const region of regions) {
-      for (const pest of pests) {
-        const id = `${region.slug}_${pest.slug}`;
-        if (!currentKeys.has(id)) {
-          missing.push({
-            regionSlug: region.slug,
-            regionName: region.name,
-            pestSlug: pest.slug,
-            pestName: pest.name,
-            status: "pending",
-          });
-        }
-      }
-    }
-
-    if (missing.length === 0) {
+    const keys = existingKeys || (await loadExistingKeys());
+    if (!keys) {
+      showToast({
+        variant: "error",
+        message: DICTIONARY.admin.combinations.errorDefault,
+      });
       return;
     }
 
-    startBulkGenerate(missing);
+    const missing: BulkJobInputItem[] = [];
+    regions.forEach((region) => {
+      pests.forEach((pest) => {
+        if (!keys.has(`${region.slug}_${pest.slug}`)) {
+          missing.push({
+            regionSlug: region.slug,
+            regionName: region.name,
+            pestSlug: pest.slug,
+            pestName: pest.name,
+          });
+        }
+      });
+    });
+    if (missing.length > 0) await startBulkGenerate(missing);
   };
 
   return (
@@ -153,91 +205,120 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
       aria-labelledby="bulk-generate-heading"
       className="bg-brand-surface border border-brand-border rounded-brand-lg p-6 space-y-5"
     >
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2
             id="bulk-generate-heading"
             className="font-heading font-bold text-text-primary text-lg"
           >
-            {d.title}
+            {dictionary.title}
           </h2>
-          <p className="text-text-muted text-sm mt-1">{d.description}</p>
+          <p className="text-text-muted text-sm mt-1">
+            {dictionary.description}
+          </p>
         </div>
 
-        {!isRunning && !hasFinished && (
+        {isRunning ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-neutral border border-brand-border text-brand-primary">
+            <Loader2
+              size={12}
+              className="animate-spin"
+              aria-hidden="true"
+            />
+            {activeStatusText}
+          </span>
+        ) : (
           <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-neutral border border-brand-border text-text-secondary">
             {keysLoading
               ? DICTIONARY.global.loading
               : keysError
                 ? DICTIONARY.admin.combinations.errorDefault
                 : !existingKeys
-                  ? d.calculateRequired
+                  ? dictionary.calculateRequired
                   : missingItems.length === 0
-                    ? d.noMissing
-                    : d.missingCount.replace("{count}", String(missingItems.length))}
+                    ? dictionary.noMissing
+                    : dictionary.missingCount.replace(
+                        "{count}",
+                        String(missingItems.length),
+                      )}
           </span>
         )}
+      </header>
 
-        {isRunning && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-neutral border border-brand-border text-brand-primary">
-            <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-            {statusText}
-          </span>
-        )}
-      </div>
-
-      {isRunning && total > 0 && (
-        <div
-          role="progressbar"
-          aria-valuenow={doneCount}
-          aria-valuemin={0}
-          aria-valuemax={total}
-          className="h-2 bg-surface-neutral rounded-full overflow-hidden"
-        >
-          <div
-            className="h-full bg-brand-primary rounded-full transition-all duration-500"
-            style={progressStyle}
-          />
-        </div>
-      )}
-
-      {existingKeys !== null && missingItems.length === 0 && !keysLoading && !keysError && !isRunning && !hasFinished && (
-        <Alert variant="info" message={d.noMissing} />
-      )}
-
-      {keysError && (
-        <Alert variant="error" message={DICTIONARY.admin.combinations.errorDefault} />
-      )}
-
-      {shouldShowJobResult && allDone && (
-        <Alert variant="success" message={`${d.doneAll} ${d.draftNote}`} />
-      )}
-
-      {shouldShowJobResult && hasFinished && !allDone && !hasQuotaError && !hasProviderUnavailableError && (
+      {isRunning && (
         <Alert
           variant="info"
-          message={`${d.partialDone.replace("{done}", String(doneCount)).replace("{total}", String(progress.length))} ${d.draftNote}`}
+          message={
+            jobStatus === "queued"
+              ? `${dictionary.waitingWorker} ${dictionary.backgroundNote}`
+              : dictionary.backgroundNote
+          }
         />
       )}
 
-      {hasQuotaError && (
+      {(isRunning || jobStatus === "completed" || jobStatus === "failed") &&
+        total > 0 && (
+          <div
+            role="progressbar"
+            aria-valuenow={doneCount}
+            aria-valuemin={0}
+            aria-valuemax={total}
+            className="h-2 bg-surface-neutral rounded-full overflow-hidden"
+          >
+            <div
+              className="h-full bg-brand-primary rounded-full transition-all duration-500"
+              style={progressStyle}
+            />
+          </div>
+        )}
+
+      {allDone && (
+        <Alert
+          variant="success"
+          message={`${dictionary.doneAll} ${dictionary.draftNote}`}
+        />
+      )}
+      {jobStatus === "failed" && (
         <Alert
           variant="error"
-          message={d.errorQuotaExceeded}
+          message={`${failedSummary}${failureDetail ? ` ${failureDetail}` : ""} ${dictionary.restartNote}`}
         />
       )}
-
-      {hasProviderUnavailableError && (
+      {jobStatus === "aborted" && (
+        <Alert
+          variant="info"
+          message={dictionary.abortedSummary
+            .replace("{done}", String(doneCount))
+            .replace("{total}", String(jobTotal))}
+        />
+      )}
+      {jobStatus === "stale" && (
         <Alert
           variant="error"
-          message={d.errorProviderUnavailable}
+          message={dictionary.staleSummary
+            .replace("{done}", String(doneCount))
+            .replace("{total}", String(jobTotal))}
+        />
+      )}
+      {!isRunning &&
+        existingKeys !== null &&
+        missingItems.length === 0 &&
+        !keysLoading &&
+        !keysError &&
+        jobStatus !== "completed" && (
+          <Alert variant="info" message={dictionary.noMissing} />
+        )}
+      {keysError && (
+        <Alert
+          variant="error"
+          message={DICTIONARY.admin.combinations.errorDefault}
         />
       )}
 
-      {activeProgress.length > 0 && (
+      {progress.length > 0 && (
         <ul className="divide-y divide-brand-border/40 rounded-xl border border-brand-border/60 overflow-hidden max-h-72 overflow-y-auto">
-          {activeProgress.map((item) => {
-            const cfg = statusConfig[item.status];
+          {progress.map((item) => {
+            const config = STATUS_CONFIG[item.status];
             return (
               <li
                 key={`${item.regionSlug}_${item.pestSlug}`}
@@ -246,9 +327,14 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
                 <span className="text-text-primary font-medium break-words">
                   {item.regionName} — {item.pestName}
                 </span>
-                <span className={`inline-flex items-center gap-1.5 font-medium ${cfg.className}`}>
-                  {cfg.icon}
-                  {cfg.label}
+                <span
+                  className={`inline-flex items-center gap-1.5 font-medium ${config.className}`}
+                >
+                  {config.icon}
+                  {config.label}
+                  {item.attemptCount > 0 && item.status !== "done"
+                    ? ` (${dictionary.attemptProgress.replace("{attempt}", String(item.attemptCount)).replace("{max}", String(dictionary.maxAttempts))})`
+                    : null}
                 </span>
               </li>
             );
@@ -256,39 +342,41 @@ export const BulkGeneratePanel = ({ regions, pests }: BulkGeneratePanelProps) =>
         </ul>
       )}
 
-      {(!existingKeys || missingItems.length > 0) && (
-        <div className="flex items-center gap-3 flex-wrap">
-          {!isRunning ? (
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={handleStart}
-              disabled={keysLoading || keysError || (existingKeys !== null && missingItems.length === 0)}
-              id="bulk-generate-start-btn"
-            >
-              <Sparkles size={ICON_SIZE} aria-hidden="true" />
-              {keysLoading ? DICTIONARY.global.loading : d.startBtn}
-              {existingKeys && missingItems.length > 0 && !keysLoading && !keysError && (
-                <span className="ml-1 opacity-75">({missingItems.length})</span>
-              )}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="danger"
-              size="md"
-              onClick={abortBulkGenerate}
-              disabled={isAbortRequested}
-              id="bulk-generate-stop-btn"
-              className="border border-error-border bg-error-bg/30 text-error-text shadow-none hover:bg-error-bg/60 hover:text-error-text disabled:opacity-60"
-            >
-              <Square size={ICON_SIZE} aria-hidden="true" />
-              {isAbortRequested ? d.stoppingBtn : d.stopBtn}
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="flex items-center gap-3 flex-wrap">
+        {isRunning ? (
+          <Button
+            type="button"
+            variant="danger"
+            size="md"
+            onClick={abortBulkGenerate}
+            disabled={isAbortRequested}
+            id="bulk-generate-stop-btn"
+            className="border border-error-border bg-error-bg/30 text-error-text shadow-none hover:bg-error-bg/60 hover:text-error-text disabled:opacity-60"
+          >
+            <Square size={ICON_SIZE} aria-hidden="true" />
+            {isAbortRequested ? dictionary.stoppingBtn : dictionary.stopBtn}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={handleStart}
+            disabled={
+              keysLoading ||
+              keysError ||
+              (existingKeys !== null && missingItems.length === 0)
+            }
+            id="bulk-generate-start-btn"
+          >
+            <Sparkles size={ICON_SIZE} aria-hidden="true" />
+            {keysLoading ? DICTIONARY.global.loading : dictionary.startBtn}
+            {existingKeys && missingItems.length > 0 && !keysLoading && (
+              <span className="ml-1 opacity-75">({missingItems.length})</span>
+            )}
+          </Button>
+        )}
+      </div>
     </section>
   );
 };
