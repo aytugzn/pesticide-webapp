@@ -45,6 +45,7 @@ type AdminToastInput = {
 
 type AdminToastState = AdminToastInput & {
   id: number;
+  durationMs: number;
 };
 
 export type BulkMutationNotice = {
@@ -141,61 +142,63 @@ export const CombinationJobProvider = ({
   const pathname = usePathname();
   const isCombinationsPage = pathname === "/admin/combinations";
   const [job, setJob] = useState<CombinationBulkJobDoc | null>(null);
-  const [toast, setToast] = useState<AdminToastState | null>(null);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toastSequenceTimeoutRefs = useRef(
-    new Set<ReturnType<typeof setTimeout>>(),
+  const [toasts, setToasts] = useState<AdminToastState[]>([]);
+  const isMountedRef = useRef(true);
+  const toastIdRef = useRef(0);
+  const toastTimeoutsRef = useRef(
+    new Map<number, ReturnType<typeof setTimeout>>(),
   );
   const bulkMutationNoticeIdRef = useRef(0);
   const bulkMutationHandlersRef = useRef(new Set<BulkMutationHandler>());
 
-  const dismissToast = useCallback(() => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-      toastTimeoutRef.current = null;
+  const dismissToast = useCallback((id: number) => {
+    if (!isMountedRef.current) return;
+
+    const timeout = toastTimeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      toastTimeoutsRef.current.delete(id);
     }
-    setToast(null);
+    setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
-  const displayToast = useCallback((nextToast: AdminToastInput) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    const id = Date.now();
-    setToast({ ...nextToast, id });
-    toastTimeoutRef.current = setTimeout(() => {
-      setToast((current) => (current?.id === id ? null : current));
-      toastTimeoutRef.current = null;
-    }, getToastDuration(nextToast.variant));
-  }, []);
+  const addToasts = useCallback((nextToasts: AdminToastInput[]) => {
+    if (!isMountedRef.current || nextToasts.length === 0) return;
 
-  const clearToastSequence = useCallback(() => {
-    toastSequenceTimeoutRefs.current.forEach(clearTimeout);
-    toastSequenceTimeoutRefs.current.clear();
+    const newToasts = nextToasts.map<AdminToastState>((nextToast) => {
+      toastIdRef.current += 1;
+      return {
+        ...nextToast,
+        id: toastIdRef.current,
+        durationMs: getToastDuration(nextToast.variant),
+      };
+    });
+
+    setToasts((current) => [...newToasts, ...current]);
+    newToasts.forEach((toast) => {
+      const timeout = setTimeout(() => {
+        toastTimeoutsRef.current.delete(toast.id);
+        if (!isMountedRef.current) return;
+        setToasts((current) =>
+          current.filter((currentToast) => currentToast.id !== toast.id),
+        );
+      }, toast.durationMs);
+      toastTimeoutsRef.current.set(toast.id, timeout);
+    });
   }, []);
 
   const showToast = useCallback(
     (nextToast: AdminToastInput) => {
-      clearToastSequence();
-      displayToast(nextToast);
+      addToasts([nextToast]);
     },
-    [clearToastSequence, displayToast],
+    [addToasts],
   );
 
   const showToastSequence = useCallback(
-    (toasts: AdminToastInput[]) => {
-      clearToastSequence();
-      if (toasts.length === 0) return;
-      displayToast(toasts[0]);
-      let delayMs = 0;
-      toasts.slice(1).forEach((nextToast, index) => {
-        delayMs += getToastDuration(toasts[index].variant);
-        const timeout = setTimeout(() => {
-          toastSequenceTimeoutRefs.current.delete(timeout);
-          displayToast(nextToast);
-        }, delayMs);
-        toastSequenceTimeoutRefs.current.add(timeout);
-      });
+    (nextToasts: AdminToastInput[]) => {
+      addToasts(nextToasts);
     },
-    [clearToastSequence, displayToast],
+    [addToasts],
   );
 
   const notifyBulkMutation = useCallback(
@@ -291,14 +294,15 @@ export const CombinationJobProvider = ({
     };
   }, [isCombinationsPage, isRunning, refreshJob]);
 
-  useEffect(
-    () => () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-      toastSequenceTimeoutRefs.current.forEach(clearTimeout);
-      toastSequenceTimeoutRefs.current.clear();
-    },
-    [],
-  );
+  useEffect(() => {
+    isMountedRef.current = true;
+    const toastTimeouts = toastTimeoutsRef.current;
+    return () => {
+      isMountedRef.current = false;
+      toastTimeouts.forEach(clearTimeout);
+      toastTimeouts.clear();
+    };
+  }, []);
 
   return (
     <CombinationJobContext.Provider
@@ -323,15 +327,20 @@ export const CombinationJobProvider = ({
       }}
     >
       {children}
-      {toast && (
-        <AdminToast
-          variant={toast.variant}
-          title={getToastTitle(toast.variant)}
-          message={toast.message}
-          durationMs={getToastDuration(toast.variant)}
-          onClose={dismissToast}
-          closeAriaLabel={DICTIONARY.global.ui.closeAria}
-        />
+      {toasts.length > 0 && (
+        <div className="pointer-events-none fixed left-3 right-3 top-4 z-50 flex max-h-[calc(100dvh-2rem)] flex-col gap-3 overflow-y-auto sm:left-auto sm:right-4 sm:w-full sm:max-w-md">
+          {toasts.map((toast) => (
+            <AdminToast
+              key={toast.id}
+              variant={toast.variant}
+              title={getToastTitle(toast.variant)}
+              message={toast.message}
+              durationMs={toast.durationMs}
+              onClose={() => dismissToast(toast.id)}
+              closeAriaLabel={DICTIONARY.global.ui.closeAria}
+            />
+          ))}
+        </div>
       )}
     </CombinationJobContext.Provider>
   );

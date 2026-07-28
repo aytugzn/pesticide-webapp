@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -27,6 +27,11 @@ type BulkGeneratePanelProps = {
   regions: RegionDoc[];
   pests: PestDoc[];
 };
+
+type ExistingKeysLoadResult =
+  | { status: "success"; keys: Set<string> }
+  | { status: "error" }
+  | { status: "cancelled" };
 
 const STATUS_CONFIG: Record<
   BulkJobStatus,
@@ -88,19 +93,41 @@ export const BulkGeneratePanel = ({
   const [existingKeys, setExistingKeys] = useState<Set<string> | null>(null);
   const [keysLoading, setKeysLoading] = useState(false);
   const [keysError, setKeysError] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const isMountedRef = useRef(true);
+  const startPendingRef = useRef(false);
 
-  const loadExistingKeys = useCallback(async (): Promise<Set<string> | null> => {
-    setKeysLoading(true);
-    setKeysError(false);
-    const response = await getExistingCombinationKeys();
-    setKeysLoading(false);
-    if (!response.success || !response.data) {
-      setKeysError(true);
-      return null;
-    }
-    const keys = new Set(response.data);
-    setExistingKeys(keys);
-    return keys;
+  const loadExistingKeys =
+    useCallback(async (): Promise<ExistingKeysLoadResult> => {
+      setKeysLoading(true);
+      setKeysError(false);
+
+      try {
+        const response = await getExistingCombinationKeys();
+        if (!isMountedRef.current) return { status: "cancelled" };
+
+        if (!response.success || !response.data) {
+          setKeysError(true);
+          return { status: "error" };
+        }
+
+        const keys = new Set(response.data);
+        setExistingKeys(keys);
+        return { status: "success", keys };
+      } catch {
+        if (!isMountedRef.current) return { status: "cancelled" };
+        setKeysError(true);
+        return { status: "error" };
+      } finally {
+        if (isMountedRef.current) setKeysLoading(false);
+      }
+    }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -173,31 +200,54 @@ export const BulkGeneratePanel = ({
         : dictionary.running
             .replace("{done}", String(doneCount))
             .replace("{total}", String(jobTotal));
+  const isButtonBusy = isStarting || keysLoading;
 
   const handleStart = async () => {
-    const keys = existingKeys || (await loadExistingKeys());
-    if (!keys) {
-      showToast({
-        variant: "error",
-        message: DICTIONARY.admin.combinations.errorDefault,
-      });
-      return;
-    }
+    if (startPendingRef.current || isRunning) return;
 
-    const missing: BulkJobInputItem[] = [];
-    regions.forEach((region) => {
-      pests.forEach((pest) => {
-        if (!keys.has(`${region.slug}_${pest.slug}`)) {
-          missing.push({
-            regionSlug: region.slug,
-            regionName: region.name,
-            pestSlug: pest.slug,
-            pestName: pest.name,
-          });
-        }
+    startPendingRef.current = true;
+    setIsStarting(true);
+
+    try {
+      const keysResult: ExistingKeysLoadResult = existingKeys
+        ? { status: "success", keys: existingKeys }
+        : await loadExistingKeys();
+      if (keysResult.status === "cancelled" || !isMountedRef.current) return;
+      if (keysResult.status === "error") {
+        showToast({
+          variant: "error",
+          message: DICTIONARY.admin.combinations.errorDefault,
+        });
+        return;
+      }
+
+      const missing: BulkJobInputItem[] = [];
+      regions.forEach((region) => {
+        pests.forEach((pest) => {
+          if (!keysResult.keys.has(`${region.slug}_${pest.slug}`)) {
+            missing.push({
+              regionSlug: region.slug,
+              regionName: region.name,
+              pestSlug: pest.slug,
+              pestName: pest.name,
+            });
+          }
+        });
       });
-    });
-    if (missing.length > 0) await startBulkGenerate(missing);
+      if (missing.length > 0 && isMountedRef.current) {
+        await startBulkGenerate(missing);
+      }
+    } catch {
+      if (isMountedRef.current) {
+        showToast({
+          variant: "error",
+          message: DICTIONARY.admin.combinations.errorDefault,
+        });
+      }
+    } finally {
+      startPendingRef.current = false;
+      if (isMountedRef.current) setIsStarting(false);
+    }
   };
 
   return (
@@ -363,17 +413,36 @@ export const BulkGeneratePanel = ({
             size="md"
             onClick={handleStart}
             disabled={
-              keysLoading ||
+              isButtonBusy ||
               keysError ||
               (existingKeys !== null && missingItems.length === 0)
             }
+            aria-busy={isButtonBusy}
             id="bulk-generate-start-btn"
+            className="min-w-52 whitespace-nowrap"
           >
-            <Sparkles size={ICON_SIZE} aria-hidden="true" />
-            {keysLoading ? DICTIONARY.global.loading : dictionary.startBtn}
-            {existingKeys && missingItems.length > 0 && !keysLoading && (
-              <span className="ml-1 opacity-75">({missingItems.length})</span>
+            {isStarting ? (
+              <Loader2
+                size={ICON_SIZE}
+                className="animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Sparkles size={ICON_SIZE} aria-hidden="true" />
             )}
+            {isStarting
+              ? dictionary.statusGenerating
+              : keysLoading
+                ? DICTIONARY.global.loading
+                : dictionary.startBtn}
+            {existingKeys &&
+              missingItems.length > 0 &&
+              !keysLoading &&
+              !isStarting && (
+                <span className="ml-1 opacity-75">
+                  ({missingItems.length})
+                </span>
+              )}
           </Button>
         )}
       </div>
