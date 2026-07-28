@@ -31,6 +31,7 @@ import {
 const ACTIVE_POLL_INTERVAL_MS = 7_000;
 const TOAST_INFO_DURATION_MS = 3_500;
 const TOAST_ERROR_DURATION_MS = 5_500;
+const MAX_VISIBLE_TOASTS = 4;
 const TERMINAL_JOB_STATUSES = new Set<CombinationJobStatus>([
   "completed",
   "aborted",
@@ -142,14 +143,26 @@ export const CombinationJobProvider = ({
   const pathname = usePathname();
   const isCombinationsPage = pathname === "/admin/combinations";
   const [job, setJob] = useState<CombinationBulkJobDoc | null>(null);
-  const [toasts, setToasts] = useState<AdminToastState[]>([]);
+  const [visibleToasts, setVisibleToasts] = useState<AdminToastState[]>([]);
   const isMountedRef = useRef(true);
   const toastIdRef = useRef(0);
+  const visibleToastsRef = useRef<AdminToastState[]>([]);
+  const queuedToastsRef = useRef<AdminToastState[]>([]);
   const toastTimeoutsRef = useRef(
     new Map<number, ReturnType<typeof setTimeout>>(),
   );
   const bulkMutationNoticeIdRef = useRef(0);
   const bulkMutationHandlersRef = useRef(new Set<BulkMutationHandler>());
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    const toastTimeouts = toastTimeoutsRef.current;
+    return () => {
+      isMountedRef.current = false;
+      toastTimeouts.forEach(clearTimeout);
+      toastTimeouts.clear();
+    };
+  }, []);
 
   const dismissToast = useCallback((id: number) => {
     if (!isMountedRef.current) return;
@@ -159,7 +172,16 @@ export const CombinationJobProvider = ({
       clearTimeout(timeout);
       toastTimeoutsRef.current.delete(id);
     }
-    setToasts((current) => current.filter((toast) => toast.id !== id));
+    const currentVisible = visibleToastsRef.current;
+    if (!currentVisible.some((toast) => toast.id === id)) return;
+
+    const remainingVisible = currentVisible.filter((toast) => toast.id !== id);
+    const openSlots = MAX_VISIBLE_TOASTS - remainingVisible.length;
+    const promotedToasts = queuedToastsRef.current.splice(0, openSlots);
+    const nextVisible = [...remainingVisible, ...promotedToasts];
+
+    visibleToastsRef.current = nextVisible;
+    setVisibleToasts(nextVisible);
   }, []);
 
   const addToasts = useCallback((nextToasts: AdminToastInput[]) => {
@@ -174,18 +196,39 @@ export const CombinationJobProvider = ({
       };
     });
 
-    setToasts((current) => [...newToasts, ...current]);
-    newToasts.forEach((toast) => {
+    const currentVisible = visibleToastsRef.current;
+    const openSlots = MAX_VISIBLE_TOASTS - currentVisible.length;
+    const immediatelyVisible = newToasts.slice(0, openSlots);
+    const queuedToasts = newToasts.slice(openSlots);
+
+    queuedToastsRef.current.push(...queuedToasts);
+    if (immediatelyVisible.length > 0) {
+      const nextVisible = [...immediatelyVisible, ...currentVisible];
+      visibleToastsRef.current = nextVisible;
+      setVisibleToasts(nextVisible);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isMountedRef.current) return;
+
+    const visibleIds = new Set(visibleToasts.map((toast) => toast.id));
+
+    visibleToasts.forEach((toast) => {
+      if (toastTimeoutsRef.current.has(toast.id)) return;
+
       const timeout = setTimeout(() => {
-        toastTimeoutsRef.current.delete(toast.id);
-        if (!isMountedRef.current) return;
-        setToasts((current) =>
-          current.filter((currentToast) => currentToast.id !== toast.id),
-        );
+        dismissToast(toast.id);
       }, toast.durationMs);
       toastTimeoutsRef.current.set(toast.id, timeout);
     });
-  }, []);
+
+    toastTimeoutsRef.current.forEach((timeout, id) => {
+      if (visibleIds.has(id)) return;
+      clearTimeout(timeout);
+      toastTimeoutsRef.current.delete(id);
+    });
+  }, [dismissToast, visibleToasts]);
 
   const showToast = useCallback(
     (nextToast: AdminToastInput) => {
@@ -294,16 +337,6 @@ export const CombinationJobProvider = ({
     };
   }, [isCombinationsPage, isRunning, refreshJob]);
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    const toastTimeouts = toastTimeoutsRef.current;
-    return () => {
-      isMountedRef.current = false;
-      toastTimeouts.forEach(clearTimeout);
-      toastTimeouts.clear();
-    };
-  }, []);
-
   return (
     <CombinationJobContext.Provider
       value={{
@@ -327,9 +360,9 @@ export const CombinationJobProvider = ({
       }}
     >
       {children}
-      {toasts.length > 0 && (
+      {visibleToasts.length > 0 && (
         <div className="pointer-events-none fixed left-3 right-3 top-4 z-50 flex max-h-[calc(100dvh-2rem)] flex-col gap-3 overflow-y-auto sm:left-auto sm:right-4 sm:w-full sm:max-w-md">
-          {toasts.map((toast) => (
+          {visibleToasts.map((toast) => (
             <AdminToast
               key={toast.id}
               variant={toast.variant}

@@ -108,6 +108,10 @@ export const BulkGeneratePanel = ({
 
         if (!response.success || !response.data) {
           setKeysError(true);
+          showToast({
+            variant: "error",
+            message: DICTIONARY.admin.combinations.errorDefault,
+          });
           return { status: "error" };
         }
 
@@ -117,11 +121,15 @@ export const BulkGeneratePanel = ({
       } catch {
         if (!isMountedRef.current) return { status: "cancelled" };
         setKeysError(true);
+        showToast({
+          variant: "error",
+          message: DICTIONARY.admin.combinations.errorDefault,
+        });
         return { status: "error" };
       } finally {
         if (isMountedRef.current) setKeysLoading(false);
       }
-    }, []);
+    }, [showToast]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -213,13 +221,7 @@ export const BulkGeneratePanel = ({
         ? { status: "success", keys: existingKeys }
         : await loadExistingKeys();
       if (keysResult.status === "cancelled" || !isMountedRef.current) return;
-      if (keysResult.status === "error") {
-        showToast({
-          variant: "error",
-          message: DICTIONARY.admin.combinations.errorDefault,
-        });
-        return;
-      }
+      if (keysResult.status === "error") return;
 
       const missing: BulkJobInputItem[] = [];
       regions.forEach((region) => {
@@ -282,7 +284,7 @@ export const BulkGeneratePanel = ({
             {keysLoading
               ? DICTIONARY.global.loading
               : keysError
-                ? DICTIONARY.admin.combinations.errorDefault
+                ? dictionary.statusError
                 : !existingKeys
                   ? dictionary.calculateRequired
                   : missingItems.length === 0
@@ -358,12 +360,6 @@ export const BulkGeneratePanel = ({
         jobStatus !== "completed" && (
           <Alert variant="info" message={dictionary.noMissing} />
         )}
-      {keysError && (
-        <Alert
-          variant="error"
-          message={DICTIONARY.admin.combinations.errorDefault}
-        />
-      )}
 
       {progress.length > 0 && (
         <ul className="divide-y divide-brand-border/40 rounded-xl border border-brand-border/60 overflow-hidden max-h-72 overflow-y-auto">

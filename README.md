@@ -1,107 +1,203 @@
-# AI Destekli Local SEO Yönetim Platformu
+# DMR İlaçlama
 
-## A) Kısa Açıklama
+DMR İlaçlama, public kurumsal siteyi ve local SEO içeriklerini yöneten Next.js tabanlı full-stack bir uygulamadır. Public sayfalar yayınlanmış bir veri snapshot'ından üretilir; bölgeler, haşereler, bölge–haşere kombinasyonları, ayarlar, görseller, yorumlar ve iletişim talepleri yetkilendirilmiş admin panelinden yönetilir.
 
-Bu proje, Next.js 16 kullanılarak geliştirilmiş, full-stack bir local SEO ve içerik yönetim platformudur.
-Sistem, admin panel üzerinden yönetilebilen bölge, hizmet/haşere ve bunların özel kombinasyonlarına ait sayfalar ile dinamik landing page'ler oluşturulmasına olanak tanır.
-Yapay zeka (Gemini API) destekli içerik üretimi ve yeniden oluşturma akışlarına sahip olan bu platform, dinamik SEO sayfaları, sitemap otomasyonu, structured data (JSON-LD) desteği ve Next.js'in modern cache invalidation mantığı ile donatılmıştır. Veritabanı ve kimlik doğrulama katmanlarında Firebase Auth, Firestore ve Firebase Admin SDK kullanılmaktadır.
+## Temel Özellikler
 
-## B) Öne Çıkan Özellikler
+- Bölge, haşere ve bölge–haşere kombinasyonları için dinamik SEO sayfaları
+- Metadata, Open Graph, LocalBusiness/Service/Breadcrumb JSON-LD, sitemap ve robots üretimi
+- Gemini ile bölge, haşere ve kombinasyon içeriği üretme/yeniden üretme
+- GitHub Actions üzerinde çalışan, Firestore tabanlı toplu kombinasyon üretim işi
+- Kombinasyonlar için arşivleme, geri yükleme, aktiflik ve filtreli toplu mutasyonlar
+- Ayarlar, site görselleri ve yorumlar için taslak ile public yayın ayrımı
+- Cloudinary tabanlı doğrulanmış görsel yükleme ve güvenli rollback/cleanup akışı
+- İletişim taleplerini Firestore'a kaydetme, Telegram bildirimi ve admin mesaj yönetimi
+- Firestore published snapshot, Redis last-known-good fallback ve granular Next.js cache tag'leri
+- Admin genelinde en fazla dört görünür öğe ve FIFO bekleme kuyruğu kullanan toast sistemi
 
-- **Dinamik SEO Sayfaları:** Bölge ve hizmet/haşere bazlı hedeflenmiş açılış sayfaları.
-- **Kombinasyon Üretimi:** Bölge + hizmet kombinasyonlarından yüksek dönüşümlü lokal SEO landing page'leri üretimi.
-- **Admin Panel Akışları:** İçeriklerin create, edit, update ve archive akışlarının tek merkezden güvenli yönetimi.
-- **AI Destekli İçerik Üretimi:** Tekil sayfa veya kombinasyonlar için akıllı ve SEO uyumlu içerik üretimi / yeniden oluşturma.
-- **Bulk Content Generation Job Sistemi:** Çoklu kombinasyonları Firestore job kaydı ve GitHub Actions worker ile tarayıcıdan bağımsız üreten otomasyon.
-- **Gelişmiş Job Kontrolü:** Transaction tabanlı claim, fail-fast retry, idempotent recovery, heartbeat, stale ve cooperative stop mekanizmaları.
-- **Gemini Çoklu Key ve Fallback:** Gemini API kotalarını aşmamak için multi-key fallback ve quota handling stratejisi.
-- **Soft Archive:** Verileri kalıcı silmek (hard delete) yerine güvenli soft archive mantığı.
-- **Defensive Public Checks:** Public sayfalarda inactive ve archived kayıtların görünmesini engelleyen güvenli mimari.
-- **Sitemap ve Metadata Yönetimi:** Hata durumlarında boş sitemap üretmeyen, dinamik ve güvenli sitemap/metadata yapısı.
-- **Firebase Auth Koruması:** Admin erişimlerinin güvenliği.
-- **Firestore + Server Actions:** Veri yönetiminin modern Server Actions ile sunucu tarafında yapılması.
-- **Validasyon ve Güvenlik:** Girdiler için Zod validation ve zengin metinler için sanitize-html ile XSS koruması.
-- **Next.js 16 Standartları:** Yeni cacheComponents, cacheTag ve updateTag yaklaşımlarının tam uyumlu kullanımı.
+## Teknoloji Yığını
 
-## C) Tech Stack
+Sürümler `package.json` içindeki güncel bağımlılıklardan alınmıştır.
 
-- **Next.js 16 App Router**
-- **React**
-- **TypeScript**
-- **Tailwind CSS v4**
-- **Firebase Auth**
-- **Firestore**
-- **Firebase Admin SDK**
-- **Gemini API**
-- **Zod**
-- **sanitize-html**
-- **Lucide React**
+| Katman | Teknoloji |
+| --- | --- |
+| Framework | Next.js `16.2.9` App Router, Cache Components ve React Compiler |
+| UI | React / React DOM `19.2.4`, Tailwind CSS `^4`, Lucide React `^1.21.0` |
+| Dil | TypeScript `^5` |
+| Veri ve kimlik | Firebase client `^12.15.0`, Firebase Admin `^14.0.0`, Firestore, Firebase Authentication |
+| Validasyon ve güvenli HTML | Zod `^4.4.3`, sanitize-html `^2.17.5` |
+| AI | `@google/generative-ai` `^0.24.1` |
+| Redis ve rate limit | `@upstash/redis` `^1.38.0`, `@upstash/ratelimit` `^2.0.8` |
+| İçerik ve carousel | Tiptap `^3.27.1`, Embla Carousel `^8.6.0` |
+| Görsel ve bildirim entegrasyonları | Cloudinary HTTP API, Telegram Bot API, Google Places API |
 
-## D) Mimari Notlar
+## Uygulama Mimarisi
 
-- **Server-First Yapı:** Mimari öncelikli olarak sunucu tarafında çalışacak şekilde dizayn edilmiştir.
-- **Server Actions:** Tüm admin ve veritabanı mutasyonları Server Actions üzerinden yürütülür.
-- **Client/Server Sınırı:** Client component'lerde server-only importları bulunmaz.
-- **Authorization:** Tüm admin işlemleri `requireAdmin` helper'ı ile sunucu tarafında korunur.
-- **Public Segment Güvenliği:** Public sayfalar inactive veya archived statüsündeki kayıtları hiçbir koşulda göstermez.
-- **Cache Yönetimi:** Mutasyonlardan sonra veriyi tazelemek için `updateTag` kullanılır; `revalidatePath` veya `revalidateTag` kullanımından kaçınılmıştır.
-- **AI İşlem Onayı:** Tekil üretimde admin onayı korunur; açıkça başlatılan toplu job ise eksik canonical kombinasyonları create-only olarak otomatik kaydeder ve public snapshot'ı değiştirmez.
-- **Create Flow:** Yeni kayıt oluşturma işlemleri `docRef.create` kullanılarak create-only (üzerine yazmama) prensibiyle çalışır.
-- **Edit Flow:** Düzenlemeler ayrı update action'ları üzerinden ilerler.
-- **Archive Flow:** Veri kaybını önlemek için hard delete yerine soft archive yaklaşımı uygulanır.
+- `src/app`: App Router route'ları, layout'lar, metadata, sitemap, robots ve Telegram webhook endpoint'i.
+- `src/features`: Domain bazlı Server Action, schema, veri erişimi ve UI bileşenleri.
+- `src/lib`: Firebase Admin/Auth adaptörleri, Gemini, Redis snapshot, public aktivasyon, rate limit ve Telegram entegrasyonları.
+- `src/components`: Ortak layout ve UI bileşenleri.
+- `src/constants`: Route, metin ve UI sabitleri.
+- `scripts`: GitHub Actions kombinasyon worker'ı ve Telegram webhook kurulum aracı.
 
-## E) Kurulum
+Admin mutasyonları sunucuda çalışır, ilgili Zod şemalarıyla doğrulanır ve korunan akışlarda `requireAdmin` kontrolünden geçer. Client Firebase yapılandırması yalnızca `NEXT_PUBLIC_` değişkenlerini kullanır; Firebase Admin, Gemini, GitHub, Cloudinary, Redis ve Telegram sırları server-only modüllerde tutulur.
 
-Projenin yerel ortamda çalıştırılması için aşağıdaki komutları kullanın:
+## Public Route Yapısı
 
-1. Bağımlılıkları yükleyin:
-   ```bash
-   npm install
-   ```
+| Route | İşlev |
+| --- | --- |
+| `/` | Ana sayfa, yayınlanmış görseller, hizmetler, yorumlar ve iletişim alanları |
+| `/hizmetler` | Hizmet/haşere listesi |
+| `/bolgeler` | Bölge listesi |
+| `/hasere/[pestSlug]` | Haşere bazlı içerik sayfası |
+| `/hasere/[pestSlug]/bolgeler` | Haşere için yayınlanmış bölge kombinasyonları |
+| `/bolge/[regionSlug]` | Bölge bazlı içerik sayfası |
+| `/bolge/[regionSlug]/hizmetler` | Bölge için yayınlanmış hizmet kombinasyonları |
+| `/[regionSlug]/[pestSlug]` | Bölge–haşere kombinasyon landing page'i |
+| `/iletisim` | İletişim formu ve iletişim bilgileri |
+| `/hakkimizda` | Kurumsal içerik |
+| `/izinler-sertifikalar` | İzin ve sertifika sayfası |
+| `/gizlilik-politikasi` | Gizlilik politikası |
+| `/kullanim-kosullari` | Kullanım koşulları |
+| `/kvkk-aydinlatma-metni` | KVKK aydınlatma metni |
+| `/sitemap.xml`, `/robots.txt` | Yayınlanmış route envanteri ve crawler kuralları |
 
-2. Ortam değişkenlerini yapılandırın:
-   Ana dizinde `.env.local` dosyası oluşturun ve aşağıdaki değişkenleri gerekli değerlerle doldurun:
-   ```env
-   NEXT_PUBLIC_FIRESTORE_API_KEY=
-   NEXT_PUBLIC_FIRESTORE_AUTH_DOMAIN=
-   NEXT_PUBLIC_FIRESTORE_PROJECT_ID=
-   NEXT_PUBLIC_FIRESTORE_STORAGE_BUCKET=
-   NEXT_PUBLIC_FIRESTORE_MESSAGING_SENDER_ID=
-   NEXT_PUBLIC_FIRESTORE_APP_ID=
-   NEXT_PUBLIC_FIRESTORE_MEASUREMENT_ID=
-   FIREBASE_PROJECT_ID=
-   FIREBASE_CLIENT_EMAIL=
-   FIREBASE_PRIVATE_KEY=
-   ADMIN_EMAIL=
-   # SESSION_COOKIE_SECRET= (Kullanılmıyor)
-   GEMINI_API_KEY=
-   GEMINI_API_KEYS=
-   RATE_LIMIT_SECRET= # İletişim formu gibi endpoint'lerde CSRF/rate-limit check için kullanılır
-   UPSTASH_REDIS_REST_URL= # Local dev'de boş bırakın. Prod'da zorunludur (https://... ile başlamalı).
-   UPSTASH_REDIS_REST_TOKEN= # Local dev'de boş bırakın. Prod'da zorunludur.
-   TELEGRAM_BOT_TOKEN=
-   TELEGRAM_CHAT_ID=
-   TELEGRAM_WEBHOOK_SECRET=
-   TELEGRAM_WEBHOOK_ORIGIN= # Server-only sabit HTTPS webhook origin'i (opsiyonel; Vercel production URL fallback'i vardır)
-   VERCEL_AUTOMATION_BYPASS_SECRET= # Yalnızca webhook hedefi Vercel Deployment Protection arkasındaysa
-   GOOGLE_PLACES_API_KEY=
-   # GOOGLE_PLACE_ID= (Kullanılmıyor)
-   NEXT_PUBLIC_SITE_URL=
-   NEXT_PUBLIC_DEVELOPER_NAME=
-   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
-   CLOUDINARY_CLOUD_NAME=
-   CLOUDINARY_API_KEY=
-   CLOUDINARY_API_SECRET=
-   ```
+Dinamik public route'lar yalnızca yayınlanmış snapshot içindeki aktif ve arşivlenmemiş kayıtları kullanır. Snapshot sağlayıcılarının tamamı kullanılamazsa sitemap ve dinamik route üretimi boş veri yayınlamak yerine kontrollü hata verir.
 
-3. Geliştirme sunucusunu başlatın:
-   ```bash
-   npm run dev
-   ```
+## Admin Panel
 
-## F) Kontrol Komutları
+Admin route'ları Firebase session cookie ve izin verilen `ADMIN_EMAIL` ile korunur; tüm admin sayfaları `noindex` olarak işaretlenir.
 
-Geliştirme süresince ve commit öncesi kalite kontrolü için aşağıdaki komutları kullanabilirsiniz:
+| Route | İşlev |
+| --- | --- |
+| `/admin` | Bölge, haşere ve kombinasyon sayaçları ile sistem durumu |
+| `/admin/regions` | Bölge oluşturma, AI içerik üretimi, düzenleme, aktiflik ve silme akışları |
+| `/admin/pests` | Haşere oluşturma, AI içerik üretimi, düzenleme, aktiflik ve silme akışları |
+| `/admin/combinations` | Tekil üretim/düzenleme, arşiv/geri yükleme, aktiflik, toplu mutasyon ve toplu AI üretimi |
+| `/admin/messages` | İletişim taleplerini filtreleme, durum güncelleme ve süresi dolan kayıtları temizleme |
+| `/admin/reviews` | Yorum taslağını oluşturma, sıralama, düzenleme ve silme |
+| `/admin/service-reports` | Firestore'daki servis raporlarının salt okunur özeti |
+| `/admin/site-images` | Hero, hizmet ve neden-biz görsellerinin taslak yönetimi ve Cloudinary yüklemeleri |
+| `/admin/settings` | İletişim, sosyal bağlantı, Google Place ID ve carousel süre ayarları |
+
+Sidebar'daki **Canlı Siteyi Güncelle** akışı ayar, site görseli ve yorum taslaklarını sürüm kontrollü olarak hazırlar; canonical published snapshot'ı günceller ve değişen domain'lere ait cache tag'lerini aktive eder.
+
+Global admin toast sistemi stabil kimlikli bağımsız timer'lar kullanır. Aynı anda en fazla dört toast render edilir; fazlası FIFO kuyruğunda bekler ve timer/progress yalnızca toast görünür olduğunda başlar. Field-level validation mesajları ve kalıcı bağlam bildirimleri inline kalır.
+
+## Veri, Cache ve Yayınlama Modeli
+
+1. **Editable/canonical veri:** Admin tarafından yönetilen bölgeler, haşereler, kombinasyonlar, mesajlar ve taslak dokümanlar Firestore'da tutulur.
+2. **Published veri:** Public site doğrudan editable koleksiyonlara dönmez; yetkili yayın akışı `system/publicSnapshot` dokümanındaki canonical public görünümü oluşturur.
+3. **Sağlayıcı sırası:** Public çözümleyici önce Firestore published snapshot'ını okur. Geçerli snapshot alınamazsa Upstash Redis'teki `last-known-good` kopyaya düşer.
+4. **Next.js cache:** Public projeksiyonlar `"use cache"`, `cacheLife("max")` ve domain bazlı `cacheTag` değerleriyle cache'lenir. Başarılı aktivasyon yalnızca değişen tag'leri `updateTag` ile geçersiz kılar.
+5. **Normal save ve publish ayrımı:** Ayar, site görseli ve yorum kaydetme işlemleri taslak üretir; public görünüm **Canlı Siteyi Güncelle** sonrasında değişir. Toplu AI worker canonical kombinasyon kaydı oluşturur ancak public snapshot'ı kendiliğinden yayınlamaz. Aktiflik mutasyonları kontrollü published patch/aktivasyon dener ve yayınlama gerektiğinde admin'e bildirir.
+
+Redis aktivasyonu veya cache invalidation başarısız olursa Firestore'daki commit geri alınmaz; pending aktivasyon bilgisi korunur ve sonraki yayın denemesinde tekrar değerlendirilebilir.
+
+## Toplu Kombinasyon Worker'ı
+
+Admin panelindeki toplu üretim akışı:
+
+1. Eksik kombinasyonları hesaplar ve Firestore'da tek bir aktif job oluşturur.
+2. GitHub REST API ile `.github/workflows/generate-combinations.yml` workflow'unu dispatch eder.
+3. GitHub runner `npm ci` sonrasında `combinations:worker` scriptini çalıştırır.
+4. Worker job'ı transaction içinde claim eder, öğeleri sırayla işler, heartbeat/ilerleme yazar ve sınırlı retry uygular.
+5. Durdurma isteği queued işi kapatır veya çalışan worker'ın bir sonraki güvenli sınırda durmasını sağlar.
+
+GitHub workflow concurrency grubu aynı anda birden fazla combination-generation run'ının çalışmasını engeller. Worker create-only/idempotent kontrollerle mevcut kaydın üzerine yazmaz ve secret ya da üretilmiş içeriği loglamaz.
+
+## Kurulum
+
+Gereksinimler:
+
+- Node.js `>=22.0.0`
+- npm ve repository'deki `package-lock.json`
+- Kullanılacak özelliklere göre Firebase, Upstash, Gemini, GitHub, Cloudinary, Telegram ve Google Cloud yapılandırmaları
+
+```bash
+npm ci
+```
+
+Kök dizinde `.env.local` oluşturun. Repository'de `.env.example` bulunmadığı için değişken adlarını aşağıdaki tablolardan alın; gerçek secret veya service account içeriğini dokümana ya da Git'e eklemeyin.
+
+Geliştirme sunucusu:
+
+```bash
+npm run dev
+```
+
+Production:
+
+```bash
+npm run build
+npm run start
+```
+
+## Environment Variables
+
+### Çekirdek Firebase ve admin yapılandırması
+
+Aşağıdaki client değişkenlerinin tamamı `src/lib/firebase.ts` tarafından gerekli kabul edilir:
+
+```text
+NEXT_PUBLIC_FIRESTORE_API_KEY
+NEXT_PUBLIC_FIRESTORE_AUTH_DOMAIN
+NEXT_PUBLIC_FIRESTORE_PROJECT_ID
+NEXT_PUBLIC_FIRESTORE_STORAGE_BUCKET
+NEXT_PUBLIC_FIRESTORE_MESSAGING_SENDER_ID
+NEXT_PUBLIC_FIRESTORE_APP_ID
+NEXT_PUBLIC_FIRESTORE_MEASUREMENT_ID
+```
+
+Server-side Firestore, Authentication ve admin erişimi:
+
+```text
+FIREBASE_PROJECT_ID
+FIREBASE_CLIENT_EMAIL
+FIREBASE_PRIVATE_KEY
+ADMIN_EMAIL
+```
+
+### Production altyapısı
+
+| Değişken | Kullanım |
+| --- | --- |
+| `UPSTASH_REDIS_REST_URL` | Public last-known-good snapshot ve rate-limit Redis bağlantısı |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash REST kimlik bilgisi |
+| `RATE_LIMIT_SECRET` | IP/telefon gibi rate-limit kimliklerini HMAC-SHA256 ile hash'leme |
+| `NEXT_PUBLIC_SITE_URL` | Canonical metadata, sitemap ve mutlak URL tabanı; yoksa dictionary fallback'i kullanılır |
+
+Upstash ve `RATE_LIMIT_SECRET` geliştirmede eksikse rate limit uyarı vererek bypass edilebilir; production'da iletişim ve login rate-limit akışları fail-closed davranır.
+
+### Özellik bazlı yapılandırma
+
+| Özellik | Değişkenler |
+| --- | --- |
+| Gemini | `GEMINI_API_KEYS` veya `GEMINI_API_KEY` |
+| GitHub Actions dispatch | `GITHUB_ACTIONS_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_ACTIONS_REF`, `GITHUB_ACTIONS_WORKFLOW` |
+| Cloudinary | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
+| Telegram bildirimleri | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` |
+| Telegram webhook | `TELEGRAM_WEBHOOK_SECRET`; origin için `TELEGRAM_WEBHOOK_ORIGIN` veya Vercel tarafından sağlanan `VERCEL_PROJECT_PRODUCTION_URL` |
+| Vercel korumalı webhook | Opsiyonel `VERCEL_AUTOMATION_BYPASS_SECRET` |
+| Google yorum istatistikleri | Yayınlanmış Google Place ID kullanılıyorsa `GOOGLE_PLACES_API_KEY` |
+| Footer geliştirici bilgisi | Opsiyonel `NEXT_PUBLIC_DEVELOPER_NAME` |
+
+`NODE_ENV`, `GITHUB_RUN_ID` ve `GITHUB_RUN_ATTEMPT` runtime/CI tarafından sağlanır; kullanıcı secret'ı değildir. GitHub Actions worker için Firebase Admin ve Gemini değerleri repository Actions secrets alanında ayrıca tanımlanmalıdır.
+
+## Kullanılabilir Komutlar
+
+| Komut | Açıklama |
+| --- | --- |
+| `npm run dev` | Next.js geliştirme sunucusu |
+| `npm run lint` | ESLint kontrolü |
+| `npx tsc --noEmit` | TypeScript tip kontrolü |
+| `npm run build` | Optimize production build |
+| `npm run start` | Production sunucusu |
+| `npm run combinations:worker -- --job-id <job-id>` | Belirli Firestore toplu üretim job'ını çalıştırır; normalde GitHub Actions çağırır |
+| `npm run telegram:webhook:set -- --dry-run` | Production webhook endpoint ve secret eşleşmesini kayıt yapmadan doğrular |
+| `npm run telegram:webhook:set` | Telegram webhook'unu kaydeder ve `getWebhookInfo` ile doğrular |
+
+Commit öncesi önerilen kontrol seti:
 
 ```bash
 npm run lint
@@ -110,85 +206,43 @@ npm run build
 git diff --check
 ```
 
-**Build Notu:** Firestore free-tier kotası doluysa, build sırasında public statik sayfaların verisi çekilemediği için süreç `RESOURCE_EXHAUSTED` hatasıyla başarısız olabilir. Bu durumda kod sağlığını ölçmek için `lint` ve `typecheck` (tsc) sonuçları ayrı değerlendirilmelidir.
+## Güvenlik ve Dayanıklılık
 
-## G) Güvenlik Notları
+- `/admin/:path*` istekleri proxy katmanında session cookie, token iptali ve email allowlist ile doğrulanır.
+- Korunan Server Action'lar UI kontrolüne güvenmeden `requireAdmin` çağırır.
+- Zod şemaları action input'larını, job belgelerini, provider yanıtlarını ve webhook payload'larını doğrular.
+- Public rich text, izinli tag/attribute/scheme listesiyle `sanitize-html` üzerinden render edilir.
+- İletişim ve admin login akışları Upstash sliding-window rate limit kullanır; ham IP/telefon yerine HMAC hash saklanır.
+- İletişim formunda honeypot ve bekleyen talep limiti bulunur. Telegram başarısız olsa bile Firestore'a kaydedilmiş lead başarılı kabul edilir.
+- Görsel yüklemede MIME, dosya boyutu ve dosya imzası doğrulanır; Cloudinary secret client bundle'a gönderilmez.
+- Telegram webhook yalnızca doğru secret header'ı kabul eder ve callback verisini Zod ile sınırlar.
+- Firestore toplu job transaction'ları ve GitHub concurrency duplicate worker/job riskini sınırlar.
+- Public route'lar inactive veya archived kayıtları snapshot projeksiyonunda filtreler.
 
-- `.env` ve `.env.local` dosyaları kesinlikle git repolarına commit edilmemelidir.
-- `FIREBASE_PRIVATE_KEY` ve `GEMINI_API_KEY` (veya `GEMINI_API_KEYS`) gibi sırlar client tarafına asla sızmamalıdır.
-- `NEXT_PUBLIC_` öneki (prefix) sadece gerçekten public Firebase client yapılandırmaları için kullanılmalıdır.
-- Admin işlemleri sadece UI tarafında değil, backend'de server side (`requireAdmin` vb.) olarak da mutlaka doğrulanır.
-- Firestore Admin SDK, sistem düzeyinde yetkilere sahip olduğu için tüm action'larda ekstra auth guard katmanı gereklidir.
+## Deployment ve Operasyon Notları
 
-## H) Deployment Notları
+- Deployment ortamı Node.js 22 veya üzerini sağlamalıdır.
+- `next/font/google` kullanıldığı için build sırasında Google Fonts erişimi gerekebilir.
+- Statik parametreler ve sitemap published snapshot sağlayıcı zincirini kullanır; deployment sırasında geçerli Firestore snapshot veya Redis fallback erişimi bulunmalıdır.
+- Firebase private key satır sonları environment değerinde escaped ise server başlangıcında normalize edilir.
+- Telegram webhook origin'i yalnızca HTTPS production origin kabul eder; localhost, private hostname ve IP adresleri reddedilir.
+- Deployment Protection kullanılıyorsa automation bypass secret yalnızca deployment platformunun secret alanında tutulmalıdır.
+- GitHub fine-grained token yalnızca ilgili repository ve Actions read/write yetkisiyle sınırlandırılmalıdır.
+- `.env`, `.env.local`, service account dosyaları, API anahtarları ve webhook secret'ları commit edilmemelidir.
 
-- **Ortam:** Node.js 22+ sürümü gereklidir.
-- Çevresel değişkenler (Environment variables) deployment platformunda (örn. Vercel) eksiksiz olarak tanımlanmalıdır.
-- Firebase, Firestore ve Auth servisleri üretim ortamına göre doğru yapılandırılmalıdır.
-- Production ortamına çıkmadan önce `lint`, `typecheck` ve `build` komutları başarıyla çalıştırılmalıdır.
-- **Google Fonts:** Proje `next/font/google` kullandığı için build (derleme) sırasında dış ağa (Google sunucularına) erişim gerektirir. Kapalı CI/CD ortamlarında veya internet erişimi kısıtlı deployment platformlarında build hata verebilir. Deploy ortamının dış ağa açık olduğundan emin olun.
-- Firebase tarafındaki Firestore kotaları ve Google Cloud budget limitleri canlı sistemde sürekli takip edilmelidir.
-
-### Telegram Webhook Kaydı
-
-Telegram webhook'u bot seviyesinde tek seferlik bir deployment ayarıdır; iletişim formu veya mesaj gönderme akışı içinde yeniden kaydedilmez. Kayıt scripti origin'i önce server-only `TELEGRAM_WEBHOOK_ORIGIN`, ardından Vercel system environment variable'ı `VERCEL_PROJECT_PRODUCTION_URL` üzerinden çözer. İki değer de yoksa localhost veya tahminî domain kullanmadan kontrollü biçimde durur. Mevcut sabit production alias'ı `https://pesticide-webapp.vercel.app` adresidir; webhook origin'i canonical site URL'sinden bağımsızdır ve bu işlem için `NEXT_PUBLIC_SITE_URL` değiştirilmez.
-
-Endpoint ve production secret eşleşmesini Firestore'a dokunmayan payload ile doğrulamak için:
-
-```bash
-npm run telegram:webhook:set -- --dry-run
-```
-
-Probe başarılı olduktan sonra webhook'u kaydetmek ve `getWebhookInfo` ile doğrulamak için:
-
-```bash
-npm run telegram:webhook:set
-```
-
-Generated deployment URL'si Vercel Authentication arkasındaysa Project Settings → Deployment Protection → Protection Bypass for Automation üzerinden oluşturulan `VERCEL_AUTOMATION_BYPASS_SECRET` kullanılabilir. Script bu değeri URL-safe query parametresi olarak ekler ve terminal çıktısında maskeler. Sabit production alias'ı doğrudan erişilebiliyorsa bypass gerekli değildir.
-
-Webhook origin'i veya secret değiştiğinde komut yeniden çalıştırılır. İleride custom domaine geçildiğinde yalnızca `TELEGRAM_WEBHOOK_ORIGIN` yeni HTTPS origin'i gösterecek şekilde güncellenir; iletişim formu, canonical metadata ve route path'i değişmez. Token ve secret değerleri repoya, terminal komutuna veya ekran görüntüsüne yazılmamalıdır.
-## I) GitHub Actions Background Combination Worker Kurulumu
-
-Toplu combination üretimi Firebase Spark planını korur. Firebase Functions, Cloud Tasks veya Blaze planı kullanılmaz. Admin paneli Firestore'da `queued` job oluşturur ve GitHub REST API ile `.github/workflows/generate-combinations.yml` workflow'unu tetikler. Üretim GitHub runner üzerinde yürüdüğü için admin sekmesi, tarayıcı veya bilgisayar kapatılsa da işlem devam eder.
-
-### 1. Vercel environment variables
-
-Vercel projesinin server environment alanına aşağıdaki değerleri ekleyin. Token'a `NEXT_PUBLIC_` prefix'i vermeyin.
-
-```env
-GITHUB_ACTIONS_TOKEN=
-GITHUB_REPOSITORY=owner/repository
-GITHUB_ACTIONS_REF=main
-GITHUB_ACTIONS_WORKFLOW=generate-combinations.yml
-```
-
-`GITHUB_ACTIONS_TOKEN` için yalnızca bu repository'yi seçen fine-grained personal access token oluşturun ve repository permission olarak yalnızca **Actions: Read and write** verin. Organization geneli veya ilgisiz repository yetkileri vermeyin. Token'ın amacı yalnızca workflow dispatch endpoint'ini çağırmaktır.
-
-### 2. GitHub Actions repository secrets
-
-Repository → Settings → Secrets and variables → Actions alanında şunları tanımlayın:
+## Proje Yapısı
 
 ```text
-FIREBASE_PROJECT_ID
-FIREBASE_CLIENT_EMAIL
-FIREBASE_PRIVATE_KEY
-GEMINI_API_KEYS
+src/
+  app/            App Router route'ları, metadata ve API endpoint'leri
+  components/     Ortak layout ve UI bileşenleri
+  constants/      Route, dictionary ve UI sabitleri
+  features/       Domain bazlı action, schema, data ve bileşenler
+  hooks/          Ortak client hook'ları
+  lib/            Server entegrasyonları, auth, cache ve provider katmanı
+  types/          Paylaşılan TypeScript tipleri
+  utils/          Saf yardımcı fonksiyonlar
+scripts/          Combination worker ve Telegram webhook aracı
+.github/workflows GitHub Actions toplu üretim workflow'u
+public/           Logo ve statik görseller
 ```
-
-Tek Gemini key kullanılıyorsa `GEMINI_API_KEYS` yerine `GEMINI_API_KEY` tanımlanabilir. Multi-key değerinde anahtarları mevcut davranışla uyumlu olarak virgülle ayırın. Firebase private key'i yalnızca encrypted Actions secret olarak saklayın; service account JSON dosyasını veya private key'i repository'ye eklemeyin.
-
-### 3. Workflow erişimi ve çalıştırma
-
-- Workflow dosyası GitHub repository'nin default branch'inde bulunmalıdır.
-- Admin panelindeki **Tüm Eksikleri Üret** butonu önce Firestore job belgesini oluşturur; GitHub dispatch güncel `200` workflow run yanıtıyla veya geriye uyumlu `204` yanıtıyla kabul edilince başlangıç başarılı sayılır. `200` yanıtındaki run kimliği ve URL alanları güvenli biçimde doğrulanır.
-- Runner job'ı transaction içinde claim eder, item'ları sırayla işler ve ilerlemeyi Firestore'a yazar.
-- **Durdur** isteği queued job'ı doğrudan kapatır. Running job'da aktif Gemini isteği zorla kesilmeyebilir; istek döndükten sonra yeni retry veya item başlatılmaz.
-- Başarısız veya durdurulmuş job sonrasında panel mevcut combination anahtarlarını yeniden okur. Yeniden başlatma yalnızca eksikleri gönderir.
-- Toplu kayıt canonical `combinations` koleksiyonuna yapılır. Redis public snapshot ve **Canlı Siteyi Güncelle** yayın sınırı otomatik değiştirilmez.
-
-### 4. Kota ve log güvenliği
-
-Firestore kullanımı Firebase Spark kotasına tabidir; bu mimari Firebase Functions veya Blaze gerektirmez. GitHub Actions'ın aylık ücretsiz kullanım kotası Firebase kotasından ayrıdır ve repository/account ayarlarından ayrıca izlenmelidir.
-
-Workflow loglarında secret, API key, private key, raw Gemini yanıtı veya üretilen AI içeriği bulunmamalıdır. Worker yalnızca kısa İngilizce operasyon logları ve güvenli sınıflandırılmış hata kodları yazar.

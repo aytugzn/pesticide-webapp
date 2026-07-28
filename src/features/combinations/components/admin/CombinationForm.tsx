@@ -31,13 +31,13 @@ export const CombinationForm = ({ regions, pests }: CombinationFormProps) => {
   const { showToast } = useCombinationAdminToast();
 
   const handleActionFeedback = useCallback((nextFeedback: Feedback) => {
-    setFeedback(nextFeedback);
-    if (nextFeedback) {
-      showToast({
-        variant: nextFeedback.type,
-        message: nextFeedback.message,
-      });
-    }
+    setFeedback(null);
+    if (!nextFeedback) return;
+
+    showToast({
+      variant: nextFeedback.type,
+      message: nextFeedback.message,
+    });
   }, [showToast]);
 
   const selection = useCombinationSelection();

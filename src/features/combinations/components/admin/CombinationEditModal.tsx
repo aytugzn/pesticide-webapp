@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
-import { Alert } from "@/components/ui/Alert";
 import { SeoFaqEditor } from "@/features/seo-content/components/admin/SeoFaqEditor";
 import { updateCombination } from "../../actions";
 import { generateCombinationContent } from "../../actions/ai";
@@ -15,8 +14,6 @@ import { COMBINATION_ERRORS } from "../../types";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useCombinationAdminToast } from "./CombinationJobProvider";
 import type { CombinationRow, GeneratedContent } from "../../types";
-
-type Feedback = { type: "success" | "error"; message: string } | null;
 
 type CombinationEditModalProps = {
   isOpen: boolean;
@@ -46,16 +43,14 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
 
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>(null);
-
-  const publishFeedback = (nextFeedback: Feedback) => {
-    setFeedback(nextFeedback);
-    if (nextFeedback) {
-      showToast({
-        variant: nextFeedback.type,
-        message: nextFeedback.message,
-      });
-    }
+  const publishFeedback = (feedback: {
+    type: "success" | "error";
+    message: string;
+  }) => {
+    showToast({
+      variant: feedback.type,
+      message: feedback.message,
+    });
   };
 
   const updateField = <TKey extends keyof GeneratedContent>(
@@ -93,7 +88,6 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
     if (!isDirty || !isFormValid) return;
 
     setIsSaving(true);
-    setFeedback(null);
 
     try {
       const res = await updateCombination(row.region, row.pest, formData);
@@ -113,7 +107,6 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
 
   const handleRegenerate = async () => {
     setIsGenerating(true);
-    setFeedback(null);
 
     try {
       const res = await generateCombinationContent(row.region, row.pest);
@@ -182,10 +175,6 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
               disabled
             />
           </div>
-
-          {feedback && (
-            <Alert variant={feedback.type} message={feedback.message} />
-          )}
 
           <div className="space-y-4">
             <Input

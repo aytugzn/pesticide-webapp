@@ -371,14 +371,9 @@ export const SeoEntityForm = <TError extends string>({
 
         if (res.success) {
           saveOutcome = "succeeded";
-          const nextFeedback = {
-            type: "success" as const,
-            message: d.updateSuccess,
-          };
-          setFeedback(nextFeedback);
           showToast({
-            variant: nextFeedback.type,
-            message: nextFeedback.message,
+            variant: "success",
+            message: d.updateSuccess,
           });
           router.refresh();
           onSuccess?.();
@@ -402,14 +397,9 @@ export const SeoEntityForm = <TError extends string>({
 
       if (res.success) {
         saveOutcome = "succeeded";
-        const nextFeedback = {
-          type: "success" as const,
-          message: d.successSave,
-        };
-        setFeedback(nextFeedback);
         showToast({
-          variant: nextFeedback.type,
-          message: nextFeedback.message,
+          variant: "success",
+          message: d.successSave,
         });
 
         if (!initialData) {
