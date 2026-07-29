@@ -21,7 +21,6 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { GlobalRevalidateButton } from "@/features/settings/components/admin/GlobalRevalidateButton";
-import logoImg from "@/../public/logo-wordmark.svg";
 
 type AdminSidebarProps = {
   isOpen: boolean;
@@ -94,8 +93,10 @@ const SidebarHeader = ({ onClose }: { onClose: () => void }) => (
   <div className="flex items-center justify-between h-16 px-6 border-b border-brand-border bg-brand-surface-light/30">
     <Link href={ROUTES.admin} className="flex flex-col w-16 py-2">
       <Image
-        src={logoImg}
+        src="/logo-wordmark.svg"
         alt={DICTIONARY.global.logo.alt}
+        width={342}
+        height={264}
         className="w-full h-auto object-contain"
         priority
       />

@@ -16,7 +16,6 @@ import {
   generateWhatsAppUrl,
   generateTelUrl,
 } from "@/utils/phone";
-import logoImg from "@/../public/logo.svg";
 import { getGlobalData } from "@/features/settings/data";
 import type { GlobalData } from "@/features/settings/types";
 
@@ -71,7 +70,7 @@ const NavbarView = ({ globalData }: { globalData: GlobalData }) => {
                 className="relative block h-10 w-40 lg:h-12 lg:w-48"
               >
                 <Image
-                  src={logoImg}
+                  src="/logo.svg"
                   alt={DICTIONARY.global.logo.alt}
                   title={DICTIONARY.global.logo.title}
                   fill

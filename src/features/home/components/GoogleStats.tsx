@@ -3,7 +3,6 @@
 import { Suspense, use, type ReactNode } from "react";
 import { BadgeCheck, Star } from "lucide-react";
 import Image from "next/image";
-import logoImg from "@/../public/logo.svg";
 import { DICTIONARY } from "@/constants/dictionary";
 import { ScrollButton } from "@/components/ui/ScrollButton";
 import { InstagramIcon, FacebookIcon } from "@/components/ui/Icons";
@@ -84,7 +83,7 @@ const GoogleStatsDetails = ({ data }: { data: GoogleStatsData }) => {
     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
       <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-brand-border bg-brand-surface shadow-sm md:h-14 md:w-14">
         <Image
-          src={logoImg}
+          src="/logo.svg"
           alt={DICTIONARY.global.logo.alt}
           title={DICTIONARY.global.logo.title}
           fill

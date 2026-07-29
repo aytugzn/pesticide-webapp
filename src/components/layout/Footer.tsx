@@ -6,7 +6,6 @@ import { DICTIONARY } from "@/constants/dictionary";
 import { ROUTES } from "@/constants/routes";
 import { CopyrightText } from "@/components/ui/CopyrightText";
 import { InstagramIcon, FacebookIcon } from "@/components/ui/Icons";
-import logoImg from "@/../public/logo-wordmark.svg";
 import {
   formatTurkishPhoneDisplay,
   generateTelUrl,
@@ -117,7 +116,7 @@ const FooterBrand = ({
     <div className="w-fit block mb-2">
       <div className="relative w-48 h-12">
         <Image
-          src={logoImg}
+          src="/logo-wordmark.svg"
           alt={DICTIONARY.global.logo.alt}
           title={DICTIONARY.global.logo.title}
           draggable={false}
