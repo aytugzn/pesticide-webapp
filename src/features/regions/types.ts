@@ -1,6 +1,8 @@
 import type { SeoGeneratedContent } from "@/features/seo-content/types";
+import { MUTATION_POLICY_ERROR } from "@/constants/mutationPolicy";
 
 export const REGION_ERRORS = {
+  [MUTATION_POLICY_ERROR]: MUTATION_POLICY_ERROR,
   FETCH_FAILED: "FETCH_FAILED",
   NOT_FOUND: "NOT_FOUND",
   AI_GENERATION_FAILED: "AI_GENERATION_FAILED",

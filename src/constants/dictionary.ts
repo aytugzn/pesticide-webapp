@@ -39,6 +39,8 @@ const authDict = {
     button: "Google ile Giriş Yap",
     loadingButton: "Giriş yapılıyor...",
     error: "Giriş yapılamadı. Lütfen tekrar deneyin.",
+    providerError:
+      "Kimlik doğrulama servisine ulaşılamıyor. Lütfen kısa süre sonra tekrar deneyin.",
     rateLimitError:
       "Çok fazla giriş denemesi yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.",
     page: {
@@ -204,6 +206,8 @@ const homeDict = {
       success: "Talebiniz başarıyla alındı! En kısa sürede aranacaksınız.",
       error:
         "Bir hata oluştu, lütfen daha sonra tekrar deneyin veya bizi arayın.",
+      temporarilyUnavailable:
+        "İletişim formu şu anda geçici olarak kullanılamıyor. Lütfen telefon veya WhatsApp üzerinden bize ulaşın.",
     },
     validation: {
       nameRequired: "Lütfen adınızı ve soyadınızı girin.",

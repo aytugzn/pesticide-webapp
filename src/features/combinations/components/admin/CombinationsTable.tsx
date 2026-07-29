@@ -12,6 +12,7 @@ import { ArchiveRestore, ExternalLink, Trash2, Edit2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { CombinationEditModal } from "./CombinationEditModal";
 import { useCombinationJob, type BulkMutationNotice } from "./CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 
 type CombinationsTableProps = {
   initialRows: CombinationLightRow[];
@@ -109,7 +110,10 @@ export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMo
           });
         }
       } else {
-        showToast({ variant: "error", message: d.errorDefault });
+        showToast({
+          variant: "error",
+          message: resolveAdminActionError(result, d.errorDefault),
+        });
       }
     } catch {
       showToast({ variant: "error", message: d.errorDefault });
@@ -301,7 +305,7 @@ export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMo
       } else {
         const message = result.error === COMBINATION_ERRORS.RELATED_ENTITY_MISSING
           ? d.restoreRelatedMissingError
-          : d.restoreError;
+          : resolveAdminActionError(result, d.restoreError);
         showToast({ variant: "error", message });
       }
     } catch {
@@ -367,7 +371,10 @@ export const CombinationsTable = ({ initialRows, initialNextCursor, initialHasMo
           ...prev,
           rows: prev.rows.map((r) => r.id === row.id ? { ...r, isActive: !isActive } : r),
         }));
-        showToast({ variant: "error", message: d.updateError });
+        showToast({
+          variant: "error",
+          message: resolveAdminActionError(result, d.updateError),
+        });
       } else {
         showToast({
           variant:

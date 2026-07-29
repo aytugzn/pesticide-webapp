@@ -21,6 +21,7 @@ import { getExistingCombinationKeys } from "../../actions/bulk";
 import type { PestDoc, RegionDoc } from "@/types";
 import type { BulkCombinationMutationOperation } from "../../types";
 import { useCombinationJob } from "./CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 
 type BulkMutationPanelProps = {
   regions: RegionDoc[];
@@ -312,7 +313,10 @@ export const BulkMutationPanel = ({ regions, pests }: BulkMutationPanelProps) =>
       return;
     }
 
-    showToast({ variant: "error", message: d.errorDefault });
+    showToast({
+      variant: "error",
+      message: resolveAdminActionError(result, d.errorDefault),
+    });
   };
 
   return (

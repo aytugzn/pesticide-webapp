@@ -2,7 +2,7 @@
 
 import "server-only";
 
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { ActionResponse } from "@/types";
 import { combinationSlugParamsSchema } from "../schemas";
@@ -24,8 +24,12 @@ export const generateCombinationContent = async (
   regionSlug: string,
   pestSlug: string,
 ): Promise<ActionResponse<GeneratedContent, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-generate-content",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = combinationSlugParamsSchema.safeParse({

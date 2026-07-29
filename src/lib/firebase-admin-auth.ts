@@ -1,6 +1,11 @@
 import "server-only";
 
 import { getAdminApp } from "@/lib/firebase-admin";
+import {
+  fetchWithTimeout,
+  isProviderTimeoutError,
+  withProviderTimeout,
+} from "@/lib/serverRequest";
 
 type DecodedFirebaseToken = Record<string, unknown> & {
   uid: string;
@@ -47,12 +52,35 @@ const SESSION_COOKIE_CERT_URL =
   "https://www.googleapis.com/identitytoolkit/v3/relyingparty/publicKeys";
 const FIREBASE_AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
 const DEFAULT_CERT_CACHE_SECONDS = 3600;
+const FIREBASE_CERT_TIMEOUT_MS = 10_000;
+const FIREBASE_AUTH_TIMEOUT_MS = 15_000;
 
 let idTokenCertCache: CertCacheEntry | null = null;
 let sessionCookieCertCache: CertCacheEntry | null = null;
 
 const createAuthError = (code: string): Error & { code: string } =>
   Object.assign(new Error(code), { code });
+
+const normalizeAuthProviderError = (error: unknown): never => {
+  if (isProviderTimeoutError(error)) {
+    throw createAuthError("auth/provider-timeout");
+  }
+  throw error;
+};
+
+/**
+ * Reads a Firebase Auth REST JSON body through the provider error contract.
+ * Syntax and other non-timeout parse failures remain unchanged.
+ */
+const readFirebaseAuthJson = async <T>(
+  response: Response,
+): Promise<T> => {
+  try {
+    return (await response.json()) as T;
+  } catch (error: unknown) {
+    return normalizeAuthProviderError(error);
+  }
+};
 
 const getProjectId = (): string => {
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -71,7 +99,11 @@ const getAccessToken = async (): Promise<string> => {
     throw createAuthError("auth/missing-credential");
   }
 
-  const token = await credential.getAccessToken();
+  const token = await withProviderTimeout(
+    () => credential.getAccessToken(),
+    FIREBASE_AUTH_TIMEOUT_MS,
+    "firebase-auth",
+  ).catch(normalizeAuthProviderError);
   return token.access_token;
 };
 
@@ -96,13 +128,18 @@ const fetchCerts = async (
     return currentCache;
   }
 
-  const response = await fetch(url);
+  const response = await fetchWithTimeout(
+    url,
+    { cache: "no-store" },
+    FIREBASE_CERT_TIMEOUT_MS,
+    "firebase-auth",
+  ).catch(normalizeAuthProviderError);
 
   if (!response.ok) {
     throw createAuthError("auth/cert-fetch-failed");
   }
 
-  const certs = (await response.json()) as Record<string, string>;
+  const certs = await readFirebaseAuthJson<Record<string, string>>(response);
   const maxAgeSeconds = getMaxAgeSeconds(response.headers.get("cache-control"));
 
   return {
@@ -171,7 +208,7 @@ const authFetch = async <T>(
 ): Promise<T> => {
   const projectId = getProjectId();
   const accessToken = await getAccessToken();
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `${FIREBASE_AUTH_BASE_URL}/projects/${projectId}${endpoint}`,
     {
       method: "POST",
@@ -182,13 +219,15 @@ const authFetch = async <T>(
       },
       body: JSON.stringify(body),
     },
-  );
+    FIREBASE_AUTH_TIMEOUT_MS,
+    "firebase-auth",
+  ).catch(normalizeAuthProviderError);
 
   if (!response.ok) {
     throw createAuthError(`auth/rest-${response.status}`);
   }
 
-  return (await response.json()) as T;
+  return readFirebaseAuthJson<T>(response);
 };
 
 const verifyNotRevokedOrDisabled = async (

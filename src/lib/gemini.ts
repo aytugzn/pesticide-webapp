@@ -6,4 +6,5 @@ export {
   buildRegionPrompt,
   getGeminiApiKeys,
   getGeminiModel,
+  generateGeminiContent,
 } from "./geminiCore";

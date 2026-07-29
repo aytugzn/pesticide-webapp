@@ -1,6 +1,8 @@
 import type { CombinationDoc, PublicMutationResult } from "@/types";
+import { MUTATION_POLICY_ERROR } from "@/constants/mutationPolicy";
 
 export const COMBINATION_ERRORS = {
+  [MUTATION_POLICY_ERROR]: MUTATION_POLICY_ERROR,
   FETCH_FAILED: "FETCH_FAILED",
   NOT_FOUND: "NOT_FOUND",
   REGION_NOT_FOUND: "REGION_NOT_FOUND",
@@ -83,6 +85,7 @@ export type BulkCombinationMutationResult = PublicMutationResult & {
 };
 
 export const COMBINATION_JOB_ERRORS = {
+  [MUTATION_POLICY_ERROR]: MUTATION_POLICY_ERROR,
   ALREADY_RUNNING: "ALREADY_RUNNING",
   DISPATCH_FAILED: "DISPATCH_FAILED",
   GITHUB_CONFIG_INVALID: "GITHUB_CONFIG_INVALID",

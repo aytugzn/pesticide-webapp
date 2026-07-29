@@ -3,7 +3,7 @@
 import "server-only";
 
 import { refresh } from "next/cache";
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { ActionResponse } from "@/types";
 import { updateMessageStatusSchema } from "./schemas";
@@ -44,8 +44,12 @@ const createDeleteChunks = <T,>(items: T[]): T[][] => {
 export const updateMessageStatus = async (
   input: UpdateMessageStatusInput,
 ): Promise<ActionResponse<void, MessageErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: MESSAGE_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "message-update-status",
+    MESSAGE_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = updateMessageStatusSchema.safeParse(input);
@@ -79,8 +83,12 @@ export const updateMessageStatus = async (
 export const deleteOverdueResolvedMessages = async (): Promise<
   ActionResponse<DeleteOverdueMessagesResult, MessageErrorCode>
 > => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: MESSAGE_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "message-delete-overdue",
+    MESSAGE_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const nowMs = Date.now();

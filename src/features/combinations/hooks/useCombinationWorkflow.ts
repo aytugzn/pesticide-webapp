@@ -7,6 +7,7 @@ import { saveCombination } from "../actions";
 import { DICTIONARY } from "@/constants/dictionary";
 import type { PestDoc, RegionDoc } from "@/types";
 import { COMBINATION_ERRORS, type GeneratedContent } from "../types";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 import type { CombinationSelection } from "./useCombinationSelection";
 import type { CombinationContent } from "./useCombinationContent";
 
@@ -70,6 +71,11 @@ export const useCombinationWorkflow = ({
         onFeedback({ type: "error", message: d.regenerateQuotaError });
       } else if (!result.success && result.error === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE) {
         onFeedback({ type: "error", message: d.errorProviderUnavailable });
+      } else if (!result.success) {
+        onFeedback({
+          type: "error",
+          message: resolveAdminActionError(result, d.errorDefault),
+        });
       } else {
         onFeedback({ type: "error", message: d.errorDefault });
       }
@@ -132,7 +138,10 @@ export const useCombinationWorkflow = ({
         } else if (result.error === "ALREADY_EXISTS") {
           onFeedback({ type: "error", message: d.errorAlreadyExists });
         } else {
-          onFeedback({ type: "error", message: d.errorSave });
+          onFeedback({
+            type: "error",
+            message: resolveAdminActionError(result, d.errorSave),
+          });
         }
       }
     } catch {

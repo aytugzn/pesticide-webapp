@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 import {
   deleteOverdueResolvedMessages,
   updateMessageStatus,
@@ -127,7 +128,10 @@ export const MessagesManager = ({ initialRows }: MessagesManagerProps) => {
       });
 
       if (!result.success) {
-        showToast({ variant: "error", message: d.toast.updateError });
+        showToast({
+          variant: "error",
+          message: resolveAdminActionError(result, d.toast.updateError),
+        });
         return;
       }
 
@@ -148,7 +152,12 @@ export const MessagesManager = ({ initialRows }: MessagesManagerProps) => {
     try {
       const result = await deleteOverdueResolvedMessages();
       if (!result.success || !result.data) {
-        showToast({ variant: "error", message: d.bulkDelete.error });
+        showToast({
+          variant: "error",
+          message: result.success
+            ? d.bulkDelete.error
+            : resolveAdminActionError(result, d.bulkDelete.error),
+        });
         return;
       }
 

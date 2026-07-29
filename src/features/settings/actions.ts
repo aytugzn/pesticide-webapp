@@ -10,7 +10,7 @@ import {
   type SettingsErrorCode,
   SETTINGS_ERRORS,
 } from "./types";
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import {
   saveGeneralSettingsSchema,
   saveSiteImagesSchema,
@@ -47,8 +47,12 @@ const serializeSiteImageSlides = (
 export const saveGeneralSettings = async (
   input: SaveGeneralSettingsInput,
 ): Promise<ActionResponse<void, SettingsErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "settings-save-general",
+    SETTINGS_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = saveGeneralSettingsSchema.safeParse(input);
@@ -77,8 +81,12 @@ export const saveGeneralSettings = async (
 export const saveSiteImages = async (
   input: SaveSiteImagesInput,
 ): Promise<ActionResponse<void, SettingsErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "settings-save-site-images",
+    SETTINGS_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = saveSiteImagesSchema.safeParse(input);

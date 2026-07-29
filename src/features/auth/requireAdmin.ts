@@ -15,7 +15,7 @@ export const requireAdmin = async (): Promise<boolean> => {
   try {
     const adminAuth = await getAdminAuth();
     const decodedClaims = await adminAuth.verifySessionCookie(session, true);
-    
+
     const allowedEmail = process.env.ADMIN_EMAIL || "";
     if (decodedClaims.email !== allowedEmail) {
       return false;

@@ -14,6 +14,7 @@ import { COMBINATION_ERRORS } from "../../types";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useCombinationAdminToast } from "./CombinationJobProvider";
 import type { CombinationRow, GeneratedContent } from "../../types";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 
 type CombinationEditModalProps = {
   isOpen: boolean;
@@ -96,7 +97,10 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
         onSuccess({ ...row, ...formData });
         onClose();
       } else {
-        publishFeedback({ type: "error", message: d.updateError });
+        publishFeedback({
+          type: "error",
+          message: resolveAdminActionError(res, d.updateError),
+        });
       }
     } catch {
       publishFeedback({ type: "error", message: d.errorDefault });
@@ -121,7 +125,10 @@ const CombinationEditForm = ({ row, onClose, onSuccess }: CombinationEditFormPro
         } else if (res.error === COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE) {
           publishFeedback({ type: "error", message: d.errorProviderUnavailable });
         } else {
-          publishFeedback({ type: "error", message: d.regenerateError });
+          publishFeedback({
+            type: "error",
+            message: resolveAdminActionError(res, d.regenerateError),
+          });
         }
       }
     } catch {

@@ -16,6 +16,8 @@ import {
   createRateLimitHash,
   limitContactSubmission,
 } from "@/lib/rateLimit";
+import { getMutationPolicyFailure } from "@/lib/mutationPolicy";
+import type { MutationPolicyErrorCode } from "@/constants/mutationPolicy";
 import type { ContactRequestDoc, ActionResponse } from "@/types";
 import { CONTACT_ERRORS, type ContactErrorCode } from "../types";
 
@@ -66,7 +68,14 @@ const contactSchema = z.object({
  * @param formData - Untrusted contact form fields
  * @returns A controlled validation, rate-limit, persistence, or success result
  */
-export const sendContactForm = async (formData: FormData): Promise<ActionResponse<void, ContactErrorCode>> => {
+export const sendContactForm = async (
+  formData: FormData,
+): Promise<ActionResponse<void, ContactErrorCode | MutationPolicyErrorCode>> => {
+  const mutationFailure = getMutationPolicyFailure("contact-request");
+  if (mutationFailure) {
+    return mutationFailure;
+  }
+
   const rawData = Object.fromEntries(formData);
 
   // 1. Honeypot check: If the hidden 'website' field is filled, it's a bot.

@@ -1,7 +1,9 @@
 import { z } from "zod";
 import type { updateMessageStatusSchema } from "./schemas";
+import { MUTATION_POLICY_ERROR } from "@/constants/mutationPolicy";
 
 export const MESSAGE_ERRORS = {
+  [MUTATION_POLICY_ERROR]: MUTATION_POLICY_ERROR,
   UNAUTHORIZED: "UNAUTHORIZED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   UPDATE_FAILED: "UPDATE_FAILED",

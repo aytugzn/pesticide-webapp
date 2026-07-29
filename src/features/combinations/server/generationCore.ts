@@ -2,6 +2,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import type { ActionResponse, CombinationDoc } from "@/types";
 import {
   buildCombinationPrompt,
+  generateGeminiContent,
   getGeminiApiKeys,
   getGeminiModel,
 } from "@/lib/geminiCore";
@@ -76,7 +77,10 @@ export const generateCombinationContentCore = async (
 
     for (let keyIndex = 0; keyIndex < keys.length; keyIndex += 1) {
       try {
-        const result = await getGeminiModel(keys[keyIndex]).generateContent(prompt);
+        const result = await generateGeminiContent(
+          getGeminiModel(keys[keyIndex]),
+          prompt,
+        );
         const responseText = result.response.text();
         if (!responseText) {
           return {
@@ -102,6 +106,14 @@ export const generateCombinationContentCore = async (
         return { success: true, data: validated.data };
       } catch (error: unknown) {
         const reason = getAiErrorReason(getErrorInfo(error));
+        if (reason === "provider_timeout") {
+          console.warn("Gemini request timed out", { keyIndex });
+          return {
+            success: false,
+            error: COMBINATION_ERRORS.AI_PROVIDER_UNAVAILABLE,
+          };
+        }
+
         if (reason === "quota_or_rate_limit") {
           sawQuotaError = true;
           console.warn("Gemini key quota unavailable", { keyIndex });

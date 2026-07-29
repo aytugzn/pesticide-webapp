@@ -3,7 +3,7 @@
 import "server-only";
 
 import type { ActionResponse } from "@/types";
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { REVIEWS_DRAFT_DOCUMENT_ID } from "./constants";
 import { saveReviewsDraftSchema } from "./schemas";
@@ -24,8 +24,12 @@ import { serializeReviewItems } from "./utils";
 export const saveReviewsDraft = async (
   input: SaveReviewsDraftInput,
 ): Promise<ActionResponse<void, ReviewErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: REVIEW_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "reviews-save-draft",
+    REVIEW_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = saveReviewsDraftSchema.safeParse(input);

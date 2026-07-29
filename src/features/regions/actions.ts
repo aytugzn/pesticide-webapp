@@ -4,7 +4,12 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { getGeminiModel, getGeminiApiKeys, buildRegionPrompt } from "@/lib/gemini";
+import {
+  buildRegionPrompt,
+  generateGeminiContent,
+  getGeminiApiKeys,
+  getGeminiModel,
+} from "@/lib/gemini";
 import { extractAndParseJson, parseRegionDoc } from "@/utils/parsers";
 import type {
   ActionResponse,
@@ -25,6 +30,7 @@ import {
   slugSchema,
 } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { activatePublishedVisibilityPatch } from "@/lib/publicActivation";
 import {
   readPublishedSnapshotInTransaction,
@@ -123,8 +129,12 @@ export const generateRegionContent = async (
   name: string,
   description: string,
 ): Promise<ActionResponse<GeneratedContent, RegionErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "region-generate-content",
+    REGION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedInput = generateRegionContentSchema.safeParse({
@@ -150,7 +160,7 @@ export const generateRegionContent = async (
       const apiKey = keys[i];
       try {
         const model = getGeminiModel(apiKey);
-        const result = await model.generateContent(prompt);
+        const result = await generateGeminiContent(model, prompt);
         const responseText = result.response.text();
 
         if (!responseText) {
@@ -172,6 +182,13 @@ export const generateRegionContent = async (
       } catch (error: unknown) {
         const errorInfo = getErrorInfo(error);
         const msg = errorInfo.message?.toLowerCase() || "";
+
+        if (errorInfo.code === "PROVIDER_TIMEOUT") {
+          console.warn("Gemini region generation timed out", {
+            keyIndex: i,
+          });
+          return { success: false, error: REGION_ERRORS.AI_SERVER_BUSY };
+        }
 
         if (
           msg.includes("429") ||
@@ -221,8 +238,12 @@ export const saveRegion = async (
   content: GeneratedContent,
   isActive: boolean,
 ): Promise<ActionResponse<void, RegionErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "region-create",
+    REGION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = saveRegionSchema.safeParse({
@@ -278,8 +299,12 @@ export const updateRegion = async (
   slug: string,
   payload: UpdateRegionInput,
 ): Promise<ActionResponse<void, RegionErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "region-update",
+    REGION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedSlug = slugSchema.safeParse(slug);
@@ -332,8 +357,12 @@ export const toggleRegionStatus = async (
   slug: string,
   isActive: boolean
 ): Promise<ActionResponse<PublicMutationResult, RegionErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "region-toggle-status",
+    REGION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedSlug = slugSchema.safeParse(slug);
@@ -437,8 +466,12 @@ export const toggleRegionStatus = async (
 export const deleteRegion = async (
   slug: string,
 ): Promise<ActionResponse<PublicMutationResult, RegionErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: REGION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "region-delete",
+    REGION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedSlug = slugSchema.safeParse(slug);

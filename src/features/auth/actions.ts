@@ -52,7 +52,9 @@ const enforceSessionCreationRateLimit = async (): Promise<boolean> => {
   return limitLoginSessionCreation(`admin-login:ip:${ipHash}`);
 };
 
-export const createSession = async (idToken: string): Promise<ActionResponse<void, AuthErrorCode>> => {
+export const createSession = async (
+  idToken: string,
+): Promise<ActionResponse<void, AuthErrorCode>> => {
   const expiresIn = SESSION_DURATION * 1000;
   let stage: AuthSessionStage = AUTH_SESSION_STAGES.rateLimit;
 
@@ -91,10 +93,18 @@ export const createSession = async (idToken: string): Promise<ActionResponse<voi
     });
 
     return { success: true };
-  } catch {
+  } catch (error: unknown) {
+    const errorCode =
+      error && typeof error === "object" && "code" in error
+        ? (error as { code?: unknown }).code
+        : undefined;
     console.error("Failed to create admin session", {
       stage,
+      errorCode: typeof errorCode === "string" ? errorCode : "UNKNOWN",
     });
+    if (errorCode === "auth/provider-timeout") {
+      return { success: false, error: AUTH_ERRORS.PROVIDER_UNAVAILABLE };
+    }
     return { success: false, error: AUTH_ERRORS.SESSION_CREATION_FAILED };
   }
 };

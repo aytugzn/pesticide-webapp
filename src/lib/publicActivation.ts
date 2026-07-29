@@ -19,6 +19,7 @@ import {
   type PublicSnapshotChanges,
   type PublicSnapshotUpdateResult,
 } from "@/lib/publicSnapshot";
+import { assertMutationAllowed } from "@/lib/mutationPolicy";
 
 export type PublicActivationResult = PublicMutationResult & {
   firestoreSnapshot: PublishedSnapshotCommitResult;
@@ -183,6 +184,8 @@ export const activatePublishedVisibilityPatch = async (
   db: Firestore,
   patch: PublishedVisibilityPatchResult,
 ): Promise<PublicMutationResult> => {
+  assertMutationAllowed("public-visibility-activation");
+
   if (!patch.snapshot) {
     return {
       activationStatus: patch.publicationRequired ? "deferred" : "not-needed",
@@ -214,6 +217,8 @@ export const activatePublicData = async (
   requestedChanges: PublicSnapshotChanges =
     createEmptyPublicSnapshotChanges(),
 ): Promise<PublicActivationResult> => {
+  assertMutationAllowed("public-snapshot-publish");
+
   const firestoreSnapshot = await publishCanonicalSnapshotToFirestore(
     db,
     requestedChanges,

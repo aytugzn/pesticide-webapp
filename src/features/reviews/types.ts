@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type { DraftCommitStatus } from "@/types";
 import type { reviewItemSchema, saveReviewsDraftSchema } from "./schemas";
+import { MUTATION_POLICY_ERROR } from "@/constants/mutationPolicy";
 
 export const REVIEW_ERRORS = {
+  [MUTATION_POLICY_ERROR]: MUTATION_POLICY_ERROR,
   UNAUTHORIZED: "UNAUTHORIZED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   FETCH_FAILED: "FETCH_FAILED",

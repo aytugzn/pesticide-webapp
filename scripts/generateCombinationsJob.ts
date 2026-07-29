@@ -3,6 +3,7 @@ import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { AppError } from "@/lib/exceptions";
 import { DICTIONARY } from "@/constants/dictionary";
 import { getAdminDb } from "@/lib/firebaseAdminCore";
+import { assertMutationAllowed } from "@/lib/mutationPolicyCore";
 import { workerArgumentsSchema } from "@/features/combinations/schemas";
 import {
   COMBINATION_ERRORS,
@@ -647,6 +648,8 @@ const executeWorker = async (): Promise<void> => {
       COMBINATION_JOB_ERRORS.INVALID_JOB,
     );
   }
+
+  assertMutationAllowed("combination-worker");
 
   const context: WorkerContext = {
     db: getAdminDb(),

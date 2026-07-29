@@ -1,5 +1,10 @@
 # DMR İlaçlama — Antigravity Context
 
+> [!WARNING]
+> Bu dosya tarihsel/legacy bir tasarım belgesidir ve güncel production kurulum
+> kaynağı değildir. Güncel mimari, environment variable listesi ve operasyon
+> komutları için repository kökündeki `README.md` dosyasını kullanın.
+
 > Bu dosya Antigravity'nin projeyi anlaması için yazılmıştır.
 > Projenin mimarisini, kararlarını ve yapılacakları içerir.
 > **ÖNEMLİ:** Kod yazmadan önce mutlaka `docs/STANDARDS.md` ve `docs/NEXT_16_GUIDELINES.md` dosyalarını da okuyun.
@@ -190,6 +195,9 @@ firestore/
 
 ## Gemini AI İçerik Üretimi
 
+> Tarihsel örnek: Güncel key rotation, model ve worker davranışı için `README.md`
+> ile `src/lib/geminiCore.ts` esas alınmalıdır.
+
 ### lib/gemini.ts
 
 ```typescript
@@ -361,6 +369,9 @@ className = "bg-error-bg border-error-border text-error-text";
 
 ## Ortam Değişkenleri
 
+> Bu liste eksik ve tarihseldir; deployment için güncel `README.md` env
+> tablolarını kullanın.
+
 ```bash
 # Firebase Client (public)
 NEXT_PUBLIC_FIRESTORE_API_KEY
@@ -409,6 +420,9 @@ _Haziran 2026_
 ---
 
 ## Cloudinary — Ana Sayfa Carousel
+
+> Tarihsel plan: Cloudinary yükleme ve site-image yayınlama akışı artık
+> uygulanmıştır. Güncel davranış için `README.md` dosyasına bakın.
 
 > **Durum:** Henüz implement edilmedi, ilerleyen aşamada yapılacak.
 

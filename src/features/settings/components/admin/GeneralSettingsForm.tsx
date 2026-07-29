@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 import { saveGeneralSettings } from "@/features/settings/actions";
 import { saveGeneralSettingsSchema } from "@/features/settings/schemas";
 import { GOOGLE_PLACE_ID_MAX_LENGTH } from "@/features/settings/constants";
@@ -181,7 +182,10 @@ export const GeneralSettingsForm = ({
     try {
       const result = await saveGeneralSettings(values);
       if (!result.success) {
-        showToast({ variant: "error", message: d.error });
+        showToast({
+          variant: "error",
+          message: resolveAdminActionError(result, d.error),
+        });
         return;
       }
 

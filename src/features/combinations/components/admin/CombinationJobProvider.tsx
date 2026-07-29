@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { AdminToast, type AdminToastVariant } from "@/components/ui/AdminToast";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AppError } from "@/lib/exceptions";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 import {
   getActiveCombinationJob,
   requestAbortCombinationJob,
@@ -276,11 +277,12 @@ export const CombinationJobProvider = ({
       if (!response.success || !response.data) {
         showToast({
           variant: "error",
-          message: getStartErrorMessage(
-            response.success
-              ? COMBINATION_JOB_ERRORS.UNKNOWN_ERROR
-              : response.error,
-          ),
+          message: response.success
+            ? getStartErrorMessage(COMBINATION_JOB_ERRORS.UNKNOWN_ERROR)
+            : resolveAdminActionError(
+                response,
+                getStartErrorMessage(response.error),
+              ),
         });
         await refreshJob();
         return;
@@ -304,7 +306,10 @@ export const CombinationJobProvider = ({
     if (!response.success) {
       showToast({
         variant: "error",
-        message: DICTIONARY.admin.combinations.errorDefault,
+        message: resolveAdminActionError(
+          response,
+          DICTIONARY.admin.combinations.errorDefault,
+        ),
       });
     }
     await refreshJob();

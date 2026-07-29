@@ -1,11 +1,17 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DICTIONARY } from "@/constants/dictionary";
 import { AppError } from "./exceptions";
+import {
+  createProviderTimeoutError,
+  isProviderTimeoutError,
+} from "@/lib/serverRequestCore";
 
 const modelsCache = new Map<
   string,
   ReturnType<typeof GoogleGenerativeAI.prototype.getGenerativeModel>
 >();
+
+export const GEMINI_REQUEST_TIMEOUT_MS = 45_000;
 
 const SEO_ENTITY_JSON_FORMAT =
   '{ "title": "...", "description": "...", "cardDescription": "...", "h1": "...", "metaDesc": "...", "content": "...", "faq": [{"question": "...", "answer": "..."}] }';
@@ -55,6 +61,38 @@ export const getGeminiModel = (apiKey?: string, modelName: string = DICTIONARY.g
 
   modelsCache.set(cacheKey, model);
   return model;
+};
+
+/**
+ * Runs one Gemini generation with a wrapper-owned timeout sentinel and an
+ * SDK-supported AbortSignal.
+ */
+export const generateGeminiContent = async (
+  model: ReturnType<typeof getGeminiModel>,
+  prompt: string,
+  timeoutMs: number = GEMINI_REQUEST_TIMEOUT_MS,
+) => {
+  const controller = new AbortController();
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await model.generateContent(prompt, {
+      signal: controller.signal,
+    });
+  } catch (error: unknown) {
+    // The SDK may wrap AbortError as a generic "operation was aborted" error.
+    // The wrapper-owned sentinel identifies our timer without message guessing.
+    if (didTimeout || isProviderTimeoutError(error)) {
+      throw createProviderTimeoutError("gemini");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 };
 
 /**

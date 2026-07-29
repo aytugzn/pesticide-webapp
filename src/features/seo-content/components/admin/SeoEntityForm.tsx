@@ -29,6 +29,7 @@ import type {
 } from "@/features/seo-content/types";
 import { SEO_CONTENT_LIMITS } from "@/features/seo-content/constants";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 
 type Feedback = { type: "success" | "error"; message: string } | null;
 
@@ -231,7 +232,7 @@ export const SeoEntityForm = <TError extends string>({
       if (!res.success) {
         setFeedback({
           type: "error",
-          message: getErrorMessage(res.error),
+          message: resolveAdminActionError(res, getErrorMessage(res.error)),
         });
       }
     } catch {
@@ -273,7 +274,7 @@ export const SeoEntityForm = <TError extends string>({
       if (!res.success) {
         setFeedback({
           type: "error",
-          message: getErrorMessage(res.error),
+          message: resolveAdminActionError(res, getErrorMessage(res.error)),
         });
       }
     } catch {
@@ -337,9 +338,12 @@ export const SeoEntityForm = <TError extends string>({
         if (!uploadResult.success || !uploadResult.data) {
           setFeedback({
             type: "error",
-            message: getUploadErrorMessage(
-              uploadResult.success ? "UPLOAD_FAILED" : uploadResult.error,
-            ),
+            message: uploadResult.success
+              ? getUploadErrorMessage("UPLOAD_FAILED")
+              : resolveAdminActionError(
+                  uploadResult,
+                  getUploadErrorMessage(uploadResult.error),
+                ),
           });
           return;
         }
@@ -381,7 +385,10 @@ export const SeoEntityForm = <TError extends string>({
         }
 
         saveOutcome = "failed";
-        await setFailureWithRollback(getErrorMessage(res.error), uploadedImage);
+        await setFailureWithRollback(
+          resolveAdminActionError(res, getErrorMessage(res.error)),
+          uploadedImage,
+        );
         return;
       }
 
@@ -416,7 +423,10 @@ export const SeoEntityForm = <TError extends string>({
 
       if (!res.success) {
         saveOutcome = "failed";
-        await setFailureWithRollback(getErrorMessage(res.error), uploadedImage);
+        await setFailureWithRollback(
+          resolveAdminActionError(res, getErrorMessage(res.error)),
+          uploadedImage,
+        );
       }
     } catch {
       if (saveOutcome === "not-started") {

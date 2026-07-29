@@ -14,6 +14,7 @@ import type {
 import { COMBINATION_ERRORS, type AdminCombinationListFilter, type CombinationErrorCode, type GeneratedContent, type CombinationRow, type CombinationLightRow, type BulkCombinationMutationInput, type BulkCombinationMutationResult } from "./types";
 import { bulkCombinationMutationSchema, combinationSlugParamsSchema, toggleCombinationSchema, unarchiveCombinationSchema, updateCombinationSchema } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { getEditableGlobalData } from "@/features/settings/data";
 import { getErrorInfo } from "./actions/utils";
 import { activatePublishedVisibilityPatch } from "@/lib/publicActivation";
@@ -110,8 +111,12 @@ export const saveCombination = async (
   content: GeneratedContent,
   isActive: boolean
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-create",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   return saveCombinationCore(getAdminDb(), {
@@ -137,8 +142,12 @@ export const updateCombination = async (
   pestSlug: string,
   content: GeneratedContent
 ): Promise<ActionResponse<void, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-update",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = updateCombinationSchema.safeParse({
@@ -199,8 +208,12 @@ export const toggleCombinationStatus = async (
   pestSlug: string,
   isActive: boolean
 ): Promise<ActionResponse<PublicMutationResult, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-toggle-status",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = toggleCombinationSchema.safeParse({ regionSlug, pestSlug, isActive });
@@ -265,8 +278,12 @@ export const toggleCombinationStatus = async (
 export const bulkMutateCombinationsByFilter = async (
   input: BulkCombinationMutationInput
 ): Promise<ActionResponse<BulkCombinationMutationResult, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-bulk-mutate",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = bulkCombinationMutationSchema.safeParse(input);
@@ -719,8 +736,12 @@ export const archiveCombination = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<PublicMutationResult, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-archive",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = combinationSlugParamsSchema.safeParse({
@@ -790,8 +811,12 @@ export const unarchiveCombination = async (
   regionSlug: string,
   pestSlug: string
 ): Promise<ActionResponse<PublicMutationResult, CombinationErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-unarchive",
+    COMBINATION_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = unarchiveCombinationSchema.safeParse({ regionSlug, pestSlug });

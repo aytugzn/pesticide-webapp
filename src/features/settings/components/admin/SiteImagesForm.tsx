@@ -7,6 +7,7 @@ import { ImagePlus, Loader2, Save, Edit, Trash2, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/Button";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 import {
   cleanupAdminImageUploads,
   uploadAdminImage,
@@ -41,7 +42,11 @@ type ProcessDraftsResult =
       value: SiteImageSlideDoc[];
       uploadedImages: AppImage[];
     }
-  | { ok: false; uploadedImages: AppImage[] };
+  | {
+      ok: false;
+      uploadedImages: AppImage[];
+      errorMessage: string;
+    };
 
 /**
  * Creates draft state objects for image arrays.
@@ -422,7 +427,13 @@ export const SiteImagesForm = ({
         if (draft.selectedFile) {
           const uploadResult = await uploadFile(target, draft.selectedFile, alt);
           if (!uploadResult.success || !uploadResult.data) {
-            return { ok: false, uploadedImages };
+            return {
+              ok: false,
+              uploadedImages,
+              errorMessage: uploadResult.success
+                ? d.uploadError
+                : resolveAdminActionError(uploadResult, d.uploadError),
+            };
           }
           image = uploadResult.data;
           imageUrl = undefined;
@@ -441,7 +452,7 @@ export const SiteImagesForm = ({
       }
       return { ok: true, value: savedSlides, uploadedImages };
     } catch {
-      return { ok: false, uploadedImages };
+      return { ok: false, uploadedImages, errorMessage: d.uploadError };
     }
   };
 
@@ -499,7 +510,7 @@ export const SiteImagesForm = ({
       );
       uploadedImages.push(...heroResult.uploadedImages);
       if (!heroResult.ok) {
-        await showFailureWithRollback(d.uploadError, uploadedImages);
+        await showFailureWithRollback(heroResult.errorMessage, uploadedImages);
         return;
       }
 
@@ -510,7 +521,7 @@ export const SiteImagesForm = ({
       );
       uploadedImages.push(...whyUsResult.uploadedImages);
       if (!whyUsResult.ok) {
-        await showFailureWithRollback(d.uploadError, uploadedImages);
+        await showFailureWithRollback(whyUsResult.errorMessage, uploadedImages);
         return;
       }
 
@@ -521,7 +532,7 @@ export const SiteImagesForm = ({
       );
       uploadedImages.push(...servicesResult.uploadedImages);
       if (!servicesResult.ok) {
-        await showFailureWithRollback(d.uploadError, uploadedImages);
+        await showFailureWithRollback(servicesResult.errorMessage, uploadedImages);
         return;
       }
 
@@ -534,7 +545,10 @@ export const SiteImagesForm = ({
 
       if (!result.success) {
         saveOutcome = "failed";
-        await showFailureWithRollback(d.error, uploadedImages);
+        await showFailureWithRollback(
+          resolveAdminActionError(result, d.error),
+          uploadedImages,
+        );
         return;
       }
 

@@ -1,18 +1,25 @@
 import "server-only";
 import { DICTIONARY } from "@/constants/dictionary";
+import {
+  fetchWithTimeout,
+  isProviderTimeoutError,
+} from "@/lib/serverRequest";
 
 const telegramDict = DICTIONARY.telegram;
+const TELEGRAM_TIMEOUT_MS = 15_000;
 
 const TELEGRAM_LOG_MESSAGES = {
   missingConfig: "Missing Telegram bot token or chat ID",
   apiFailed: "Telegram API request failed",
   networkError: "Network error while sending Telegram message",
+  timeout: "Telegram API request timed out",
 };
 
 const TELEGRAM_ERRORS = {
   missingConfig: "TELEGRAM_MISSING_CONFIG",
   apiFailed: "TELEGRAM_API_FAILED",
   networkError: "TELEGRAM_NETWORK_ERROR",
+  timeout: "TELEGRAM_TIMEOUT",
 };
 
 type TelegramResult =
@@ -46,7 +53,7 @@ export const sendTelegramContactRequest = async (
   }
 
   try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const response = await fetchWithTimeout(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -62,7 +69,7 @@ export const sendTelegramContactRequest = async (
           ],
         },
       }),
-    });
+    }, TELEGRAM_TIMEOUT_MS, "telegram");
 
     if (!response.ok) {
       console.error(TELEGRAM_LOG_MESSAGES.apiFailed, {
@@ -77,7 +84,11 @@ export const sendTelegramContactRequest = async (
       messageId: data.result.message_id,
       chatId: String(data.result.chat.id),
     };
-  } catch {
+  } catch (error: unknown) {
+    if (isProviderTimeoutError(error)) {
+      console.error(TELEGRAM_LOG_MESSAGES.timeout);
+      return { success: false, error: TELEGRAM_ERRORS.timeout };
+    }
     console.error(TELEGRAM_LOG_MESSAGES.networkError);
     return { success: false, error: TELEGRAM_ERRORS.networkError };
   }
@@ -102,7 +113,7 @@ export const editTelegramMessageAsResolved = async (
   }
 
   try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+    const response = await fetchWithTimeout(`https://api.telegram.org/bot${token}/editMessageText`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -111,7 +122,7 @@ export const editTelegramMessageAsResolved = async (
         text: telegramDict.resolvedMessage,
         reply_markup: { inline_keyboard: [] }, // Remove all buttons
       }),
-    });
+    }, TELEGRAM_TIMEOUT_MS, "telegram");
 
     if (!response.ok) {
       console.error(TELEGRAM_LOG_MESSAGES.apiFailed, {
@@ -121,7 +132,11 @@ export const editTelegramMessageAsResolved = async (
     }
 
     return { success: true };
-  } catch {
+  } catch (error: unknown) {
+    if (isProviderTimeoutError(error)) {
+      console.error(TELEGRAM_LOG_MESSAGES.timeout);
+      return { success: false, error: TELEGRAM_ERRORS.timeout };
+    }
     console.error(TELEGRAM_LOG_MESSAGES.networkError);
     return { success: false, error: TELEGRAM_ERRORS.networkError };
   }
@@ -137,14 +152,25 @@ export const sendTelegramAdminMessage = async (message: string): Promise<void> =
 
   if (!token || !chatId) return;
 
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: message,
-    }),
-  }).catch(() => { });
+  try {
+    await fetchWithTimeout(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+        }),
+      },
+      TELEGRAM_TIMEOUT_MS,
+      "telegram",
+    );
+  } catch (error: unknown) {
+    console.warn("Telegram admin notification failed", {
+      reason: isProviderTimeoutError(error) ? "timeout" : "network",
+    });
+  }
 };
 
 /**
@@ -158,13 +184,24 @@ export const answerTelegramCallback = async (
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
 
-  await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      callback_query_id: callbackQueryId,
-      ...(options?.showAlert ? { show_alert: true } : {}),
-      ...(options?.text ? { text: options.text } : {}),
-    }),
-  }).catch(() => { });
+  try {
+    await fetchWithTimeout(
+      `https://api.telegram.org/bot${token}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callback_query_id: callbackQueryId,
+          ...(options?.showAlert ? { show_alert: true } : {}),
+          ...(options?.text ? { text: options.text } : {}),
+        }),
+      },
+      TELEGRAM_TIMEOUT_MS,
+      "telegram",
+    );
+  } catch (error: unknown) {
+    console.warn("Telegram callback answer failed", {
+      reason: isProviderTimeoutError(error) ? "timeout" : "network",
+    });
+  }
 };

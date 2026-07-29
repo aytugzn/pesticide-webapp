@@ -8,6 +8,7 @@ import { revalidateAll } from "@/features/settings/revalidateAll";
 import { cn } from "@/utils/cn";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 
 /**
  * Publishes pending global domains and reports cache or cleanup warnings.
@@ -149,7 +150,12 @@ export const GlobalRevalidateButton = () => {
       } else {
         showToast({
           variant: "error",
-          message: DICTIONARY.admin.settings.revalidateError,
+          message: res.success
+            ? DICTIONARY.admin.settings.revalidateError
+            : resolveAdminActionError(
+                res,
+                DICTIONARY.admin.settings.revalidateError,
+              ),
         });
       }
     } catch {

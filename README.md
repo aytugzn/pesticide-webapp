@@ -165,9 +165,28 @@ ADMIN_EMAIL
 | `UPSTASH_REDIS_REST_URL` | Public last-known-good snapshot ve rate-limit Redis bağlantısı |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash REST kimlik bilgisi |
 | `RATE_LIMIT_SECRET` | IP/telefon gibi rate-limit kimliklerini HMAC-SHA256 ile hash'leme |
+| `DMR_ALLOW_MUTATIONS` | Server-only mutation opt-in; yalnız izin verilen runtime'larda tam olarak `true` olmalıdır |
 | `NEXT_PUBLIC_SITE_URL` | Canonical metadata, sitemap ve mutlak URL tabanı; yoksa dictionary fallback'i kullanılır |
 
 Upstash ve `RATE_LIMIT_SECRET` geliştirmede eksikse rate limit uyarı vererek bypass edilebilir; production'da iletişim ve login rate-limit akışları fail-closed davranır.
+
+Vercel Preview public site salt-okuma olarak kullanılabilir; Preview
+mutation'ları `DMR_ALLOW_MUTATIONS=true` yanlışlıkla verilse bile engellenir.
+Mutation policy authentication kodunu veya admin read-only loader'larını
+doğrudan engellemez, ancak bu durum Preview admin erişimini garanti etmez.
+Preview admin için ayrı non-production Firebase client/Admin yapılandırması,
+`ADMIN_EMAIL`, Upstash Redis ve `RATE_LIMIT_SECRET` gerekir. Bu projede ayrı
+Preview admin altyapısı varsayılan olarak kurulmaz; bu altyapı yoksa Preview
+admin login'in çalışması beklenmemelidir. Production Firebase, Redis veya diğer
+credential'lar Preview scope'una verilmemelidir.
+
+Production, local development ve GitHub worker mutation'ları
+`DMR_ALLOW_MUTATIONS=true` olmadan başlamaz. Production release öncesinde değer
+Vercel **Production** scope'una eklenmeli, Preview scope'unda tanımlanmamalı ve
+combination worker için GitHub Actions repository variable olarak `true`
+olmalıdır.
+Ayrıntılı release sırası için `docs/RELEASE_MUTATION_CHECKLIST.md` kullanılmalıdır.
+
 
 ### Özellik bazlı yapılandırma
 
@@ -182,7 +201,13 @@ Upstash ve `RATE_LIMIT_SECRET` geliştirmede eksikse rate limit uyarı vererek b
 | Google yorum istatistikleri | Yayınlanmış Google Place ID kullanılıyorsa `GOOGLE_PLACES_API_KEY` |
 | Footer geliştirici bilgisi | Opsiyonel `NEXT_PUBLIC_DEVELOPER_NAME` |
 
-`NODE_ENV`, `GITHUB_RUN_ID` ve `GITHUB_RUN_ATTEMPT` runtime/CI tarafından sağlanır; kullanıcı secret'ı değildir. GitHub Actions worker için Firebase Admin ve Gemini değerleri repository Actions secrets alanında ayrıca tanımlanmalıdır.
+`NODE_ENV`, `GITHUB_ACTIONS`, `GITHUB_RUN_ID` ve `GITHUB_RUN_ATTEMPT` runtime/CI tarafından sağlanır; kullanıcı secret'ı değildir. GitHub Actions worker için Firebase Admin ve Gemini değerleri repository Actions secrets alanında, `DMR_ALLOW_MUTATIONS=true` ise repository Actions variables alanında ayrıca tanımlanmalıdır.
+
+Quality workflow, yalnız GitHub Actions build adımında
+`DMR_USE_SYNTHETIC_BUILD_FIXTURE=true` ile açılan secretsız sentetik snapshot
+kullanır. Bu kontrol Firebase/Redis entegrasyonunu test etmez; production
+preflight ayrıdır. Daha az route üretilmesi fixture kapsamındandır ve production
+route kaybı anlamına gelmez.
 
 ## Kullanılabilir Komutlar
 

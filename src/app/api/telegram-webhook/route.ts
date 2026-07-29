@@ -7,6 +7,7 @@ import {
   sendTelegramAdminMessage,
 } from "@/lib/telegram";
 import { z } from "zod";
+import { getMutationPolicyFailure } from "@/lib/mutationPolicy";
 
 const telegramCallbackQuerySchema = z.object({
   callback_query: z.object({
@@ -44,6 +45,14 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   if (incomingSecret !== secret) {
     console.warn("Webhook secret mismatch or missing");
     return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  const mutationFailure = getMutationPolicyFailure("telegram-webhook");
+  if (mutationFailure) {
+    return NextResponse.json(
+      { ok: false, error: mutationFailure.error },
+      { status: 503 },
+    );
   }
 
   let body: unknown;

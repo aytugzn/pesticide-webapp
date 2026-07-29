@@ -24,6 +24,7 @@ export const getErrorInfo = (
 export type AiErrorReason =
   | "quota_or_rate_limit"
   | "provider_unavailable"
+  | "provider_timeout"
   | "invalid_api_key"
   | "unknown_ai_error";
 
@@ -32,6 +33,13 @@ export const getAiErrorReason = (
 ): AiErrorReason => {
   const code = errorInfo.code?.toLowerCase() || "";
   const message = errorInfo.message?.toLowerCase() || "";
+
+  if (
+    code === "provider_timeout" ||
+    message.includes("request timed out")
+  ) {
+    return "provider_timeout";
+  }
 
   if (
     code === "429" ||

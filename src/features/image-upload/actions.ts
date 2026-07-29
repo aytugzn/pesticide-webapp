@@ -3,7 +3,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { ActionResponse, AppImage } from "@/types";
 import {
@@ -22,8 +22,14 @@ import {
   isManagedAdminImagePublicId,
 } from "./cloudinary";
 import { normalizeCloudinaryPublicId } from "@/utils/cloudinary";
+import { assertCloudinaryCloudConsistency } from "@/lib/environmentConsistency";
+import {
+  fetchWithTimeout,
+  isProviderTimeoutError,
+} from "@/lib/serverRequest";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const CLOUDINARY_UPLOAD_TIMEOUT_MS = 30_000;
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -96,8 +102,12 @@ const resolveUploadFolder = (target: string, slug?: string): string => {
 export const uploadAdminImage = async (
   formData: FormData,
 ): Promise<ActionResponse<AppImage, ImageUploadErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: IMAGE_UPLOAD_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "cloudinary-upload",
+    IMAGE_UPLOAD_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedInput = imageUploadInputSchema.safeParse({
@@ -139,6 +149,16 @@ export const uploadAdminImage = async (
     };
   }
 
+  try {
+    assertCloudinaryCloudConsistency();
+  } catch {
+    console.error("Cloudinary client/server configuration mismatch");
+    return {
+      success: false,
+      error: IMAGE_UPLOAD_ERRORS.CONFIGURATION_FAILED,
+    };
+  }
+
   const { target, alt } = parsedInput.data;
   const slug = "slug" in parsedInput.data ? parsedInput.data.slug : undefined;
   const folder = resolveUploadFolder(target, slug);
@@ -156,13 +176,15 @@ export const uploadAdminImage = async (
   uploadData.set("signature", signature);
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`,
       {
         method: "POST",
         body: uploadData,
         cache: "no-store",
       },
+      CLOUDINARY_UPLOAD_TIMEOUT_MS,
+      "cloudinary",
     );
 
     if (!response.ok) {
@@ -195,7 +217,11 @@ export const uploadAdminImage = async (
         ...(uploaded.format ? { format: uploaded.format } : {}),
       },
     };
-  } catch {
+  } catch (error: unknown) {
+    if (isProviderTimeoutError(error)) {
+      console.error("Cloudinary upload request timed out");
+      return { success: false, error: IMAGE_UPLOAD_ERRORS.UPLOAD_FAILED };
+    }
     console.error("Cloudinary upload request failed");
     return { success: false, error: IMAGE_UPLOAD_ERRORS.UPLOAD_FAILED };
   }
@@ -211,8 +237,12 @@ export const uploadAdminImage = async (
 export const cleanupAdminImageUploads = async (
   input: unknown,
 ): Promise<ActionResponse<AdminImageCleanupResult, ImageUploadErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: IMAGE_UPLOAD_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "cloudinary-cleanup",
+    IMAGE_UPLOAD_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedInput = adminImageCleanupInputSchema.safeParse(input);

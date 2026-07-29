@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 2,
+  "revision": 0,
+  "updatedAt": 1,
+  "data": {
+    "globalData": {
+      "pests": [
+        {
+          "name": "CI Pest",
+          "slug": "ci-pest",
+          "isActive": true
+        }
+      ],
+      "regions": [
+        {
+          "name": "CI Region",
+          "slug": "ci-region",
+          "isActive": true
+        }
+      ],
+      "settings": {}
+    },
+    "homeData": {
+      "slides": [],
+      "customReviews": [],
+      "viewAllReviewsUrl": "#"
+    },
+    "combinationsById": {
+      "ci-region_ci-pest": {
+        "region": "ci-region",
+        "pest": "ci-pest",
+        "isActive": true
+      }
+    }
+  }
+}

@@ -45,7 +45,9 @@ export const LoginForm = () => {
         setError(
           result.error === AUTH_ERRORS.RATE_LIMITED
             ? DICTIONARY.auth.login.rateLimitError
-            : DICTIONARY.auth.login.error
+            : result.error === AUTH_ERRORS.PROVIDER_UNAVAILABLE
+              ? DICTIONARY.auth.login.providerError
+              : DICTIONARY.auth.login.error
         );
         return;
       }

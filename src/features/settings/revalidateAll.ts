@@ -3,7 +3,7 @@
 import "server-only";
 
 import type { ActionResponse } from "@/types";
-import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { DraftFinalizationStatus } from "@/lib/firestoreDraftFinalization";
 import { activatePublicData } from "@/lib/publicActivation";
@@ -87,8 +87,12 @@ const getRequestedDraftChanges = (input: {
 export const revalidateAll = async (): Promise<
   ActionResponse<GlobalPublishResult, SettingsErrorCode>
 > => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: SETTINGS_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "public-site-publish",
+    SETTINGS_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const db = getAdminDb();

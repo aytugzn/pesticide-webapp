@@ -1,96 +1,146 @@
 import "server-only";
 
-import { connection } from "next/server";
+import { createHash } from "node:crypto";
+import { cacheLife, cacheTag } from "next/cache";
 import type { GoogleStatsState } from "@/features/home/types";
+import { AppError } from "@/lib/exceptions";
+import { fetchWithTimeout } from "@/lib/serverRequest";
 
 const GOOGLE_PLACES_TIMEOUT_MS = 9_000;
+const GOOGLE_STATS_SUCCESS_CACHE = {
+  stale: 5 * 60,
+  revalidate: 6 * 60 * 60,
+  expire: 7 * 24 * 60 * 60,
+} as const;
+const GOOGLE_STATS_EMPTY_CACHE = {
+  stale: 30,
+  revalidate: 5 * 60,
+  expire: 30 * 60,
+} as const;
+
+const getGoogleStatsCacheTag = (placeId: string): string => {
+  const placeHash = createHash("sha256")
+    .update(placeId)
+    .digest("hex")
+    .slice(0, 20);
+  return `google-places-stats:${placeHash}`;
+};
 
 /**
- * Fetches current Google rating data without caching or persistence.
- * Provider failures resolve to a typed state so optional public content never
- * rejects the server-rendered promise. The request boundary keeps configured
- * provider calls out of build-time prerendering.
+ * Fetches and validates one Google Places stats response.
  *
  * @param placeId - Published opaque Google Place ID, when configured
- * @returns A success, empty, or controlled error state for public rendering
+ * @returns A success or valid empty state; provider failures throw safely
+ */
+const fetchGoogleStats = async (
+  placeId: string,
+): Promise<GoogleStatsState> => {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) {
+    return { status: "error", data: null };
+  }
+
+  const response = await fetchWithTimeout(
+    `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=tr`,
+    {
+      headers: {
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "id,rating,userRatingCount",
+      },
+      cache: "no-store",
+    },
+    GOOGLE_PLACES_TIMEOUT_MS,
+    "google-places",
+  );
+
+  if (!response.ok) {
+    throw new AppError(
+      "Google Places request failed",
+      "PROVIDER_ERROR",
+      { provider: "google-places", status: response.status },
+    );
+  }
+
+  const rawData: unknown = await response.json();
+  const data =
+    rawData && typeof rawData === "object"
+      ? (rawData as Record<string, unknown>)
+      : {};
+  if (typeof data.id !== "string" || data.id !== placeId) {
+    throw new AppError(
+      "Google Places returned an unexpected place identity",
+      "PROVIDER_RESPONSE_INVALID",
+      { provider: "google-places" },
+    );
+  }
+
+  const rating = data.rating;
+  const reviewCount = data.userRatingCount;
+  if (
+    rating === undefined ||
+    rating === null ||
+    reviewCount === undefined ||
+    reviewCount === null ||
+    reviewCount === 0
+  ) {
+    return { status: "empty", data: null };
+  }
+
+  if (
+    typeof rating !== "number" ||
+    !Number.isFinite(rating) ||
+    rating < 0 ||
+    rating > 5 ||
+    typeof reviewCount !== "number" ||
+    !Number.isSafeInteger(reviewCount) ||
+    reviewCount < 0
+  ) {
+    throw new AppError(
+      "Google Places returned invalid rating data",
+      "PROVIDER_RESPONSE_INVALID",
+      { provider: "google-places" },
+    );
+  }
+
+  return { status: "success", data: { rating, reviewCount } };
+};
+
+/**
+ * Caches successful stats for six hours and valid empty responses briefly.
+ * The Place ID argument and hashed tag isolate different businesses.
+ */
+const getCachedGoogleStats = async (
+  placeId: string,
+): Promise<GoogleStatsState> => {
+  "use cache";
+
+  cacheTag(getGoogleStatsCacheTag(placeId));
+  const result = await fetchGoogleStats(placeId);
+  if (result.status === "success") {
+    cacheLife(GOOGLE_STATS_SUCCESS_CACHE);
+  } else {
+    cacheLife(GOOGLE_STATS_EMPTY_CACHE);
+  }
+  return result;
+};
+
+/**
+ * Resolves optional public stats without letting provider failures reject render.
  */
 export const getPublicGoogleStats = async (
   placeId?: string,
 ): Promise<GoogleStatsState> => {
   if (!placeId) return { status: "empty", data: null };
-
-  await connection();
-
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  if (!apiKey) {
-    console.error("Missing Google Places API configuration");
+  if (!process.env.GOOGLE_PLACES_API_KEY) {
     return { status: "error", data: null };
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    GOOGLE_PLACES_TIMEOUT_MS,
-  );
-
   try {
-    const response = await fetch(
-      `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=tr`,
-      {
-        headers: {
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "id,rating,userRatingCount",
-        },
-        cache: "no-store",
-        signal: controller.signal,
-      },
-    );
-
-    if (!response.ok) {
-      console.warn("Google Places request failed", { status: response.status });
-      return { status: "error", data: null };
-    }
-
-    const rawData: unknown = await response.json();
-    const data =
-      rawData && typeof rawData === "object"
-        ? (rawData as Record<string, unknown>)
-        : {};
-    if (typeof data.id !== "string" || data.id !== placeId) {
-      console.warn("Google Places returned an unexpected place ID");
-      return { status: "error", data: null };
-    }
-
-    const rating = data.rating;
-    const reviewCount = data.userRatingCount;
-    if (
-      rating === undefined ||
-      rating === null ||
-      reviewCount === undefined ||
-      reviewCount === null ||
-      reviewCount === 0
-    ) {
-      return { status: "empty", data: null };
-    }
-
-    if (
-      typeof rating !== "number" ||
-      !Number.isFinite(rating) ||
-      rating < 0 ||
-      rating > 5 ||
-      typeof reviewCount !== "number" ||
-      !Number.isSafeInteger(reviewCount) ||
-      reviewCount < 0
-    ) {
-      console.warn("Google Places returned invalid rating data");
-      return { status: "error", data: null };
-    }
-
-    return { status: "success", data: { rating, reviewCount } };
-  } catch {
-    console.warn("Google Places request timed out or failed");
+    return await getCachedGoogleStats(placeId);
+  } catch (error: unknown) {
+    console.warn("Google Places request failed", {
+      errorCode: error instanceof AppError ? error.code : "UNKNOWN",
+    });
     return { status: "error", data: null };
-  } finally {
-    clearTimeout(timeoutId);
   }
 };

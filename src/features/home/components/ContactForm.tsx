@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { DICTIONARY } from "@/constants/dictionary";
+import { MUTATION_POLICY_ERROR } from "@/constants/mutationPolicy";
 import { sendContactForm } from "../actions/sendContact";
 import { CONTACT_ERRORS } from "../types";
 import { Button } from "@/components/ui/Button";
@@ -102,6 +103,9 @@ export const ContactForm = ({ pests, regions, className }: ContactFormProps) => 
 
       let message = dict.error;
       switch (result.error) {
+        case MUTATION_POLICY_ERROR:
+          message = dict.temporarilyUnavailable;
+          break;
         case CONTACT_ERRORS.VALIDATION_FAILED:
           message = DICTIONARY.home.contact.validation.invalidFormat;
           break;

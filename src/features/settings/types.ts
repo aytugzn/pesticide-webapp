@@ -11,8 +11,10 @@ import {
   saveGeneralSettingsSchema,
   saveSiteImagesSchema,
 } from "./schemas";
+import { MUTATION_POLICY_ERROR } from "@/constants/mutationPolicy";
 
 export const SETTINGS_ERRORS = {
+  [MUTATION_POLICY_ERROR]: MUTATION_POLICY_ERROR,
   FETCH_FAILED: "FETCH_FAILED",
   UNAUTHORIZED: "UNAUTHORIZED",
   VALIDATION_FAILED: "VALIDATION_FAILED",

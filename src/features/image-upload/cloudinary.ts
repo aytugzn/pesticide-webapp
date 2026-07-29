@@ -3,6 +3,13 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { cloudinaryDestroyResponseSchema } from "@/features/image-upload/schemas";
 import { normalizeCloudinaryPublicId } from "@/utils/cloudinary";
+import { assertCloudinaryCloudConsistency } from "@/lib/environmentConsistency";
+import {
+  fetchWithTimeout,
+  isProviderTimeoutError,
+} from "@/lib/serverRequest";
+
+const CLOUDINARY_DELETE_TIMEOUT_MS = 15_000;
 
 const MANAGED_SITE_IMAGE_FOLDERS = [
   "sites/default/home/hero/",
@@ -183,6 +190,13 @@ const deleteManagedImage = async (
     return false;
   }
 
+  try {
+    assertCloudinaryCloudConsistency();
+  } catch {
+    console.error("Cloudinary cleanup configuration mismatch");
+    return false;
+  }
+
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = createHash("sha1")
     .update(`public_id=${normalizedPublicId}&timestamp=${timestamp}${apiSecret}`)
@@ -194,9 +208,11 @@ const deleteManagedImage = async (
   body.set("signature", signature);
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/destroy`,
       { method: "POST", body, cache: "no-store" },
+      CLOUDINARY_DELETE_TIMEOUT_MS,
+      "cloudinary",
     );
 
     if (!response.ok) {
@@ -215,7 +231,12 @@ const deleteManagedImage = async (
     }
 
     return true;
-  } catch {
+  } catch (error: unknown) {
+    if (isProviderTimeoutError(error)) {
+      console.error("Cloudinary managed image cleanup timed out");
+      return false;
+    }
+
     console.error("Cloudinary managed image cleanup request failed");
     return false;
   }

@@ -4,6 +4,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { AppError } from "@/lib/exceptions";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { ActionResponse } from "@/types";
@@ -136,8 +137,12 @@ export const getActiveCombinationJob = async (): Promise<
 export const startCombinationJob = async (
   items: BulkJobInputItem[],
 ): Promise<ActionResponse<CombinationBulkJobDoc, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-job-start",
+    COMBINATION_JOB_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedItems = startCombinationJobSchema.safeParse(items);
@@ -257,8 +262,12 @@ export const startCombinationJob = async (
 export const requestAbortCombinationJob = async (
   jobId: string,
 ): Promise<ActionResponse<void, CombinationJobErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: COMBINATION_JOB_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "combination-job-abort",
+    COMBINATION_JOB_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedJobId = combinationJobIdSchema.safeParse(jobId);

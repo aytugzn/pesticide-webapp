@@ -4,7 +4,12 @@ import "server-only";
 
 import { getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { getGeminiModel, getGeminiApiKeys, buildPestPrompt } from "@/lib/gemini";
+import {
+  buildPestPrompt,
+  generateGeminiContent,
+  getGeminiApiKeys,
+  getGeminiModel,
+} from "@/lib/gemini";
 import { extractAndParseJson, parsePestDoc } from "@/utils/parsers";
 import type {
   ActionResponse,
@@ -25,6 +30,7 @@ import {
   slugSchema,
 } from "./schemas";
 import { requireAdmin } from "@/features/auth/requireAdmin";
+import { requireAdminMutation } from "@/features/auth/requireAdminMutation";
 import { activatePublishedVisibilityPatch } from "@/lib/publicActivation";
 import {
   readPublishedSnapshotInTransaction,
@@ -123,8 +129,12 @@ export const generatePestContent = async (
   name: string,
   description: string,
 ): Promise<ActionResponse<GeneratedContent, PestErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "pest-generate-content",
+    PEST_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedInput = generatePestContentSchema.safeParse({
@@ -150,7 +160,7 @@ export const generatePestContent = async (
       const apiKey = keys[i];
       try {
         const model = getGeminiModel(apiKey);
-        const result = await model.generateContent(prompt);
+        const result = await generateGeminiContent(model, prompt);
         const responseText = result.response.text();
 
         if (!responseText) {
@@ -172,6 +182,13 @@ export const generatePestContent = async (
       } catch (error: unknown) {
         const errorInfo = getErrorInfo(error);
         const msg = errorInfo.message?.toLowerCase() || "";
+
+        if (errorInfo.code === "PROVIDER_TIMEOUT") {
+          console.warn("Gemini pest generation timed out", {
+            keyIndex: i,
+          });
+          return { success: false, error: PEST_ERRORS.AI_SERVER_BUSY };
+        }
 
         if (
           msg.includes("429") ||
@@ -221,8 +238,12 @@ export const savePest = async (
   content: GeneratedContent,
   isActive: boolean,
 ): Promise<ActionResponse<void, PestErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "pest-create",
+    PEST_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsed = savePestSchema.safeParse({
@@ -279,8 +300,12 @@ export const updatePest = async (
   slug: string,
   payload: UpdatePestInput,
 ): Promise<ActionResponse<void, PestErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "pest-update",
+    PEST_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedSlug = slugSchema.safeParse(slug);
@@ -333,8 +358,12 @@ export const togglePestStatus = async (
   slug: string,
   isActive: boolean
 ): Promise<ActionResponse<PublicMutationResult, PestErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "pest-toggle-status",
+    PEST_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedSlug = slugSchema.safeParse(slug);
@@ -436,8 +465,12 @@ export const togglePestStatus = async (
 export const deletePest = async (
   slug: string,
 ): Promise<ActionResponse<PublicMutationResult, PestErrorCode>> => {
-  if (!(await requireAdmin())) {
-    return { success: false, error: PEST_ERRORS.UNAUTHORIZED };
+  const guardFailure = await requireAdminMutation(
+    "pest-delete",
+    PEST_ERRORS.UNAUTHORIZED,
+  );
+  if (guardFailure) {
+    return guardFailure;
   }
 
   const parsedSlug = slugSchema.safeParse(slug);

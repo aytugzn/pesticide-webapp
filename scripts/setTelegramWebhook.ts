@@ -2,6 +2,7 @@ import { isIP } from "node:net";
 import { config } from "dotenv";
 import { z } from "zod";
 import { AppError } from "../src/lib/exceptions";
+import { assertMutationAllowed } from "../src/lib/mutationPolicyCore";
 
 config({ path: ".env.local", override: false, quiet: true });
 
@@ -403,6 +404,8 @@ const main = async (): Promise<void> => {
     console.log("Telegram webhook dry run completed");
     return;
   }
+
+  assertMutationAllowed("telegram-webhook-registration");
 
   const token = getRequiredEnv("TELEGRAM_BOT_TOKEN");
   await registerTelegramWebhook(token, webhookSecret, webhookUrl);

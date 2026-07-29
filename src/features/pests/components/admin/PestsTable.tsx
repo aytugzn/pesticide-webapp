@@ -13,6 +13,7 @@ import { Edit2, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { PestForm } from "./PestForm";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 
 type PestsTableProps = {
   initialRows: PestDoc[];
@@ -60,6 +61,10 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
           delete next[row.slug];
           return next;
         });
+        showToast({
+          variant: "error",
+          message: resolveAdminActionError(result, d.updateError),
+        });
       } else if (result.data?.activationStatus === "deferred") {
         showToast({
           variant: "warning",
@@ -74,6 +79,7 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
         delete next[row.slug];
         return next;
       });
+      showToast({ variant: "error", message: d.updateError });
     } finally {
       setPendingToggleIds((prev) => {
         const next = new Set(prev);
@@ -81,7 +87,7 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
         return next;
       });
     }
-  }, [pendingToggleIds, showToast]);
+  }, [d.updateError, pendingToggleIds, showToast]);
 
   const handleEdit = useCallback(async (row: PestDoc) => {
     if (pendingEditSlug) return;
@@ -153,7 +159,10 @@ export const PestsTable = ({ initialRows }: PestsTableProps) => {
 
       setDeleteNotice({
         variant: "error",
-        message: result.error === "PEST_IN_USE" ? d.deleteInUseError : d.deleteError,
+        message:
+          result.error === "PEST_IN_USE"
+            ? d.deleteInUseError
+            : resolveAdminActionError(result, d.deleteError),
       });
       setRowToDelete(null);
     } catch {

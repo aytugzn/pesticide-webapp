@@ -20,6 +20,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Textarea } from "@/components/ui/Textarea";
 import { DICTIONARY } from "@/constants/dictionary";
 import { useCombinationAdminToast } from "@/features/combinations/components/admin/CombinationJobProvider";
+import { resolveAdminActionError } from "@/features/auth/adminActionError";
 import { saveReviewsDraft } from "@/features/reviews/actions";
 import { REVIEW_LIMITS } from "@/features/reviews/constants";
 import { reviewItemSchema } from "@/features/reviews/schemas";
@@ -276,7 +277,10 @@ export const ReviewsManager = ({
         viewAllUrl: initialData.viewAllUrl ?? "",
       });
       if (!result.success) {
-        showToast({ variant: "error", message: d.saveError });
+        showToast({
+          variant: "error",
+          message: resolveAdminActionError(result, d.saveError),
+        });
         return;
       }
 
